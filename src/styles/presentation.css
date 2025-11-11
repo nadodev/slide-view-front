@@ -1,0 +1,87 @@
+/* Presentation styles moved to a single CSS file to keep components lightweight */
+
+:root {
+  --primary-1: #667eea;
+  --primary-2: #764ba2;
+  --text: #2d3748;
+}
+
+.presentation-container {
+  width: 100vw;
+  height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  /* Force readable text color inside the presentation area to avoid global overrides */
+  color: var(--text);
+}
+
+.upload-screen {
+  background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+  padding: 70px;
+  border-radius: 24px;
+  box-shadow: 0 25px 80px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.05);
+  text-align: center;
+  max-width: 650px;
+  animation: fadeIn 0.35s ease-out;
+  color: var(--text);
+}
+
+.upload-area {
+  border: 3px dashed var(--primary-1);
+  border-radius: 18px;
+  padding: 50px 40px;
+  margin: 30px 0;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+  cursor: pointer;
+  transition: all 0.24s ease;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 200px;
+}
+
+.upload-area:hover { transform: translateY(-3px); border-color: var(--primary-2); }
+.upload-area input { display: none; }
+.upload-icon { color: var(--primary-1); margin-bottom: 12px; }
+.upload-text-primary { margin: 0; font-size: 1.05rem; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+.upload-text-secondary { margin: 0; font-size: 0.95rem; color: #718096; }
+.upload-btn, .upload-btn:focus { background: linear-gradient(135deg, var(--primary-1) 0%, var(--primary-2) 100%); color: white; border: none; padding: 10px 20px; border-radius: 20px; font-weight: 600; cursor: pointer; }
+
+.instructions { background: #fff8e1; border-left: 4px solid #ffd700; padding: 16px; margin-top: 12px; border-radius: 8px; text-align: left; max-width: 650px; }
+.instructions h3 { color: #f57c00; margin: 0 0 8px 0; }
+
+.slide-container { background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%); width: 90%; max-width: 1400px; height: 85vh; border-radius: 20px; box-shadow: 0 25px 80px rgba(0,0,0,0.15); padding: 48px; overflow-y: auto; color: var(--text); }
+.slide-container::-webkit-scrollbar { width: 10px; }
+.slide-container::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+.slide-container::-webkit-scrollbar-thumb { background: linear-gradient(135deg, var(--primary-1) 0%, var(--primary-2) 100%); border-radius: 10px; }
+
+.slide-content { max-width: 100%; color: var(--text); }
+.slide-content h1 { color: var(--primary-1); font-size: 2.3rem; margin-bottom: 16px; font-weight: 700; }
+.slide-content h2 { color: var(--primary-2); font-size: 1.6rem; margin: 20px 0 14px; }
+.slide-content p { font-size: 1rem; line-height: 1.6; color: var(--text); margin: 10px 0; }
+.slide-content a { color: var(--primary-1); text-decoration: none; border-bottom: 1px dashed rgba(102,126,234,0.25); }
+.slide-content a:hover { color: var(--primary-2); border-bottom-color: rgba(118,75,162,0.35); }
+.slide-content code:not(pre code) { background: linear-gradient(135deg, rgba(102, 126, 234, 0.07), rgba(118,75,162,0.07)); padding: 2px 6px; border-radius: 6px; color: var(--primary-1); font-family: 'Fira Code', monospace; }
+.slide-content ul, .slide-content ol { margin: 12px 0; padding-left: 26px; }
+.slide-content pre.code-block { background: #0b1220; padding: 14px; border-radius: 8px; overflow: auto; color: #fff; margin: 12px 0; }
+
+.navigation { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; background: rgba(255,255,255,0.95); backdrop-filter: blur(6px); padding: 12px 18px; border-radius: 40px; box-shadow: 0 6px 18px rgba(0,0,0,0.12); align-items: center; }
+.nav-btn { background: linear-gradient(135deg, var(--primary-1) 0%, var(--primary-2) 100%); color: white; border: none; padding: 8px 14px; border-radius: 18px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+.nav-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.slide-counter { color: var(--primary-1); font-weight: 700; min-width: 64px; text-align: center; }
+.reload-btn { background: #f0f0f0; color: var(--primary-1); border: 1px solid var(--primary-1); padding: 6px 12px; border-radius: 14px; cursor: pointer; }
+
+.message { display: flex; gap: 8px; align-items: center; justify-content: center; margin-top: 12px; color: var(--primary-1); }
+.message.error { color: #c62828; background: #ffebee; padding: 8px 12px; border-radius: 8px; }
+
+/* small responsive tweaks */
+@media (max-width: 900px) {
+  .slide-container { padding: 24px; height: 70vh; }
+  .upload-screen { padding: 40px; }
+}

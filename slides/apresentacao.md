@@ -1,3 +1,79 @@
+# 🎨 Aurea Design System
+
+**Padronização, excelência e identidade nos ambientes digitais da Unoesc**
+
+> Componentes, tokens e documentação para construir experiências consistentes 
+> em qualquer produto.
+
+---
+
+### **Sobre o Áurea**
+
+O Áurea é o design system oficial da Unoesc, criado para promover consistência, eficiência e acessibilidade em todos os produtos digitais da universidade. Inspirado na proporção áurea — símbolo clássico de harmonia e equilíbrio — este sistema traduz visualmente os valores da instituição: excelência, inovação e compromisso com a formação humana e acadêmica.
+
+Mais do que um conjunto de componentes reutilizáveis, o Áurea é uma linguagem compartilhada entre designers, desenvolvedores e comunicadores. Ele padroniza estilos, comportamentos e interações, garantindo uma experiência coesa para estudantes, professores, colaboradores e comunidade externa.
+
+Ao adotar o Áurea, projetamos juntos um ecossistema digital mais intuitivo, funcional e alinhado à identidade e missão da Unoesc.
+
+- 🎨 Design Tokens (cores, tipografia, espaçamentos)
+- ⚛️ Componentes React
+- 📚 Documentação via Storybook
+- 🔧 Scripts/CLI de automação
+
+## Casos de uso
+
+- Criar protótipos rapidamente usando componentes prontos
+- Padronizar formulários e estados de erro/feedback
+- Habilitar tema claro/escuro sem reescrever estilos
+
+## Métricas que buscamos
+
+- Reduzir retrabalho visual e divergências de UI
+- Aumentar reuso de código e velocidade de entrega
+
+----'----
+
+# 🔍 Contexto e Problema
+
+Desafios que motivaram o projeto:
+
+- 🎨 Inconsistência visual entre produtos
+- ⏱️ Retrabalho constante de elementos básicos
+- 🔄 Manutenção difícil
+
+## Impactos no dia a dia
+
+- Dificulta o trabalho de QA e aumenta bugs visuais
+- Onboarding mais lento (cada projeto com padrão diferente)
+- Decisões repetidas: “qual azul usar?”, “qual espaçamento?”
+
+## O que o DS resolve
+
+- Define um vocabulário comum (tokens, componentes, guidelines)
+- Centraliza evolução e manutenção
+- Garante consistência de UI/UX entre produtos
+
+----'----
+# 🎨 O que é um Design System?
+
+> Sistema de padrões de design, componentes reutilizáveis e standards de desenvolvimento para construir produtos consistentes e escaláveis.
+
+Analogia com LEGO:
+
+- 🎨 Design Tokens → "tintas e cores padronizadas"
+- 🧱 Componentes → "peças de LEGO"
+- 📚 Documentação → "manual de instruções"
+- 📏 Guidelines → "regras de montagem"
+
+## Elementos essenciais
+
+- Design tokens: base para identidade visual (cores, tipografia, espaçamentos)
+- Biblioteca de componentes: blocos reutilizáveis e acessíveis
+- Documentação: exemplos, API, boas práticas
+- Processos: versionamento, contribution, revisão e publicação
+
+----'----
+
 ## 🏗️ Visão Geral da Arquitetura
 
 **Monorepo** baseado em **Turborepo** com múltiplos pacotes especializados, cada um com responsabilidades bem definidas e interdependências gerenciadas.
@@ -196,3 +272,189 @@ React apps → @aurea/react + @aurea/tokens
 Vanilla JS → @aurea/tokens only
 Documentation → Storybook build
 ```
+
+----'----
+
+# 🛠️ Tecnologias e Ferramentas
+
+Stack técnica:
+
+- Node.js 22+
+- TypeScript 5+
+- React 18+
+- Turborepo
+- Vite
+- Style Dictionary
+
+DevOps e automação:
+
+- 🐳 Docker
+- 🔄 Jenkins
+- 📦 Nexus
+- 🦊 GitLab
+
+## Por que essas escolhas
+
+- Vite/Turborepo: DX rápida e builds otimizados
+- TypeScript: segurança de tipos para API de componentes
+- Style Dictionary: múltiplos formatos de tokens (CSS, TS, JSON)
+- Jenkins + Docker: pipeline reproduzível e previsível
+
+----'----
+
+# ⚛️ Componentes React
+
+Características:
+
+- 🔷 TypeScript (tipagem forte)
+- 🎨 CSS-in-JS / estilos base
+- 🌙 Temas (claro/escuro)
+- ♿ Acessibilidade (ARIA, teclado)
+- 📱 Responsivo
+
+Exemplos disponíveis: `Button`, `Card`, `Alert`, `Typography`, `ThemeProvider`.
+
+## Princípios de implementação
+
+- Propriedades tipadas e documentadas (limita erro de uso)
+- Estilos desacoplados por tokens (tema claro/escuro)
+- Acessibilidade: roles/ARIA, foco visível, navegação por teclado
+
+## Exemplo de uso
+```bash
+npm install  @unoescaurea/react
+
+```
+
+```tsx
+import { Button, ThemeProvider } from '@unoescaurea/react';
+
+<ThemeProvider theme="light">
+  <Button variant="primary" onClick={() => alert('Aurea!')}>Salvar</Button>
+</ThemeProvider>
+```
+----'----
+
+# 📖 Storybook
+
+Documentação interativa dos componentes:
+
+- 🎮 Playground em tempo real
+- 📚 Exemplos de uso e API
+- 🧪 Testes visuais e acessibilidade
+- 🌗 Temas claro/escuro
+
+Acesso (dev): `https://aurea.unoesc.edu.br:6006`
+
+## Como usar no dia a dia
+
+- Desenvolva componentes guiado por stories (props, variações, edge cases)
+- Use controles para validar estados (loading, disabled, erro)
+- Documente exemplos reais para consumo pelos times
+
+----'----
+
+# 🔄 Fluxo de Desenvolvimento
+
+1. Criar branch (feature) a partir de `master`
+2. Desenvolver com commits semânticos
+3. MR para `teste` e validação
+4. Versionar na feature (patch/minor/major)
+5. MR para `master`
+6. Jenkins: build/deploy/publicação no Nexus
+
+----'----
+
+# 🏷️ Versionamento Semântico
+
+Formato: `MAJOR.MINOR.PATCH` (ex.: `1.2.3`)
+
+Quando usar:
+
+- PATCH → correções de bugs
+- MINOR → novas funcionalidades compatíveis
+- MAJOR → mudanças incompatíveis (breaking changes)
+
+Comandos (root):
+
+```bash
+npm run version:dev
+npm run version:patch
+npm run version:minor
+npm run version:major
+```
+
+## Como decidir o bump
+
+- `patch`: correções e ajustes sem impacto de API
+- `minor`: novas props/funcionalidades backward-compatible
+- `major`: remove/renomeia props, muda contrato visual/comportamental
+
+----'----
+
+# 🐳 Docker (Dev)
+
+Arquivos:
+
+- `builds/Dockerfile`
+- `builds/docker-compose-dev.yml`
+
+Comandos principais:
+
+```bash
+docker compose -f builds/docker-compose-dev.yml build --no-cache
+docker compose -f builds/docker-compose-dev.yml up -d
+docker compose -f builds/docker-compose-dev.yml logs -f --tail=100 aurea-storybook-dev
+```
+
+Vantagens: ambiente idêntico, isolamento, setup rápido, pronto para prod.
+
+## Dicas de porta e healthcheck
+
+- Porta interna do Storybook: `6006`
+- Prefira mapear `6006:6006` para previsibilidade
+- Healthcheck coerente com a porta interna
+
+
+----'----
+
+# 🎯 Benefícios
+
+- ⚡ Velocidade: até 70% mais rápido para criar telas
+- 🎨 Consistência: 100% alinhado com a identidade visual
+- 🔧 Manutenção: atualizações centralizadas
+- 📚 Documentação: Storybook como fonte de verdade
+- 👥 Onboarding: novos devs produtivos rapidamente
+- ♿ Acessibilidade embutida
+
+## Impacto esperado
+
+- Menos bugs visuais e retrabalho
+- Mais previsibilidade entre projetos
+- Entregas mais rápidas e consistentes
+
+----'----
+
+# 🚀 Próximos Passos
+
+Curto prazo (1-3 meses):
+- Novos componentes: Input, Select, Checkbox, Radio, Modal
+- Tema escuro completo
+- Testes automatizados (80%+)
+
+Médio prazo (3-6 meses):
+- Componentes complexos: Table, Pagination, DatePicker
+- Integração Figma → código
+- Migração gradual nos projetos
+
+Longo prazo (6-12 meses):
+- DS v2 (tokens avançados, animações)
+- Suporte mobile (React Native)
+- Comunidade interna de contribuições
+
+## Critérios de pronto
+
+- Componentes com documentação, testes e exemplos
+- Tokens revisados por design + dev
+- Roadmap publicado no repositório
+

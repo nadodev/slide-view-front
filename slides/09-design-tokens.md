@@ -29,4 +29,3 @@ Formatos: CSS • JS • TS • JSON
 ## Dica
 
 Atualize o token uma vez, todos os componentes herdam a mudança automaticamente.
-
