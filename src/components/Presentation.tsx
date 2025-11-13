@@ -290,6 +290,80 @@ const Presentation = () => {
     URL.revokeObjectURL(url);
   };
 
+  const exportSlideAsPdf = (index: number) => {
+    try {
+      const slide = slides[index];
+      if (!slide) return;
+      const slideHtml = slide.html || '';
+
+      // Open a new window and copy all same-origin stylesheets + inline styles
+      const w = window.open('', '_blank');
+      if (!w) {
+        setWarning('Não foi possível abrir nova janela para exportar. Bloqueador de pop-ups?');
+        setTimeout(() => setWarning(''), 4000);
+        return;
+      }
+
+      const doc = w.document;
+      doc.open();
+      doc.write('<!doctype html><html><head><meta charset="utf-8"><title>Slide - ' + (slide.name || index+1) + '</title>');
+
+      // copy link[rel=stylesheet] and style tags from current document (same-origin only)
+      Array.from(document.querySelectorAll('link[rel="stylesheet"], style')).forEach((node) => {
+        if (node.tagName.toLowerCase() === 'link') {
+          const href = (node as HTMLLinkElement).href;
+          // Only include same-origin stylesheets to avoid CORS issues
+          try {
+            const u = new URL(href, window.location.href);
+            if (u.origin === window.location.origin) {
+              doc.write('<link rel="stylesheet" href="' + u.href + '">');
+            }
+          } catch (e) {
+            // ignore
+          }
+        } else if (node.tagName.toLowerCase() === 'style') {
+          doc.write('<style>' + (node.textContent || '') + '</style>');
+        }
+      });
+
+      // Add a small print stylesheet to ensure colors and layout print correctly
+      doc.write('<style>html,body{height:100%;margin:0;padding:0;background:#fff;}@page{size:auto;margin:12mm;}body{ -webkit-print-color-adjust:exact; print-color-adjust:exact; } .slide-container{box-shadow:none !important;} .navigation, .thumbs-rail, .editor-overlay, .editor-panel, .presenter-bar { display: none !important; } .presentation-main{display:block;} </style>');
+      doc.write('</head><body>');
+
+      // Wrap slide HTML with the same structure/classes used in the app so presentation.css rules apply
+      doc.write('<div class="presentation-container">');
+      doc.write('<div class="presentation-with-thumbs">');
+      doc.write('<div class="presentation-main">');
+      doc.write('<div class="slide-container">');
+      doc.write('<div class="slide-content">');
+      doc.write(slideHtml);
+      doc.write('</div>');
+      doc.write('</div>');
+      doc.write('</div>');
+      doc.write('</div>');
+      doc.write('</div>');
+      doc.write('</body></html>');
+      doc.close();
+
+      // Give the new window a moment to load styles, then trigger print
+      // Give the new window a bit more time to load stylesheets before printing
+      setTimeout(() => {
+        try {
+          w.focus();
+          w.print();
+          // Optionally close after print dialog opens (some browsers block close)
+          // w.close();
+        } catch (err) {
+          console.warn('Erro ao imprimir slide:', err);
+        }
+      }, 900);
+    } catch (err) {
+      console.warn('Erro ao exportar slide para PDF', err);
+      setWarning('Erro ao exportar slide como PDF.');
+      setTimeout(() => setWarning(''), 4000);
+    }
+  };
+
   const duplicateSlide = () => {
     if (slides.length === 0) return;
     const current = slides[currentSlide];
@@ -423,6 +497,7 @@ const Presentation = () => {
                         onExport={exportCombinedMarkdown}
                         onDuplicate={duplicateSlide}
                         onReset={() => { setSlides([]); setCurrentSlide(0); setError(''); setShowSlideList(false); setPresenterMode(false); }}
+                        onExportPdf={() => exportSlideAsPdf(currentSlide)}
                   />
                 </>
               )}

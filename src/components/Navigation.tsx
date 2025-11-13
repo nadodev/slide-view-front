@@ -10,10 +10,11 @@ type NavigationProps = {
   onToggleFocus?: () => void;
   focusMode?: boolean;
   onExport?: () => void;
+  onExportPdf?: () => void;
   onDuplicate?: () => void;
 };
 
-export default function Navigation({ currentSlide, slidesLength, onPrev, onNext, onReset, onEdit, onToggleFocus, focusMode, onExport, onDuplicate }: NavigationProps) {
+export default function Navigation({ currentSlide, slidesLength, onPrev, onNext, onReset, onEdit, onToggleFocus, focusMode, onExport, onExportPdf, onDuplicate }: NavigationProps) {
   return (
     <div className="navigation">
       <div style={{ width: '96%', maxWidth: 1100, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -59,6 +60,13 @@ export default function Navigation({ currentSlide, slidesLength, onPrev, onNext,
           {typeof onExport === 'function' && (
             <button className="nav-btn" onClick={onExport} aria-label="Exportar todos os slides como .md" title="Exportar .md" style={{ padding: '6px 10px', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
               <Download size={14} /> <span style={{ fontSize: 13 }}>Exportar</span>
+            </button>
+          )}
+
+          {typeof onExportPdf === 'function' && (
+            <button className="nav-btn" onClick={onExportPdf} aria-label="Exportar slide atual como PDF" title="Exportar PDF" style={{ padding: '6px 10px', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M21 8v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8"/><path d="M7 8V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v3"/><path d="M12 12v6"/><path d="M9 15l3-3 3 3"/></svg>
+              <span style={{ fontSize: 13 }}>PDF</span>
             </button>
           )}
 
