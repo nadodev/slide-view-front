@@ -1,34 +1,38 @@
-import { useState, useEffect, useRef } from 'react';
-import { marked } from 'marked';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import hljs from 'highlight.js';
-import 'highlight.js/styles/github-dark.min.css';
+import { useLocation, useNavigate } from 'react-router-dom';
 import UploadArea from './UploadArea';
 import SlideViewer from './SlideViewer';
-import { useMemo } from 'react';
 import Navigation from './Navigation';
 import SlideList from './SlideList';
 import PresenterView from './PresenterView';
 import EditPanel from './EditPanel';
 import { Sparkles, AlertCircle } from 'lucide-react';
 import '../styles/presentation.css';
+import useAnchorNavigation from '../hooks/useAnchorNavigation';
+import ScrollTopButton from './ScrollTopButton';
 
-const parseMarkdownSafe = (md) => {
-  let html = marked.parse(md);
-  html = html.replace(/<pre><code class="language-(\w+)">/g, '<pre class="code-block"><code class="hljs language-$1">');
-  html = html.replace(/<pre><code class="hljs language-(\w+)">/g, '<pre class="code-block"><code class="hljs language-$1">');
-  html = html.replace(/<pre><code>/g, '<pre class="code-block"><code class="hljs">');
-  return html;
+import parseMarkdownSafe from '../utils/markdown';
+
+export type Slide = {
+  name?: string;
+  content?: string;
+  notes?: string[];
+  html?: string;
+  _fileHandle?: any;
 };
 
 const Presentation = () => {
-  const [slides, setSlides] = useState([]);
-  const [currentSlide, setCurrentSlide] = useState(0);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [slides, setSlides] = useState<any[]>([]);
+  const [currentSlide, setCurrentSlide] = useState<number>(0);
   const [showSlideList, setShowSlideList] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [warning, setWarning] = useState('');
-  const slideContentRef = useRef(null);
-  const slideContainerRef = useRef(null);
+  const slideContentRef = useRef<any>(null);
+  const slideContainerRef = useRef<any>(null);
   const [highContrast, setHighContrast] = useState(() => {
     try { return localStorage.getItem('presentation-high-contrast') === '1'; } catch { return false; }
   });
@@ -37,32 +41,16 @@ const Presentation = () => {
     try { localStorage.setItem('presentation-high-contrast', highContrast ? '1' : '0'); } catch {}
   }, [highContrast]);
 
-  marked.setOptions({
-    highlight: function(code, lang) {
-      if (lang && hljs.getLanguage(lang)) {
-        try {
-          return hljs.highlight(code, { language: lang }).value;
-        } catch (err) {
-          return hljs.highlightAuto(code).value;
-        }
-      }
-      return hljs.highlightAuto(code).value;
-    },
-    breaks: true,
-    gfm: true
-  });
+  const [presenterMode, setPresenterMode] = useState<boolean>(false);
+  const [editing, setEditing] = useState<boolean>(false);
+  const [draftContent, setDraftContent] = useState<string>('');
+  const [focusMode, setFocusMode] = useState<boolean>(false);
+  const [editorFocus, setEditorFocus] = useState<boolean>(false); 
+  const [showHelp, setShowHelp] = useState<boolean>(false);
+  const [slideTransition, setSlideTransition] = useState<string>('fade');
+  const thumbsRailRef = useRef<any>(null);
+  const [transitionKey, setTransitionKey] = useState<number>(0);
 
-  const [presenterMode, setPresenterMode] = useState(false);
-  const [editing, setEditing] = useState(false);
-  const [draftContent, setDraftContent] = useState('');
-  const [focusMode, setFocusMode] = useState(false);
-  const [editorFocus, setEditorFocus] = useState(false); // full-screen edit panel
-  const [showHelp, setShowHelp] = useState(false);
-  const [slideTransition, setSlideTransition] = useState('fade'); // 'fade', 'slide', 'none'
-  const thumbsRailRef = useRef(null);
-  const [transitionKey, setTransitionKey] = useState(0);
-
-  // Disable page scroll while in focus mode
   useEffect(() => {
     if (focusMode) {
       const prevX = document.body.style.overflowX;
@@ -77,25 +65,22 @@ const Presentation = () => {
     return undefined;
   }, [focusMode]);
 
-  // Attempt to save a slide's markdown to a local file using the File System Access API when available.
-  const saveSlideToFile = async (index, content) => {
+  const saveSlideToFile = async (index: number, content: string) => {
     try {
       const slide = slides[index];
       if (!slide) return;
-      const supportsFS = typeof window !== 'undefined' && 'showSaveFilePicker' in window;
+      const supportsFS = typeof window !== 'undefined' && 'showSaveFilePicker' in (window as any);
       if (supportsFS) {
-        // If we already have a handle in memory, reuse it; otherwise ask where to save
         let handle = slide._fileHandle;
         if (!handle) {
-          handle = await window.showSaveFilePicker({
+          handle = await (window as any).showSaveFilePicker({
             suggestedName: (slide.name?.endsWith('.md') ? slide.name : `${slide.name || 'slide'}.md`),
             types: [
               { description: 'Markdown', accept: { 'text/markdown': ['.md'] } },
               { description: 'Text', accept: { 'text/plain': ['.txt'] } }
             ]
           });
-          // Stash handle in memory for this session only (not persisted)
-          setSlides(prev => {
+          setSlides((prev) => {
             const cp = prev.slice();
             if (cp[index]) cp[index]._fileHandle = handle;
             return cp;
@@ -105,7 +90,6 @@ const Presentation = () => {
         await writable.write(content);
         await writable.close();
       } else {
-        // Fallback: trigger a download of the current content
         const blob = new Blob([content], { type: 'text/markdown' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -117,29 +101,28 @@ const Presentation = () => {
         URL.revokeObjectURL(url);
       }
     } catch (err) {
-      // Swallow errors silently or optionally set a warning
       console.warn('Falha ao salvar arquivo:', err);
       setWarning('Não foi possível salvar diretamente no arquivo. Seu navegador pode não suportar, ou a permissão foi negada.');
       setTimeout(() => setWarning(''), 4000);
     }
   };
 
-  const extractNotes = (text) => {
-    const notes = [];
+  const extractNotes = (text: string) => {
+    const notes: string[] = [];
     if (!text) return { clean: text || '', notes };
-    const cleaned = text.replace(/<!--\s*note:\s*([\s\S]*?)-->/gi, (m, p1) => {
+    const cleaned = text.replace(/<!--\s*note:\s*([\s\S]*?)-->/gi, (_m: string, p1: string) => {
       if (p1 && p1.trim()) notes.push(p1.trim());
       return '';
     });
     return { clean: cleaned.trim(), notes };
   };
 
-  const handleFileUpload = async (e, options = {}) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement> | any, options: any = {}) => {
     if (options?.error) {
       setError(options.error);
       return;
     }
-    const files = Array.from(e?.target?.files || []);
+    const files = Array.from((e?.target?.files || []) as File[]);
     if (files.length === 0) return;
     setLoading(true); setError('');
     try {
@@ -147,23 +130,22 @@ const Presentation = () => {
         const file = files[0];
         const raw = await file.text();
         const marker = (options.delimiter || '---').trim();
-        const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          const lineRegex = new RegExp('^\\s*' + esc(marker) + '\\s*$', 'gm');
-          let slidesParts = raw.split(lineRegex).map((p) => p.trim()).filter(Boolean);
-          if (slidesParts.length <= 1) {
-            const altRegex = new RegExp('\\r?\\n\\s*' + esc(marker) + '\\s*\\r?\\n');
-            slidesParts = raw.split(altRegex).map((p) => p.trim()).filter(Boolean);
-          }
-          // If after attempts we still have a single part, the marker wasn't present — treat as blocking error.
-          if (slidesParts.length <= 1) {
-            setError('Marcador não encontrado — nenhum slide foi carregado. Verifique o marcador ou desmarque a opção de dividir.');
-            setLoading(false);
-            return;
-          }
-          setWarning('');
-        const loadedSlides = slidesParts.map((content, i) => {
+        const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const lineRegex = new RegExp('^\\s*' + esc(marker) + '\\s*$', 'gm');
+        let slidesParts = raw.split(lineRegex).map((p: string) => p.trim()).filter(Boolean);
+        if (slidesParts.length <= 1) {
+          const altRegex = new RegExp('\\r?\\n\\s*' + esc(marker) + '\\s*\\r?\\n');
+          slidesParts = raw.split(altRegex).map((p: string) => p.trim()).filter(Boolean);
+        }
+        if (slidesParts.length <= 1) {
+          setError('Marcador não encontrado — nenhum slide foi carregado. Verifique o marcador ou desmarque a opção de dividir.');
+          setLoading(false);
+          return;
+        }
+        setWarning('');
+        const loadedSlides = slidesParts.map((content: string, i: number) => {
           const { clean, notes } = extractNotes(content);
-          return { name: `${file.name.replace('.md','')}-${i+1}`, content: clean, notes, html: parseMarkdownSafe(clean) };
+          return { name: `${file.name.replace('.md','')}-${i+1}`, content: clean, notes, html: parseMarkdownSafe(clean) } as Slide;
         });
         setSlides(loadedSlides);
         setCurrentSlide(0);
@@ -171,43 +153,43 @@ const Presentation = () => {
         return;
       }
 
-      const sortedFiles = files.sort((a,b) => a.name.localeCompare(b.name));
-      const loadedSlides = await Promise.all(sortedFiles.map(async (file) => {
+      const sortedFiles = files.sort((a: File, b: File) => a.name.localeCompare(b.name));
+      const loadedSlides = await Promise.all(sortedFiles.map(async (file: File) => {
         const raw = await file.text();
         const { clean, notes } = extractNotes(raw);
-        return { name: file.name.replace('.md',''), content: clean, notes, html: parseMarkdownSafe(clean) };
+        return { name: file.name.replace('.md',''), content: clean, notes, html: parseMarkdownSafe(clean) } as Slide;
       }));
       setSlides(loadedSlides);
       setCurrentSlide(0);
       setShowSlideList(true);
     } catch (err) {
-      setError('Erro ao carregar arquivos: ' + (err?.message || err));
+      const errorAny: any = err;
+      setError('Erro ao carregar arquivos: ' + (errorAny?.message || String(errorAny)));
     } finally { setLoading(false); }
   };
 
   useEffect(() => {
-    const handleKeyPress = (e) => {
-      // Ignore global shortcuts while editing or typing in inputs/textareas/contenteditable
-      const target = e.target;
+    const handleKeyPress = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
       const tag = target?.tagName?.toLowerCase();
       if (editing || tag === 'input' || tag === 'textarea' || target?.isContentEditable) return;
-      const k = e.key.toLowerCase();
-      if (e.key === '?' || (e.shiftKey && k === '/')) { // Help shortcut
+      const k = (e as KeyboardEvent & { key: string }).key.toLowerCase();
+      if (e.key === '?' || (e.shiftKey && k === '/')) { 
         setShowHelp((v) => !v);
         return;
       }
-      if (k === 'h') { // Toggle focus mode
+      if (k === 'h') { 
         if (!presenterMode) setFocusMode((v) => !v);
         return;
       }
-      if (k === 'e') { // Edit shortcut
+      if (k === 'e') { 
         if (!presenterMode && slides.length > 0) {
           setDraftContent(slides[currentSlide].content || '');
           setEditing(true);
           return;
         }
       }
-      if ((e.ctrlKey || e.metaKey) && k === 'd') { // Duplicate slide
+      if ((e.ctrlKey || e.metaKey) && k === 'd') { 
         e.preventDefault();
         if (!presenterMode && slides.length > 0) {
           duplicateSlide();
@@ -231,19 +213,20 @@ const Presentation = () => {
       if (e.key === 'Home') { setCurrentSlide(0); setTransitionKey(prev => prev + 1); }
       if (e.key === 'End') { setCurrentSlide(slides.length - 1); setTransitionKey(prev => prev + 1); }
     };
-    window.addEventListener('keydown', handleKeyPress);
+    window.addEventListener('keydown', handleKeyPress as EventListener);
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [currentSlide, slides.length, editing, presenterMode]);
 
   useEffect(() => {
     if (slideContentRef.current && slides.length > 0) {
-      slideContentRef.current.querySelectorAll('pre code').forEach((block) => hljs.highlightElement(block));
+      const blocks = slideContentRef.current.querySelectorAll('pre code');
+      blocks.forEach((block: Element) => hljs.highlightElement(block as HTMLElement));
     }
   }, [currentSlide, slides]);
 
   useEffect(() => { if (slideContainerRef.current && slides.length > 0) slideContainerRef.current.scrollTo({ top:0, behavior:'smooth' }); }, [currentSlide, slides.length]);
 
-  // Auto-scroll thumbnail rail to keep current slide visible
+
   useEffect(() => {
     if (thumbsRailRef.current && slides.length > 0) {
       const activeThumb = thumbsRailRef.current.querySelector('.thumb-item.active');
@@ -279,7 +262,8 @@ const Presentation = () => {
     } catch (err) {}
   }, []);
 
-  // Fullscreen helper
+  useAnchorNavigation({ location, slides, showSlideList, slideContainerRef, setCurrentSlide, setTransitionKey, navigate });
+
   const toggleFullscreen = async () => {
     try {
       if (!document.fullscreenElement) {
@@ -292,9 +276,8 @@ const Presentation = () => {
     }
   };
 
-  // Export all slides as a single combined markdown file
   const exportCombinedMarkdown = () => {
-    const delimiter = '---'; // You can make this configurable
+    const delimiter = "----'----";
     const combined = slides.map((s) => s.content).join(`\n\n${delimiter}\n\n`);
     const blob = new Blob([combined], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
@@ -307,7 +290,6 @@ const Presentation = () => {
     URL.revokeObjectURL(url);
   };
 
-  // Duplicate current slide
   const duplicateSlide = () => {
     if (slides.length === 0) return;
     const current = slides[currentSlide];
@@ -323,10 +305,25 @@ const Presentation = () => {
     setCurrentSlide(currentSlide + 1);
   };
 
+  const containerClasses = [
+    'presentation-container',
+    'w-screen',
+    'h-screen',
+    'flex',
+    'items-start',
+    'justify-center',
+    'relative',
+    'mt-12',
+    'text-text',
+    highContrast ? 'high-contrast' : '',
+    presenterMode ? 'presenter-full' : '',
+    focusMode ? 'focus-mode' : '',
+  ].filter(Boolean).join(' ');
+
   return (
-  <div className={`presentation-container${highContrast ? ' high-contrast' : ''}${presenterMode ? ' presenter-full' : ''}${focusMode ? ' focus-mode' : ''}`}>
+  <div className={containerClasses}>
       {slides.length === 0 ? (
-        <div className="upload-wrapper">
+        <div className="w-full flex flex-col items-center gap-6 relative">
           <div style={{ position: 'absolute', top: 16, right: 16 }}>
             <button
               className="reload-btn"
@@ -339,9 +336,9 @@ const Presentation = () => {
           </div>
           <UploadArea onFilesChange={handleFileUpload} loading={loading} />
 
-          <div className="instructions">
-            <h3>Instruções</h3>
-            <ul>
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mt-4 rounded-md text-left max-w-3xl">
+            <h3 className="text-yellow-700 m-0">Instruções</h3>
+            <ul className="mt-2 list-disc pl-5 text-sm text-gray-700">
               <li>Nomeie seus arquivos para controlar a ordem (ex: 01-intro.md, 02-conceitos.md)</li>
               <li>Use código com blocos de linguagem para destaque</li>
             </ul>
@@ -356,9 +353,9 @@ const Presentation = () => {
           {showSlideList ? (
             <SlideList
               slides={slides}
-              onReorder={(newSlides) => { setSlides(newSlides); setError(''); setWarning(''); }}
+              onReorder={(newSlides: Slide[]) => { setSlides(newSlides); setError(''); setWarning(''); }}
               onStart={() => { setShowSlideList(false); setCurrentSlide(0); setWarning(''); setError(''); }}
-              onRemove={(idx) => { const copy = slides.slice(); copy.splice(idx,1); setSlides(copy); setCurrentSlide((c) => Math.min(c, Math.max(0, copy.length - 1))); if (copy.length === 0) setPresenterMode(false); }}
+                onRemove={(idx: number) => { const copy = slides.slice(); copy.splice(idx,1); setSlides(copy); setCurrentSlide((c) => Math.min(c, Math.max(0, copy.length - 1))); if (copy.length === 0) setPresenterMode(false); }}
               highContrast={highContrast}
               onToggleContrast={() => setHighContrast((v) => !v)}
             />
@@ -431,6 +428,10 @@ const Presentation = () => {
               )}
             </>
           )}
+          {/* Botão flutuante: voltar ao topo do conteúdo do slide */}
+          {!showSlideList && slides.length > 0 && (
+            <ScrollTopButton slideContainerRef={slideContainerRef} />
+          )}
         </>
       )}
           <EditPanel
@@ -449,66 +450,65 @@ const Presentation = () => {
                 return copy;
               });
               setEditing(false);
-              // Try saving to file on each save; this will prompt once per slide
               saveSlideToFile(currentSlide, draftContent);
             }}
             editorFocus={editorFocus}
             onToggleEditorFocus={() => setEditorFocus(v => !v)}
           />
-      {focusMode && (
-        <div className="focus-indicator" aria-live="polite">Focus Mode ON (H para sair)</div>
+          {focusMode && (
+        <div className="fixed top-3 right-3 bg-black bg-opacity-85 text-white px-3 py-1 rounded-full text-xs border border-white/10 z-50" aria-live="polite">Focus Mode ON (H para sair)</div>
       )}
       {showHelp && (
-        <div className="help-overlay" onClick={() => setShowHelp(false)}>
-          <div className="help-panel" onClick={(e) => e.stopPropagation()}>
-            <h2>Atalhos de Teclado</h2>
-            <div className="help-grid">
-              <div className="help-item">
-                <kbd>→</kbd> <kbd>Space</kbd>
-                <span>Próximo slide</span>
+        <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-md flex items-center justify-center z-50" onClick={() => setShowHelp(false)}>
+          <div className="bg-white rounded-lg p-8 max-w-lg w-11/12 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-primary-1 text-xl font-semibold">Atalhos de Teclado</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+              <div className="flex flex-col gap-2 p-3 bg-gray-50 rounded-md">
+                <div className="flex items-center gap-2"><kbd className="px-2 py-1 bg-white border rounded">→</kbd> <kbd className="px-2 py-1 bg-white border rounded">Space</kbd></div>
+                <span className="text-sm text-gray-600">Próximo slide</span>
               </div>
-              <div className="help-item">
-                <kbd>←</kbd>
-                <span>Slide anterior</span>
+              <div className="flex flex-col gap-2 p-3 bg-gray-50 rounded-md">
+                <kbd className="px-2 py-1 bg-white border rounded">←</kbd>
+                <span className="text-sm text-gray-600">Slide anterior</span>
               </div>
-              <div className="help-item">
-                <kbd>Home</kbd>
-                <span>Primeiro slide</span>
+              <div className="flex flex-col gap-2 p-3 bg-gray-50 rounded-md">
+                <kbd className="px-2 py-1 bg-white border rounded">Home</kbd>
+                <span className="text-sm text-gray-600">Primeiro slide</span>
               </div>
-              <div className="help-item">
-                <kbd>End</kbd>
-                <span>Último slide</span>
+              <div className="flex flex-col gap-2 p-3 bg-gray-50 rounded-md">
+                <kbd className="px-2 py-1 bg-white border rounded">End</kbd>
+                <span className="text-sm text-gray-600">Último slide</span>
               </div>
-              <div className="help-item">
-                <kbd>E</kbd>
-                <span>Editar slide atual</span>
+              <div className="flex flex-col gap-2 p-3 bg-gray-50 rounded-md">
+                <kbd className="px-2 py-1 bg-white border rounded">E</kbd>
+                <span className="text-sm text-gray-600">Editar slide atual</span>
               </div>
-              <div className="help-item">
-                <kbd>Ctrl</kbd>+<kbd>D</kbd>
-                <span>Duplicar slide</span>
+              <div className="flex flex-col gap-2 p-3 bg-gray-50 rounded-md">
+                <div className="flex items-center gap-2"><kbd className="px-2 py-1 bg-white border rounded">Ctrl</kbd>+<kbd className="px-2 py-1 bg-white border rounded">D</kbd></div>
+                <span className="text-sm text-gray-600">Duplicar slide</span>
               </div>
-              <div className="help-item">
-                <kbd>H</kbd>
-                <span>Modo foco (sem chrome)</span>
+              <div className="flex flex-col gap-2 p-3 bg-gray-50 rounded-md">
+                <kbd className="px-2 py-1 bg-white border rounded">H</kbd>
+                <span className="text-sm text-gray-600">Modo foco (sem chrome)</span>
               </div>
-              <div className="help-item">
-                <kbd>P</kbd>
-                <span>Modo apresentador</span>
+              <div className="flex flex-col gap-2 p-3 bg-gray-50 rounded-md">
+                <kbd className="px-2 py-1 bg-white border rounded">P</kbd>
+                <span className="text-sm text-gray-600">Modo apresentador</span>
               </div>
-              <div className="help-item">
-                <kbd>F</kbd>
-                <span>Tela cheia</span>
+              <div className="flex flex-col gap-2 p-3 bg-gray-50 rounded-md">
+                <kbd className="px-2 py-1 bg-white border rounded">F</kbd>
+                <span className="text-sm text-gray-600">Tela cheia</span>
               </div>
-              <div className="help-item">
-                <kbd>?</kbd>
-                <span>Mostrar/ocultar ajuda</span>
+              <div className="flex flex-col gap-2 p-3 bg-gray-50 rounded-md">
+                <kbd className="px-2 py-1 bg-white border rounded">?</kbd>
+                <span className="text-sm text-gray-600">Mostrar/ocultar ajuda</span>
               </div>
-              <div className="help-item">
-                <kbd>Esc</kbd>
-                <span>Fechar painéis</span>
+              <div className="flex flex-col gap-2 p-3 bg-gray-50 rounded-md">
+                <kbd className="px-2 py-1 bg-white border rounded">Esc</kbd>
+                <span className="text-sm text-gray-600">Fechar painéis</span>
               </div>
             </div>
-            <button className="help-close" onClick={() => setShowHelp(false)}>Fechar (Esc ou clique fora)</button>
+            <button className="mt-6 w-full bg-gradient-to-br from-primary-1 to-primary-2 text-white py-3 rounded-md font-semibold" onClick={() => setShowHelp(false)}>Fechar (Esc ou clique fora)</button>
           </div>
         </div>
       )}
