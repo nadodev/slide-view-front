@@ -9,8 +9,9 @@ interface PresentationSession {
 }
 
 interface RemoteCommand {
-  command: 'next' | 'previous' | 'goto';
+  command: 'next' | 'previous' | 'goto' | 'scroll';
   slideIndex?: number;
+  scrollDirection?: 'up' | 'down';
   fromClient: string;
 }
 

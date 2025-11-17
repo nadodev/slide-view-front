@@ -6,6 +6,8 @@ import {
   ChevronRight, 
   SkipBack, 
   SkipForward,
+  ChevronUp,
+  ChevronDown,
   Play,
   Pause,
   Smartphone,
@@ -142,7 +144,7 @@ export const RemoteControl: React.FC = () => {
     };
   }, [sessionId]);
 
-  const sendCommand = (command: 'next' | 'previous' | 'goto', slideIndex?: number) => {
+  const sendCommand = (command: 'next' | 'previous' | 'goto' | 'scroll', slideIndex?: number, scrollDirection?: 'up' | 'down') => {
     if (!socket || !isConnected) {
       toast.error('Não conectado', {
         description: 'Verifique a conexão'
@@ -154,13 +156,15 @@ export const RemoteControl: React.FC = () => {
       sessionId,
       command,
       slideIndex,
+      scrollDirection,
     });
 
     // Feedback visual
     const commandMessages = {
       next: 'Próximo slide',
       previous: 'Slide anterior',
-      goto: `Indo para slide ${(slideIndex || 0) + 1}`
+      goto: `Indo para slide ${(slideIndex || 0) + 1}`,
+      scroll: scrollDirection === 'up' ? 'Rolando para cima' : 'Rolando para baixo'
     };
 
     toast.success(commandMessages[command]);
@@ -302,6 +306,32 @@ export const RemoteControl: React.FC = () => {
               <SkipForward size={20} />
               <span className="text-sm">Último</span>
             </Button>
+          </div>
+
+          {/* Scroll Controls */}
+          <div className="mt-6">
+            <h3 className="text-slate-300 text-sm font-medium mb-3">🖱️ Controles de Rolagem:</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <Button
+                onClick={() => sendCommand('scroll', undefined, 'up')}
+                disabled={!isConnected}
+                size="lg"
+                className="h-14 bg-indigo-800 hover:bg-indigo-700 border border-indigo-600 flex flex-col items-center gap-1"
+              >
+                <ChevronUp size={24} />
+                <span className="text-xs">Rolar ↑</span>
+              </Button>
+
+              <Button
+                onClick={() => sendCommand('scroll', undefined, 'down')}
+                disabled={!isConnected}
+                size="lg"
+                className="h-14 bg-indigo-800 hover:bg-indigo-700 border border-indigo-600 flex flex-col items-center gap-1"
+              >
+                <ChevronDown size={24} />
+                <span className="text-xs">Rolar ↓</span>
+              </Button>
+            </div>
           </div>
 
           {/* Slide Grid - Quick Jump */}

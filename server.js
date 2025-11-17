@@ -120,7 +120,7 @@ io.on('connection', (socket) => {
   });
 
   // Comandos de navegação do controle remoto
-  socket.on('remote-command', ({ sessionId, command, slideIndex }) => {
+  socket.on('remote-command', ({ sessionId, command, slideIndex, scrollDirection }) => {
     const presentation = presentations.get(sessionId);
     
     if (!presentation || !presentation.remoteClients.includes(socket.id)) {
@@ -135,19 +135,23 @@ io.on('connection', (socket) => {
     } else if (command === 'previous') {
       presentation.currentSlide = Math.max(presentation.currentSlide - 1, 0);
     }
+    // Para scroll, não alteramos currentSlide - apenas passamos o comando
 
     // Enviar comando para o host
     socket.to(presentation.hostSocket).emit('remote-command', {
       command,
       slideIndex: presentation.currentSlide,
+      scrollDirection,
       fromClient: socket.id
     });
 
-    // Sincronizar com outros remotes
-    socket.to(`presentation-${sessionId}`).emit('sync-slide', {
-      currentSlide: presentation.currentSlide,
-      totalSlides: presentation.totalSlides
-    });
+    // Sincronizar com outros remotes apenas para navegação de slides
+    if (command !== 'scroll') {
+      socket.to(`presentation-${sessionId}`).emit('sync-slide', {
+        currentSlide: presentation.currentSlide,
+        totalSlides: presentation.totalSlides
+      });
+    }
 
     console.log(`🎮 Comando remoto: ${command} | Slide: ${presentation.currentSlide}`);
   });

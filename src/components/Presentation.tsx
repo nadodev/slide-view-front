@@ -92,10 +92,21 @@ const Presentation = () => {
         setCurrentSlide((prev) => Math.max(prev - 1, 0));
       } else if (command.command === 'goto' && command.slideIndex !== undefined) {
         setCurrentSlide(Math.max(0, Math.min(command.slideIndex, slides.length - 1)));
+      } else if (command.command === 'scroll' && command.scrollDirection) {
+        // Scroll da apresentação
+        const scrollAmount = 150; // pixels
+        const direction = command.scrollDirection === 'up' ? -scrollAmount : scrollAmount;
+        
+        window.scrollBy({
+          top: direction,
+          behavior: 'smooth'
+        });
       }
       
-      // Update transition for smooth slide change
-      setTransitionKey(prev => prev + 1);
+      // Update transition for smooth slide change (except for scroll)
+      if (command.command !== 'scroll') {
+        setTransitionKey(prev => prev + 1);
+      }
     });
   }, [onRemoteCommand, slides.length, setCurrentSlide, setTransitionKey]);
 
