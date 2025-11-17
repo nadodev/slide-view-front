@@ -1,5 +1,5 @@
 import React from 'react';
-import { QrCode, Smartphone, AlertTriangle, ExternalLink } from 'lucide-react';
+import { Smartphone } from 'lucide-react';
 import { Button } from './ui/button';
 
 interface RemoteControlModalProps {
@@ -30,82 +30,39 @@ export const RemoteControlModal: React.FC<RemoteControlModalProps> = ({
           {/* Header */}
           <div className="text-center mb-6">
             <div className="inline-flex items-center gap-2 mb-3">
-              <AlertTriangle className="text-orange-400" size={24} />
+              <Smartphone className="text-blue-400" size={24} />
               <h2 className="text-xl font-bold text-white">Controle Remoto</h2>
             </div>
             <p className="text-slate-400 text-sm">
-              Não disponível em {platform === 'vercel' ? 'Vercel' : platform}
+              {isDevelopment ? 'Funcionalidade em desenvolvimento' : 'Não disponível no momento'}
             </p>
           </div>
 
-          {/* Platform info */}
-          <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-4 mb-6">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="text-orange-400 mt-0.5" size={20} />
-              <div>
-                <h3 className="text-orange-200 font-semibold text-sm mb-1">
-                  {isDevelopment ? 'Servidor não iniciado' : 'WebSockets não suportados'}
-                </h3>
-                <p className="text-orange-300/80 text-xs">
-                  {isDevelopment 
-                    ? 'Para usar o controle remoto em desenvolvimento, inicie o servidor completo'
-                    : platform === 'vercel' 
-                      ? 'Vercel tem limitações com WebSockets em tempo real'
-                      : `${platform} não suporta WebSockets para esta aplicação`
-                  }
-                </p>
-              </div>
+          {/* User-friendly message */}
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 mb-6">
+            <div className="text-center">
+              <Smartphone className="text-blue-400 mx-auto mb-3" size={48} />
+              <h3 className="text-blue-200 font-semibold text-base mb-2">
+                {isDevelopment ? '🔧 Funcionalidade em Desenvolvimento' : '📱 Controle Remoto'}
+              </h3>
+              <p className="text-blue-300/80 text-sm">
+                {isDevelopment 
+                  ? 'Esta funcionalidade está sendo desenvolvida e estará disponível em breve!'
+                  : 'O controle remoto via celular estará disponível em uma próxima atualização.'
+                }
+              </p>
             </div>
           </div>
 
-          {/* Solutions */}
-          {isDevelopment ? (
+          {/* Development instructions */}
+          {isDevelopment && (
             <div className="mb-6">
-              <h3 className="text-slate-300 font-semibold mb-3 text-sm">🚀 Para usar em desenvolvimento:</h3>
-              <div className="bg-slate-800/50 rounded-lg p-4">
-                <div className="mb-3">
-                  <code className="text-green-400 text-sm bg-slate-900/50 px-2 py-1 rounded">
-                    npm run dev:full
-                  </code>
-                </div>
-                <p className="text-slate-400 text-xs">
-                  Isso iniciará tanto o frontend quanto o servidor Socket.IO
-                </p>
+              <div className="bg-slate-800/50 rounded-lg p-4 text-center">
+                <p className="text-slate-300 text-sm mb-2">Para desenvolvedores:</p>
+                <code className="text-green-400 text-xs bg-slate-900/50 px-2 py-1 rounded">
+                  npm run dev:full
+                </code>
               </div>
-            </div>
-          ) : (
-            <div className="mb-6">
-              <h3 className="text-slate-300 font-semibold mb-3 text-sm">✅ Para usar controle remoto:</h3>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between p-2 bg-slate-800/50 rounded-lg">
-                  <span className="text-slate-300 text-sm">Railway.app</span>
-                  <span className="text-green-400 text-xs">Recomendado</span>
-                </div>
-                <div className="flex items-center justify-between p-2 bg-slate-800/50 rounded-lg">
-                  <span className="text-slate-300 text-sm">Render.com</span>
-                  <span className="text-blue-400 text-xs">Grátis</span>
-                </div>
-                <div className="flex items-center justify-between p-2 bg-slate-800/50 rounded-lg">
-                  <span className="text-slate-300 text-sm">Heroku</span>
-                  <span className="text-purple-400 text-xs">Estável</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Quick deploy button */}
-          {!isDevelopment && (
-            <div className="text-center mb-6">
-              <Button
-                onClick={() => window.open('https://railway.app', '_blank')}
-                className="bg-violet-600 hover:bg-violet-700 text-white flex items-center gap-2"
-              >
-                <ExternalLink size={16} />
-                Deploy no Railway
-              </Button>
-              <p className="text-slate-500 text-xs mt-2">
-                Deploy gratuito com controle remoto funcionando
-              </p>
             </div>
           )}
 
@@ -114,9 +71,9 @@ export const RemoteControlModal: React.FC<RemoteControlModalProps> = ({
             <Button
               onClick={onClose}
               variant="outline"
-              className="border-slate-600 hover:border-violet-400 text-white"
+              className="border-slate-600 hover:border-blue-400 text-white"
             >
-              Fechar
+              Entendi
             </Button>
           </div>
         </div>

@@ -17,6 +17,8 @@ import { Button } from './ui/button';
 import { toast } from 'sonner';
 
 export const RemoteControl: React.FC = () => {
+  console.log('RemoteControl component renderizado');
+  
   const { sessionId } = useParams<{ sessionId: string }>();
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -28,8 +30,24 @@ export const RemoteControl: React.FC = () => {
   // Detectar se estamos na Vercel
   const isVercel = window.location.hostname.includes('vercel.app');
 
+  console.log('RemoteControl state:', { 
+    sessionId, 
+    isConnected, 
+    isConnecting, 
+    error, 
+    currentSlide, 
+    totalSlides,
+    hostname: window.location.hostname
+  });
+
+  // Wrapper de erro para capturar problemas de renderização
+  try {
+
   useEffect(() => {
+    console.log('RemoteControl iniciado:', { sessionId, hostname: window.location.hostname });
+    
     if (!sessionId) {
+      console.error('SessionId não encontrado');
       setError('ID da sessão não encontrado');
       setIsConnecting(false);
       return;
@@ -37,53 +55,72 @@ export const RemoteControl: React.FC = () => {
 
     // Se for Vercel, mostrar mensagem de que WebSockets não funcionam
     if (isVercel) {
+      console.log('Vercel detectado - WebSockets não funcionam');
       setIsConnecting(false);
       setError('Vercel não suporta WebSockets. Use Railway, Render ou Heroku para controle remoto.');
       return;
     }
 
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+    // Detectar URL da API baseado no ambiente
+    let apiUrl: string;
+    if (window.location.hostname.includes('railway.app')) {
+      // No Railway, usar a mesma URL base
+      apiUrl = window.location.origin;
+      console.log('Railway detectado, usando:', apiUrl);
+    } else {
+      // Fallback para desenvolvimento ou outras plataformas
+      apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      console.log('Usando URL configurada:', apiUrl);
+    }
+
+    console.log('Tentando conectar Socket.IO em:', apiUrl);
 
     // Conectar ao servidor
     const socketConnection = io(apiUrl, {
       transports: ['websocket', 'polling'],
-      timeout: 5000,
+      timeout: 10000,
     });
 
     socketConnection.on('connect', () => {
+      console.log('Socket.IO conectado com sucesso!');
       setIsConnected(true);
       setIsConnecting(false);
+      setError(null);
       
       // Juntar-se à sessão
       socketConnection.emit('join-remote', sessionId, (response: any) => {
-        if (response.success) {
+        console.log('Resposta join-remote:', response);
+        if (response?.success) {
           setCurrentSlide(response.currentSlide);
           setTotalSlides(response.totalSlides);
           toast.success('Conectado!', {
             description: 'Controle remoto ativo'
           });
         } else {
-          setError(response.error || 'Erro ao conectar');
+          console.error('Erro join-remote:', response);
+          setError(response?.error || 'Sessão não encontrada');
           toast.error('Erro', {
-            description: response.error || 'Falha na conexão'
+            description: response?.error || 'Falha na conexão'
           });
         }
       });
     });
 
     socketConnection.on('disconnect', () => {
+      console.log('Socket.IO desconectado');
       setIsConnected(false);
       toast.warning('Desconectado', {
         description: 'Reconectando...'
       });
     });
 
-    socketConnection.on('connect_error', () => {
+    socketConnection.on('connect_error', (error) => {
+      console.error('Erro de conexão Socket.IO:', error);
       setIsConnected(false);
       setIsConnecting(false);
-      setError('Não foi possível conectar ao servidor');
+      setError(`Não foi possível conectar: ${error.message || 'Servidor indisponível'}`);
       toast.error('Erro de conexão', {
-        description: 'Verifique sua internet'
+        description: 'Verifique se a apresentação está ativa'
       });
     });
 
@@ -302,4 +339,27 @@ export const RemoteControl: React.FC = () => {
       </div>
     </div>
   );
+
+  } catch (renderError) {
+    console.error('Erro de renderização no RemoteControl:', renderError);
+    return (
+      <div className="min-h-screen bg-red-900 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg p-6 max-w-md text-center">
+          <h1 className="text-red-600 font-bold text-xl mb-2">Erro de Carregamento</h1>
+          <p className="text-gray-600 mb-4">
+            Ocorreu um erro ao carregar o controle remoto.
+          </p>
+          <p className="text-sm text-gray-500 mb-4">
+            SessionId: {sessionId}
+          </p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="bg-red-600 text-white px-4 py-2 rounded"
+          >
+            Recarregar
+          </button>
+        </div>
+      </div>
+    );
+  }
 };
