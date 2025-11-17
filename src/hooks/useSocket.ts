@@ -164,13 +164,27 @@ export const useSocket = (): UseSocketReturn => {
         setIsConnecting(false);
 
         if (response.success) {
+          // Validar e corrigir URL se necessário
+          let qrUrl = response.qrUrl;
+          
+          // Se a URL não começar com http/https, construir usando window.location
+          if (!qrUrl || (!qrUrl.startsWith('http://') && !qrUrl.startsWith('https://'))) {
+            const baseUrl = window.location.origin;
+            qrUrl = `${baseUrl}/remote/${response.sessionId}`;
+            console.log('⚠️ URL corrigida usando window.location.origin:', qrUrl);
+          }
+          
+          // Verificar se a URL está acessível (opcional, apenas log)
+          console.log('🔍 URL do QR Code:', qrUrl);
+          console.log('🔍 Session ID:', response.sessionId);
+          
           setSession({
             sessionId: response.sessionId,
-            qrUrl: response.qrUrl,
+            qrUrl: qrUrl,
             isConnected: true,
             remoteClients: 0,
           });
-          console.log('✅ Apresentação criada:', response.sessionId, 'QR URL:', response.qrUrl);
+          console.log('✅ Apresentação criada:', response.sessionId, 'QR URL:', qrUrl);
         } else {
           console.error('❌ Erro ao criar apresentação:', response);
           setError('Erro ao criar apresentação');

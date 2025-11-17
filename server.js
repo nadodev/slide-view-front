@@ -72,30 +72,63 @@ io.on('connection', (socket) => {
     console.log(`📺 Nova apresentação criada: ${sessionId}`);
     
     // Determinar URL base dinamicamente
+    // Tentar obter do header da requisição primeiro (mais confiável)
+    const request = socket.request;
+    const host = request?.headers?.host || request?.headers?.origin?.replace(/^https?:\/\//, '') || null;
+    const protocol = request?.headers?.['x-forwarded-proto'] || (request?.secure ? 'https' : 'http') || 'http';
+    
     const isProduction = process.env.NODE_ENV === 'production';
     const vercelUrl = process.env.VERCEL_URL;
     const isRailway = process.env.RAILWAY_ENVIRONMENT;
+    const railwayUrl = process.env.RAILWAY_PUBLIC_DOMAIN;
     
     let baseUrl;
-    if (isProduction && vercelUrl) {
-      // Vercel
+    
+    // Prioridade 1: URL do header da requisição (mais confiável)
+    if (host) {
+      baseUrl = `${protocol}://${host}`;
+      console.log('✅ Usando URL do header:', baseUrl);
+    } 
+    // Prioridade 2: Variáveis de ambiente específicas
+    else if (isProduction && railwayUrl) {
+      baseUrl = `https://${railwayUrl}`;
+      console.log('✅ Usando Railway URL:', baseUrl);
+    } else if (isProduction && vercelUrl) {
       baseUrl = `https://${vercelUrl}`;
-    } else if (isProduction && isRailway) {
-      // Railway - usar a URL do environment ou fallback
-      baseUrl = process.env.VITE_BASE_URL || 'https://slide-view-production.up.railway.app';
+      console.log('✅ Usando Vercel URL:', baseUrl);
+    } else if (process.env.VITE_BASE_URL) {
+      baseUrl = process.env.VITE_BASE_URL;
+      console.log('✅ Usando VITE_BASE_URL:', baseUrl);
+    } else if (process.env.BASE_URL) {
+      baseUrl = process.env.BASE_URL;
+      console.log('✅ Usando BASE_URL:', baseUrl);
+    } 
+    // Prioridade 3: Fallback baseado no ambiente
+    else if (isProduction && isRailway) {
+      baseUrl = 'https://slide-view-production.up.railway.app';
+      console.log('⚠️ Usando fallback Railway:', baseUrl);
     } else if (isProduction) {
-      // Outras plataformas de produção
-      baseUrl = process.env.VITE_BASE_URL || process.env.VITE_API_URL || process.env.BASE_URL || `http://localhost:${PORT}`;
+      baseUrl = `http://localhost:${PORT}`;
+      console.log('⚠️ Usando fallback produção:', baseUrl);
     } else {
-      // Desenvolvimento
-      baseUrl = process.env.VITE_BASE_URL || process.env.VITE_API_URL || 'http://localhost:5173';
+      // Desenvolvimento - usar a porta do servidor ou do Vite
+      const vitePort = process.env.VITE_PORT || '5173';
+      baseUrl = `http://localhost:${vitePort}`;
+      console.log('⚠️ Usando fallback desenvolvimento:', baseUrl);
     }
+    
+    // Remover trailing slash se houver
+    baseUrl = baseUrl.replace(/\/$/, '');
     
     console.log('🔧 Environment vars:', {
       NODE_ENV: process.env.NODE_ENV,
-      RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT,
+      RAILWAY_ENVIRONMENT: isRailway,
+      RAILWAY_PUBLIC_DOMAIN: railwayUrl,
+      VERCEL_URL: vercelUrl,
       VITE_BASE_URL: process.env.VITE_BASE_URL,
-      VITE_API_URL: process.env.VITE_API_URL
+      BASE_URL: process.env.BASE_URL,
+      host: host,
+      protocol: protocol
     });
     console.log('🔗 QR Code URL gerada:', `${baseUrl}/remote/${sessionId}`);
     

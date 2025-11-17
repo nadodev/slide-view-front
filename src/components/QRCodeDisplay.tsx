@@ -26,8 +26,17 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
     const generateQR = async () => {
       if (!canvasRef.current) return;
 
+      // Validar URL antes de gerar
+      if (!qrUrl || (!qrUrl.startsWith('http://') && !qrUrl.startsWith('https://'))) {
+        console.error('❌ URL inválida para QR Code:', qrUrl);
+        setIsLoading(false);
+        return;
+      }
+
       try {
         setIsLoading(true);
+        console.log('📱 Gerando QR Code para URL:', qrUrl);
+        
         await QRCode.toCanvas(canvasRef.current, qrUrl, {
           width: 200,
           margin: 2,
@@ -37,9 +46,11 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
           },
           errorCorrectionLevel: 'M',
         });
+        
+        console.log('✅ QR Code gerado com sucesso');
         setIsLoading(false);
       } catch (error) {
-        console.error('Erro ao gerar QR Code:', error);
+        console.error('❌ Erro ao gerar QR Code:', error);
         setIsLoading(false);
       }
     };
@@ -59,7 +70,7 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-xl rounded-3xl shadow-2xl max-w-md w-full p-8 border border-slate-700/50">
+      <div className="bg-linear-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-xl rounded-3xl shadow-2xl max-w-md w-full p-8 border border-slate-700/50">
         {/* Header */}
         <div className="text-center mb-6">
           <div className="inline-flex items-center gap-2 mb-3">

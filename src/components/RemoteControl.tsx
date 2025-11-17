@@ -32,6 +32,8 @@ export const RemoteControl: React.FC = () => {
   const [presentationContent, setPresentationContent] = useState<string>('');
   const [scrollPosition, setScrollPosition] = useState(0);
   const mirrorRef = useRef<HTMLDivElement>(null);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isScrollingRef = useRef(false);
 
   // Detectar se estamos na Vercel
   const isVercel = window.location.hostname.includes('vercel.app');
@@ -206,21 +208,79 @@ export const RemoteControl: React.FC = () => {
     };
   }, [sessionId]);
 
-  // Sincronizar scroll position do espelho
+  // Sincronizar scroll position do espelho (recebido do servidor)
   useEffect(() => {
-    if (mirrorRef.current && scrollPosition !== undefined) {
-      mirrorRef.current.scrollTop = scrollPosition;
+    if (mirrorRef.current && scrollPosition !== undefined && !isScrollingRef.current) {
+      // Só atualizar se não estiver fazendo scroll manualmente
+      const currentScroll = mirrorRef.current.scrollTop;
+      const diff = Math.abs(currentScroll - scrollPosition);
+      
+      // Só atualizar se a diferença for significativa (mais de 5px)
+      // para evitar micro-ajustes que causam loops
+      if (diff > 5) {
+        isScrollingRef.current = true;
+        mirrorRef.current.scrollTop = scrollPosition;
+        
+        // Resetar flag após um tempo
+        setTimeout(() => {
+          isScrollingRef.current = false;
+        }, 200);
+      }
     }
   }, [scrollPosition]);
 
   const sendScrollSync = (scrollTop: number) => {
     if (!socket || !isConnected) return;
 
-    socket.emit('remote-command', {
-      sessionId,
-      command: 'scroll-sync',
-      scrollPosition: scrollTop,
-    });
+    // Throttle: enviar apenas a cada 50ms para evitar spam
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+    }
+
+    scrollTimeoutRef.current = setTimeout(() => {
+      socket.emit('remote-command', {
+        sessionId,
+        command: 'scroll-sync',
+        scrollPosition: scrollTop,
+      });
+      console.log('📱 Scroll sincronizado:', scrollTop);
+    }, 50);
+  };
+
+  // Handler para scroll (mouse wheel e touch)
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    if (target && !isScrollingRef.current) {
+      // Pequeno delay para evitar conflito com scroll recebido do servidor
+      setTimeout(() => {
+        if (!isScrollingRef.current && target) {
+          sendScrollSync(target.scrollTop);
+        }
+      }, 10);
+    }
+  };
+
+  // Handler para touch events
+  const handleTouchStart = () => {
+    isScrollingRef.current = false;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    if (target) {
+      isScrollingRef.current = true;
+      sendScrollSync(target.scrollTop);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    // Pequeno delay para garantir que o scroll final seja enviado
+    setTimeout(() => {
+      isScrollingRef.current = false;
+      if (mirrorRef.current) {
+        sendScrollSync(mirrorRef.current.scrollTop);
+      }
+    }, 100);
   };
 
   const retryJoin = () => {
@@ -388,23 +448,27 @@ export const RemoteControl: React.FC = () => {
             
             <div 
               ref={mirrorRef}
-              className="bg-white rounded-xl shadow-lg border-2 border-slate-600/30 overflow-hidden"
-              style={{ height: '300px' }}
+              className="bg-white rounded-xl shadow-lg border-2 border-slate-600/30 overflow-hidden touch-pan-y"
+              style={{ height: '300px', WebkitOverflowScrolling: 'touch' }}
             >
               {presentationContent ? (
-                <div className="h-full overflow-y-auto">
+                <div 
+                  className="h-full overflow-y-auto"
+                  onScroll={handleScroll}
+                  onTouchStart={handleTouchStart}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
+                  style={{ WebkitOverflowScrolling: 'touch' }}
+                >
                   <div 
                     className="presentation-mirror p-6 text-gray-800 leading-relaxed"
                     style={{
                       fontSize: '11px',
                       lineHeight: '1.5',
-                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                      touchAction: 'pan-y'
                     }}
                     dangerouslySetInnerHTML={{ __html: presentationContent }}
-                    onScroll={(e) => {
-                      const target = e.target as HTMLDivElement;
-                      sendScrollSync(target.scrollTop);
-                    }}
                   />
                   <style dangerouslySetInnerHTML={{
                     __html: `
