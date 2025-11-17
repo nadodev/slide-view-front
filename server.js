@@ -204,7 +204,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Catch-all handler: send back React's index.html file for client-side routing
-app.get('*', (req, res) => {
+app.get('/*', (req, res) => {
   const indexPath = path.join(__dirname, 'dist', 'index.html');
   console.log('Serving index.html from:', indexPath);
   res.sendFile(indexPath, (err) => {
