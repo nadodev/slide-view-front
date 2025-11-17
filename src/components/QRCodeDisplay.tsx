@@ -22,43 +22,45 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [urlError, setUrlError] = useState<string | null>(null);
-  const [finalUrl, setFinalUrl] = useState<string>(qrUrl);
+  const [finalUrl, setFinalUrl] = useState<string>(() => {
+    // Inicializar com URL construída usando window.location.origin
+    if (sessionId) {
+      return `${window.location.origin}/remote/${sessionId}`;
+    }
+    return qrUrl || '';
+  });
 
   useEffect(() => {
     const generateQR = async () => {
-      if (!canvasRef.current) return;
-
-      // Validar e corrigir URL se necessário
-      let urlToUse = qrUrl;
-      
-      if (!urlToUse || (!urlToUse.startsWith('http://') && !urlToUse.startsWith('https://'))) {
-        console.warn('⚠️ URL inválida do servidor, tentando corrigir...', urlToUse);
-        
-        // Tentar construir a URL usando window.location.origin
-        const baseUrl = window.location.origin;
-        urlToUse = `${baseUrl}/remote/${sessionId}`;
-        setUrlError('URL corrigida automaticamente');
-        console.log('✅ URL corrigida:', urlToUse);
-      } else {
-        // Verificar se a URL parece correta
-        const urlObj = new URL(urlToUse);
-        const currentOrigin = window.location.origin;
-        
-        // Se o hostname for localhost mas estamos em produção, pode estar errado
-        if (urlObj.hostname === 'localhost' && !currentOrigin.includes('localhost')) {
-          console.warn('⚠️ URL parece estar usando localhost incorretamente');
-          urlToUse = `${currentOrigin}/remote/${sessionId}`;
-          setUrlError('URL ajustada para o domínio atual');
-        } else {
-          setUrlError(null);
-        }
+      if (!canvasRef.current || !sessionId) {
+        console.warn('⚠️ Canvas ou sessionId não disponível');
+        setIsLoading(false);
+        return;
       }
+
+      // SEMPRE usar window.location.origin para garantir que funciona
+      // Isso é mais confiável que depender da URL do servidor
+      const baseUrl = window.location.origin;
+      const urlToUse = `${baseUrl}/remote/${sessionId}`;
+      
+      console.log('📱 Gerando QR Code:', {
+        originalUrl: qrUrl,
+        finalUrl: urlToUse,
+        sessionId: sessionId,
+        origin: baseUrl
+      });
       
       setFinalUrl(urlToUse);
+      
+      // Se a URL original for diferente, mostrar aviso
+      if (qrUrl && qrUrl !== urlToUse && qrUrl.startsWith('http')) {
+        setUrlError('URL ajustada para o domínio atual');
+      } else {
+        setUrlError(null);
+      }
 
       try {
         setIsLoading(true);
-        console.log('📱 Gerando QR Code para URL:', urlToUse);
         
         await QRCode.toCanvas(canvasRef.current, urlToUse, {
           width: 200,
@@ -70,12 +72,12 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
           errorCorrectionLevel: 'M',
         });
         
-        console.log('✅ QR Code gerado com sucesso');
+        console.log('✅ QR Code gerado com sucesso para:', urlToUse);
         setIsLoading(false);
       } catch (error) {
         console.error('❌ Erro ao gerar QR Code:', error);
         setIsLoading(false);
-        setUrlError('Erro ao gerar QR Code');
+        setUrlError(`Erro ao gerar QR Code: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
       }
     };
 
