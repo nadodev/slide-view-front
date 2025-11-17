@@ -10,7 +10,8 @@ import {
   Pause,
   Smartphone,
   Wifi,
-  WifiOff
+  WifiOff,
+  QrCode
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { toast } from 'sonner';
@@ -24,10 +25,20 @@ export const RemoteControl: React.FC = () => {
   const [isConnecting, setIsConnecting] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Detectar se estamos na Vercel
+  const isVercel = window.location.hostname.includes('vercel.app');
+
   useEffect(() => {
     if (!sessionId) {
       setError('ID da sessão não encontrado');
       setIsConnecting(false);
+      return;
+    }
+
+    // Se for Vercel, mostrar mensagem de que WebSockets não funcionam
+    if (isVercel) {
+      setIsConnecting(false);
+      setError('Vercel não suporta WebSockets. Use Railway, Render ou Heroku para controle remoto.');
       return;
     }
 
@@ -134,16 +145,29 @@ export const RemoteControl: React.FC = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center p-4">
         <div className="text-center max-w-md">
-          <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <WifiOff className="text-red-400" size={32} />
+          <div className="w-16 h-16 bg-orange-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            {isVercel ? <QrCode className="text-orange-400" size={32} /> : <WifiOff className="text-red-400" size={32} />}
           </div>
-          <h2 className="text-white text-xl font-semibold mb-2">Erro de Conexão</h2>
+          <h2 className="text-white text-xl font-semibold mb-2">
+            {isVercel ? 'Controle Remoto Não Disponível' : 'Erro de Conexão'}
+          </h2>
           <p className="text-slate-400 mb-4">{error}</p>
+          {isVercel ? (
+            <div className="text-left bg-slate-800/50 p-4 rounded-lg mb-4">
+              <p className="text-slate-300 text-sm mb-2">✅ Funciona em:</p>
+              <ul className="text-slate-400 text-sm space-y-1">
+                <li>• Railway.app (recomendado)</li>
+                <li>• Render.com</li>
+                <li>• Heroku</li>
+                <li>• Servidor próprio</li>
+              </ul>
+            </div>
+          ) : null}
           <Button 
             onClick={() => window.location.reload()}
             className="bg-violet-600 hover:bg-violet-700"
           >
-            Tentar Novamente
+            {isVercel ? '← Voltar à Apresentação' : 'Tentar Novamente'}
           </Button>
         </div>
       </div>
