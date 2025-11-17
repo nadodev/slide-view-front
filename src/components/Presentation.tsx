@@ -13,6 +13,8 @@ import { useSlidesPersistence } from "../hooks/useSlidesPersistence";
 import { useSlideRenderingEffects } from "../hooks/useSlideRenderingEffects";
 import PresentationEmptyState from "./presentation/PresentationEmptyState";
 import SlidesWorkspace from "./presentation/SlidesWorkspace";
+import { useSocket } from "../hooks/useSocket";
+import { QRCodeDisplay } from "./QRCodeDisplay";
 
 const Presentation = () => {
   const location = useLocation();
@@ -66,6 +68,41 @@ const Presentation = () => {
   const thumbsRailRef = useRef<HTMLElement | null>(null);
   const [transitionKey, setTransitionKey] = useState<number>(0);
 
+  // Remote control states
+  const [showQRCode, setShowQRCode] = useState<boolean>(false);
+  const {
+    session,
+    isConnecting,
+    error: socketError,
+    createPresentation,
+    updateSlide,
+    disconnect,
+    onRemoteCommand,
+  } = useSocket();
+
+  // Setup remote control command handling
+  useEffect(() => {
+    onRemoteCommand((command) => {
+      if (command.command === 'next') {
+        setCurrentSlide((prev) => Math.min(prev + 1, slides.length - 1));
+      } else if (command.command === 'previous') {
+        setCurrentSlide((prev) => Math.max(prev - 1, 0));
+      } else if (command.command === 'goto' && command.slideIndex !== undefined) {
+        setCurrentSlide(Math.max(0, Math.min(command.slideIndex, slides.length - 1)));
+      }
+      
+      // Update transition for smooth slide change
+      setTransitionKey(prev => prev + 1);
+    });
+  }, [onRemoteCommand, slides.length, setCurrentSlide, setTransitionKey]);
+
+  // Update remote clients when slide changes
+  useEffect(() => {
+    if (session && slides.length > 0) {
+      updateSlide(currentSlide, slides.length);
+    }
+  }, [session, currentSlide, slides.length, updateSlide]);
+
   const handleRestart = () => {
     resetSlidesState();
     setShowSlideList(false);
@@ -73,6 +110,8 @@ const Presentation = () => {
     setEditing(false);
     setFocusMode(false);
     setDraftContent("");
+    setShowQRCode(false);
+    disconnect();
   };
 
   useEffect(() => {
@@ -238,6 +277,16 @@ const Presentation = () => {
               highContrast={highContrast}
               setHighContrast={setHighContrast}
               loading={loading}
+              onShowRemoteControl={() => {
+                if (!session) {
+                  createPresentation();
+                }
+                setShowQRCode(true);
+              }}
+              remoteSession={session ? {
+                isConnected: session.isConnected,
+                remoteClients: session.remoteClients
+              } : null}
             />
           )}
           {!showSlideList && slides.length > 0 && (
@@ -352,6 +401,17 @@ const Presentation = () => {
             </button>
           </div>
         </div>
+      )}
+
+      {/* QR Code Modal */}
+      {showQRCode && session && (
+        <QRCodeDisplay
+          qrUrl={session.qrUrl}
+          sessionId={session.sessionId}
+          remoteClients={session.remoteClients}
+          isConnected={session.isConnected}
+          onClose={() => setShowQRCode(false)}
+        />
       )}
     </div>
   );

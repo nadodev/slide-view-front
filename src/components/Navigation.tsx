@@ -7,6 +7,10 @@ import {
   Download,
   Copy,
   RotateCw,
+  QrCode,
+  Smartphone,
+  Wifi,
+  WifiOff
 } from "lucide-react";
 import { Button } from "./ui/button";
 import {
@@ -40,6 +44,13 @@ type NavigationProps = {
   onRestart?: () => void;
   highContrast: boolean;
   setHighContrast: (contrast: boolean) => void;
+  
+  // Remote control props
+  onShowRemoteControl?: () => void;
+  remoteSession?: {
+    isConnected: boolean;
+    remoteClients: number;
+  } | null;
 };
 
 const Navigation = ({
@@ -53,6 +64,8 @@ const Navigation = ({
   duplicateSlide,
   onSaveAllSlides,
   onRestart,
+  onShowRemoteControl,
+  remoteSession,
 }: NavigationProps) => {
   
   const onPrev = () => {
@@ -162,6 +175,30 @@ const Navigation = ({
               <Copy size={16} />
               <span className="hidden md:inline">Duplicar</span>
             </button>
+
+            {/* Botão Controle Remoto */}
+            {onShowRemoteControl && (
+              <button
+                onClick={onShowRemoteControl}
+                aria-label="Ativar controle remoto"
+                title="Controlar apresentação pelo celular"
+                className={`cursor-pointer flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 text-sm border ${
+                  remoteSession?.isConnected
+                    ? "bg-violet-600 hover:bg-violet-500 text-white border-violet-500 shadow-lg shadow-violet-900/30"
+                    : "bg-gray-800 hover:bg-gray-700 text-gray-200 border-gray-700 hover:border-violet-400"
+                }`}
+              >
+                {remoteSession?.isConnected ? <Wifi size={16} /> : <QrCode size={16} />}
+                <span className="hidden md:inline">
+                  {remoteSession?.isConnected ? 'Remoto' : 'QR Code'}
+                </span>
+                {remoteSession?.isConnected && remoteSession.remoteClients > 0 && (
+                  <span className="bg-white text-violet-600 text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+                    {remoteSession.remoteClients}
+                  </span>
+                )}
+              </button>
+            )}
 
             {/* Botão de Salvar Todos */}
             {onSaveAllSlides && (

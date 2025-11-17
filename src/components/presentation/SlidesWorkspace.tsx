@@ -28,6 +28,13 @@ type SlidesWorkspaceProps = {
   highContrast: boolean;
   setHighContrast: (value: boolean | ((prev: boolean) => boolean)) => void;
   loading?: boolean;
+  
+  // Remote control props
+  onShowRemoteControl?: () => void;
+  remoteSession?: {
+    isConnected: boolean;
+    remoteClients: number;
+  } | null;
 };
 
 export default function SlidesWorkspace({
@@ -56,6 +63,8 @@ export default function SlidesWorkspace({
   highContrast,
   setHighContrast,
   loading = false,
+  onShowRemoteControl,
+  remoteSession,
 }: SlidesWorkspaceProps) {
   return (
     <div className="flex w-full flex-col">
@@ -100,6 +109,8 @@ export default function SlidesWorkspace({
           onRestart={onRestart}
           highContrast={highContrast}
           setHighContrast={setHighContrast}
+          onShowRemoteControl={onShowRemoteControl}
+          remoteSession={remoteSession}
         />
       </div>
     </div>

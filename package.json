@@ -6,8 +6,15 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:production": "node scripts/build-production.js",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "server": "node server.js",
+    "server:production": "NODE_ENV=production node server.js",
+    "start": "NODE_ENV=production node server.js",
+    "dev:full": "concurrently \"npm run dev\" \"npm run server\"",
+    "production": "npm run build:production && cd dist && npm install && npm start",
+    "deploy": "npm run build:production"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -15,20 +22,28 @@
     "@radix-ui/react-slot": "^1.2.4",
     "@tailwindcss/postcss": "^4.1.17",
     "@tailwindcss/vite": "^4.1.17",
+    "@types/qrcode": "^1.5.6",
+    "@types/uuid": "^10.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "concurrently": "^9.2.1",
+    "express": "^5.1.0",
     "highlight.js": "^11.11.1",
     "lucide-react": "^0.552.0",
     "marked": "^16.4.1",
     "next-themes": "^0.4.6",
+    "qrcode": "^1.5.4",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-resizable-panels": "^3.0.6",
     "react-router-dom": "^7.9.5",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
     "sonner": "^2.0.7",
     "styled-components": "^6.0.3",
     "tailwind-merge": "^3.4.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
