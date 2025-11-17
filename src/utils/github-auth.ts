@@ -112,20 +112,22 @@ async function handleAuthCallback(code: string, state: string): Promise<boolean>
  * AVISO: Em produção, isso deve ser feito no backend!
  */
 async function exchangeCodeForToken(code: string): Promise<any> {
-  // Esta implementação é apenas para desenvolvimento
-  // Em produção, você precisaria de um endpoint no seu backend
-  const response = await fetch('https://github.com/login/oauth/access_token', {
+  // Usar nossa API backend para trocar o código por token (mais seguro)
+  const response = await fetch('/api/auth/github/token', {
     method: 'POST',
     headers: {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      client_id: GITHUB_CLIENT_ID,
-      client_secret: import.meta.env.VITE_GITHUB_CLIENT_SECRET, // NUNCA exponha isso em produção!
       code,
     }),
   });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Falha na autenticação');
+  }
   
   return await response.json();
 }

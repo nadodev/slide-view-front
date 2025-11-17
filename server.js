@@ -330,6 +330,50 @@ io.on('connection', (socket) => {
   });
 });
 
+// Middleware para parsing de JSON
+app.use(express.json());
+
+// GitHub OAuth API endpoints
+app.post('/api/auth/github/token', async (req, res) => {
+  try {
+    const { code } = req.body;
+    
+    if (!code) {
+      return res.status(400).json({ error: 'Authorization code required' });
+    }
+
+    // Trocar code por access token
+    const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'User-Agent': 'SlideView-App',
+      },
+      body: JSON.stringify({
+        client_id: process.env.VITE_GITHUB_CLIENT_ID,
+        client_secret: process.env.VITE_GITHUB_CLIENT_SECRET,
+        code,
+      }),
+    });
+
+    if (!tokenResponse.ok) {
+      throw new Error('Failed to exchange code for token');
+    }
+
+    const tokenData = await tokenResponse.json();
+
+    if (tokenData.error) {
+      throw new Error(tokenData.error_description || tokenData.error);
+    }
+
+    res.json({ access_token: tokenData.access_token });
+  } catch (error) {
+    console.error('GitHub OAuth error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // API de saúde
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
