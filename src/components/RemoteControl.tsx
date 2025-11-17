@@ -136,8 +136,30 @@ export const RemoteControl: React.FC = () => {
 
     socketConnection.on('presentation-content', ({ content, scrollPosition: newScrollPos }) => {
       console.log('Conteúdo da apresentação recebido');
-      setPresentationContent(content);
-      setScrollPosition(newScrollPos || 0);
+      
+      try {
+        // Tentar parsear como JSON primeiro (novo formato)
+        const parsedContent = JSON.parse(content);
+        if (parsedContent.html) {
+          setPresentationContent(parsedContent.html);
+          setCurrentSlide(parsedContent.currentSlide || 0);
+          setTotalSlides(parsedContent.totalSlides || 0);
+          setScrollPosition(parsedContent.scrollPosition || 0);
+          console.log('✅ Conteúdo JSON processado:', {
+            currentSlide: parsedContent.currentSlide,
+            totalSlides: parsedContent.totalSlides,
+            scrollPosition: parsedContent.scrollPosition
+          });
+        } else {
+          // Fallback para o formato antigo
+          setPresentationContent(content);
+          setScrollPosition(newScrollPos || 0);
+        }
+      } catch (e) {
+        // Se não for JSON, usar como string simples (formato antigo)
+        setPresentationContent(content);
+        setScrollPosition(newScrollPos || 0);
+      }
     });
 
     socketConnection.on('scroll-sync', ({ scrollPosition: newScrollPos }) => {

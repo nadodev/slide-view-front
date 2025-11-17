@@ -22,6 +22,7 @@ interface UseSocketReturn {
   error: string | null;
   createPresentation: () => void;
   updateSlide: (currentSlide: number, totalSlides: number) => void;
+  shareContent: (content: string) => void;
   disconnect: () => void;
   onRemoteCommand: (callback: (command: RemoteCommand) => void) => void;
   isSupported: boolean;
@@ -192,6 +193,13 @@ export const useSocket = (): UseSocketReturn => {
     }
   };
 
+  const shareContent = (content: string) => {
+    if (socketRef.current && session) {
+      console.log('📤 Compartilhando conteúdo da apresentação...');
+      socketRef.current.emit('share-presentation-content', session.sessionId, content);
+    }
+  };
+
   const disconnect = () => {
     if (socketRef.current) {
       socketRef.current.disconnect();
@@ -219,6 +227,7 @@ export const useSocket = (): UseSocketReturn => {
     error,
     createPresentation,
     updateSlide,
+    shareContent,
     disconnect,
     onRemoteCommand,
     isSupported,

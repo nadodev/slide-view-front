@@ -77,6 +77,7 @@ const Presentation = () => {
     error: socketError,
     createPresentation,
     updateSlide,
+    shareContent,
     disconnect,
     onRemoteCommand,
     isSupported,
@@ -126,6 +127,33 @@ const Presentation = () => {
       updateSlide(currentSlide, slides.length);
     }
   }, [session, currentSlide, slides.length, updateSlide]);
+
+  // Share presentation content with remote clients
+  useEffect(() => {
+    if (session && slides.length > 0) {
+      // Capturar todo o conteúdo HTML da apresentação
+      const presentationElement = slideContentRef.current?.parentElement || document.querySelector('.slide-content');
+      if (presentationElement) {
+        // Aguardar um momento para garantir que o DOM foi atualizado
+        setTimeout(() => {
+          const contentHtml = presentationElement.innerHTML;
+          const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+          
+          // Extrair também o conteúdo markdown dos slides para o controle remoto
+          const slidesContent = slides.map(slide => slide.content).join('\n\n---\n\n');
+          
+          console.log('📤 Compartilhando conteúdo da apresentação...');
+          shareContent(JSON.stringify({
+            html: contentHtml,
+            markdown: slidesContent,
+            currentSlide,
+            totalSlides: slides.length,
+            scrollPosition
+          }));
+        }, 100);
+      }
+    }
+  }, [session, slides, currentSlide, shareContent]);
 
   const handleRestart = () => {
     resetSlidesState();

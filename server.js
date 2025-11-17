@@ -102,14 +102,21 @@ io.on('connection', (socket) => {
 
   // Conectar como controle remoto
   socket.on('join-remote', (sessionId, callback) => {
+    console.log('🔌 Cliente tentando conectar ao remote:', sessionId);
     const presentation = presentations.get(sessionId);
     
     if (!presentation) {
+      console.log('❌ Apresentação não encontrada:', sessionId);
+      console.log('📋 Sessões ativas:', Array.from(presentations.keys()));
       callback({ success: false, error: 'Apresentação não encontrada' });
       return;
     }
 
-    presentation.remoteClients.push(socket.id);
+    // Verificar se cliente já está na lista
+    if (!presentation.remoteClients.includes(socket.id)) {
+      presentation.remoteClients.push(socket.id);
+    }
+    
     socket.join(`presentation-${sessionId}`);
     
     // Notificar o host sobre nova conexão
@@ -125,7 +132,35 @@ io.on('connection', (socket) => {
       totalSlides: presentation.totalSlides
     });
 
-    console.log(`📱 Controle remoto conectado à sessão: ${sessionId}`);
+    console.log(`✅ Controle remoto conectado à sessão: ${sessionId}`);
+    
+    // Enviar conteúdo da apresentação se disponível
+    if (presentation.content) {
+      socket.emit('presentation-content', {
+        content: presentation.content,
+        scrollPosition: presentation.scrollPosition || 0
+      });
+    }
+  });
+
+  // Receber conteúdo da apresentação do host
+  socket.on('share-presentation-content', (sessionId, content) => {
+    console.log('📤 Host compartilhando conteúdo da sessão:', sessionId);
+    const presentation = presentations.get(sessionId);
+    
+    if (presentation && presentation.hostSocket === socket.id) {
+      presentation.content = content;
+      presentation.lastUpdated = new Date();
+      console.log('✅ Conteúdo salvo para sessão:', sessionId);
+      
+      // Enviar conteúdo atualizado para todos os controles remotos conectados
+      socket.to(`presentation-${sessionId}`).emit('presentation-content', {
+        content: content,
+        scrollPosition: presentation.scrollPosition || 0
+      });
+    } else {
+      console.log('❌ Tentativa inválida de compartilhar conteúdo:', sessionId);
+    }
   });
 
   // Comandos de navegação do controle remoto
