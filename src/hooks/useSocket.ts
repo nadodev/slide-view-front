@@ -22,6 +22,8 @@ interface UseSocketReturn {
   updateSlide: (currentSlide: number, totalSlides: number) => void;
   disconnect: () => void;
   onRemoteCommand: (callback: (command: RemoteCommand) => void) => void;
+  isSupported: boolean;
+  platform: string;
 }
 
 export const useSocket = (): UseSocketReturn => {
@@ -30,6 +32,37 @@ export const useSocket = (): UseSocketReturn => {
   const [error, setError] = useState<string | null>(null);
   const socketRef = useRef<Socket | null>(null);
   const commandCallbackRef = useRef<((command: RemoteCommand) => void) | null>(null);
+
+  // Detectar plataforma e suporte a WebSockets
+  const [platform, setPlatform] = useState<string>('unknown');
+  const [isSupported, setIsSupported] = useState<boolean>(true);
+
+  useEffect(() => {
+    const hostname = window.location.hostname;
+    
+    if (hostname.includes('vercel.app')) {
+      setPlatform('vercel');
+      setIsSupported(false); // Vercel não suporta WebSockets adequadamente
+    } else if (hostname.includes('netlify.app')) {
+      setPlatform('netlify');
+      setIsSupported(false); // Netlify não suporta WebSockets
+    } else if (hostname.includes('railway.app')) {
+      setPlatform('railway');
+      setIsSupported(true);
+    } else if (hostname.includes('render.com')) {
+      setPlatform('render');
+      setIsSupported(true);
+    } else if (hostname.includes('herokuapp.com')) {
+      setPlatform('heroku');
+      setIsSupported(true);
+    } else if (hostname.includes('localhost')) {
+      setPlatform('development');
+      setIsSupported(true);
+    } else {
+      setPlatform('custom');
+      setIsSupported(true); // Assumir que suporta, testar depois
+    }
+  }, []);
 
   // Conectar ao servidor
   const connect = () => {
@@ -82,6 +115,12 @@ export const useSocket = (): UseSocketReturn => {
   };
 
   const createPresentation = () => {
+    // Verificar se a plataforma suporta WebSockets
+    if (!isSupported) {
+      setError(`Controle remoto não disponível em ${platform}. Use Railway, Render ou Heroku.`);
+      return;
+    }
+
     if (!socketRef.current) {
       connect();
     }
@@ -147,5 +186,7 @@ export const useSocket = (): UseSocketReturn => {
     updateSlide,
     disconnect,
     onRemoteCommand,
+    isSupported,
+    platform,
   };
 };
