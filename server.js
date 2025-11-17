@@ -178,6 +178,7 @@ io.on('connection', (socket) => {
   // Comandos de navegação do controle remoto
   socket.on('remote-command', ({ sessionId, command, slideIndex, scrollDirection, scrollPosition }) => {
     console.log('🎮 Servidor - Comando recebido:', { sessionId, command, slideIndex, scrollDirection, scrollPosition });
+    console.log('📊 Tipo de comando:', command, 'é scroll?', command === 'scroll');
     
     const presentation = presentations.get(sessionId);
     
@@ -216,14 +217,17 @@ io.on('connection', (socket) => {
     // Para scroll, presenter, focus não alteramos currentSlide - apenas passamos o comando
 
     console.log('📡 Enviando comando para host:', presentation.hostSocket);
-
-    // Enviar comando para o host
-    socket.to(presentation.hostSocket).emit('remote-command', {
+    
+    const commandData = {
       command,
       slideIndex: presentation.currentSlide,
       scrollDirection,
       fromClient: socket.id
-    });
+    };
+    console.log('📦 Dados do comando sendo enviado:', commandData);
+
+    // Enviar comando para o host
+    socket.to(presentation.hostSocket).emit('remote-command', commandData);
 
     if (command === 'scroll') {
       console.log(`🖱️ Comando de scroll ${scrollDirection} enviado para host`);

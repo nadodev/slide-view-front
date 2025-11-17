@@ -28,6 +28,7 @@ export const RemoteControl: React.FC = () => {
   const [totalSlides, setTotalSlides] = useState(0);
   const [isConnecting, setIsConnecting] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [joinError, setJoinError] = useState<string | null>(null);
   const [presentationContent, setPresentationContent] = useState<string>('');
   const [scrollPosition, setScrollPosition] = useState(0);
   const mirrorRef = useRef<HTMLDivElement>(null);
@@ -119,12 +120,15 @@ export const RemoteControl: React.FC = () => {
           });
           setCurrentSlide(response.currentSlide || 0);
           setTotalSlides(response.totalSlides || 0);
+          setJoinError(null);
           toast.success('Conectado!', {
             description: 'Controle remoto ativo'
           });
         } else {
           console.error('Erro join-remote:', response);
-          setError(response?.error || 'Sessão não encontrada');
+          // Não usar o `error` global (que mostra tela inteira) para falha de join;
+          // armazenar em `joinError` e permitir retry sem recarregar
+          setJoinError(response?.error || 'Sessão não encontrada');
           toast.error('Erro', {
             description: response?.error || 'Falha na conexão'
           });
@@ -216,6 +220,30 @@ export const RemoteControl: React.FC = () => {
       sessionId,
       command: 'scroll-sync',
       scrollPosition: scrollTop,
+    });
+  };
+
+  const retryJoin = () => {
+    if (!socket) {
+      toast.error('Socket não está disponível para reconectar');
+      return;
+    }
+
+    setIsConnecting(true);
+    setJoinError(null);
+
+    socket.emit('join-remote', sessionId, (response: any) => {
+      console.log('Resposta join-remote (retry):', response);
+      setIsConnecting(false);
+      if (response?.success) {
+        setJoinError(null);
+        setCurrentSlide(response.currentSlide || 0);
+        setTotalSlides(response.totalSlides || 0);
+        toast.success('Reconectado!', { description: 'Controle remoto ativo' });
+      } else {
+        setJoinError(response?.error || 'Sessão não encontrada');
+        toast.error('Falha ao reconectar', { description: response?.error || 'Sessão não encontrada' });
+      }
     });
   };
 
@@ -318,6 +346,16 @@ export const RemoteControl: React.FC = () => {
               <span className="text-red-400 text-sm">Desconectado</span>
             )}
           </div>
+
+          {/* Join Error (não bloquear toda a UI) */}
+          {joinError ? (
+            <div className="mb-4 p-3 rounded-lg bg-yellow-900/30 border border-yellow-800">
+              <p className="text-yellow-200 text-sm">{joinError}</p>
+              <div className="mt-3 flex justify-center">
+                <Button onClick={retryJoin} className="bg-yellow-700 hover:bg-yellow-600">Tentar reconectar</Button>
+              </div>
+            </div>
+          ) : null}
 
           {/* Slide Counter */}
           {totalSlides > 0 && (

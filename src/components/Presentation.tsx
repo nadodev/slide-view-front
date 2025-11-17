@@ -88,7 +88,13 @@ const Presentation = () => {
   // Setup remote control command handling
   useEffect(() => {
     onRemoteCommand((command) => {
-      console.log('Presentation - Comando recebido:', command);
+      console.log('📺 Presentation - Comando recebido:', command);
+      console.log('🔍 Detalhes:', {
+        command: command.command,
+        slideIndex: command.slideIndex,
+        scrollDirection: command.scrollDirection,
+        fromClient: command.fromClient
+      });
       
       if (command.command === 'next') {
         setCurrentSlide((prev) => Math.min(prev + 1, slides.length - 1));
