@@ -39,15 +39,19 @@ export async function fetchFilesFromGitHub(config: GitHubConfig): Promise<GitHub
 
     for (const file of Array.isArray(files) ? files : [files]) {
       if (file.type === 'file' && file.name.endsWith('.md')) {
-        // Buscar conteúdo do arquivo
-        const contentResponse = await fetch(file.download_url, {
+        // Buscar conteúdo do arquivo usando a API do GitHub (evita CORS)
+        const contentResponse = await fetch(file.url, {
           headers: {
-            'Authorization': `token ${token}`
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'X-GitHub-Api-Version': '2022-11-28'
           }
         });
         
         if (contentResponse.ok) {
-          const content = await contentResponse.text();
+          const fileData = await contentResponse.json();
+          // Decodificar o conteúdo base64
+          const content = atob(fileData.content.replace(/\s/g, ''));
           markdownFiles.push({
             name: file.name,
             content,
