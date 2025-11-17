@@ -435,25 +435,41 @@ export const RemoteControl: React.FC = () => {
           )}
 
           {/* Espelho da Apresentação */}
-          <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 rounded-2xl p-4 mb-6 border border-slate-700/50">
+          <div className="bg-linear-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm rounded-2xl p-5 mb-6 border border-white/10 shadow-2xl">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-slate-200 font-semibold flex items-center gap-2">
-                <span className="text-lg">📺</span>
-                Espelho da Apresentação
-              </h3>
-              <div className="text-xs text-slate-400 bg-slate-800/50 px-2 py-1 rounded">
-                {currentSlide + 1} / {totalSlides}
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-violet-500/20 rounded-lg blur-sm"></div>
+                  <div className="relative bg-linear-to-br from-violet-600 to-indigo-600 p-2 rounded-lg">
+                    <span className="text-white text-lg">📺</span>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-white font-bold text-sm">Espelho da Apresentação</h3>
+                  <p className="text-slate-400 text-xs">Role para sincronizar</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 bg-slate-800/60 backdrop-blur-sm border border-white/10 px-3 py-1.5 rounded-lg">
+                <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
+                <span className="text-white font-semibold text-xs">
+                  {currentSlide + 1} / {totalSlides}
+                </span>
               </div>
             </div>
             
             <div 
               ref={mirrorRef}
-              className="bg-white rounded-xl shadow-lg border-2 border-slate-600/30 overflow-hidden touch-pan-y"
-              style={{ height: '300px', WebkitOverflowScrolling: 'touch' }}
+              className="relative rounded-2xl shadow-2xl overflow-hidden touch-pan-y border border-white/10 bg-linear-to-br from-slate-900 via-slate-800 to-slate-900"
+              style={{ height: '320px', WebkitOverflowScrolling: 'touch' }}
             >
+              {/* Gradient overlay no topo */}
+              <div className="absolute top-0 left-0 right-0 h-12 bg-linear-to-b from-slate-900 via-slate-900/80 to-transparent z-10 pointer-events-none"></div>
+              
+              {/* Gradient overlay na base */}
+              <div className="absolute bottom-0 left-0 right-0 h-12 bg-linear-to-t from-slate-900 via-slate-900/80 to-transparent z-10 pointer-events-none"></div>
               {presentationContent ? (
                 <div 
-                  className="h-full overflow-y-auto"
+                  className="h-full overflow-y-auto custom-scrollbar-mirror"
                   onScroll={handleScroll}
                   onTouchStart={handleTouchStart}
                   onTouchMove={handleTouchMove}
@@ -461,140 +477,212 @@ export const RemoteControl: React.FC = () => {
                   style={{ WebkitOverflowScrolling: 'touch' }}
                 >
                   <div 
-                    className="presentation-mirror p-6 text-gray-800 leading-relaxed"
+                    className="presentation-mirror p-8 text-slate-100 leading-relaxed"
                     style={{
-                      fontSize: '11px',
-                      lineHeight: '1.5',
+                      fontSize: '12px',
+                      lineHeight: '1.7',
                       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                      touchAction: 'pan-y'
+                      touchAction: 'pan-y',
+                      minHeight: '100%'
                     }}
                     dangerouslySetInnerHTML={{ __html: presentationContent }}
                   />
                   <style dangerouslySetInnerHTML={{
                     __html: `
+                      /* Custom scrollbar para o espelho */
+                      .custom-scrollbar-mirror {
+                        scrollbar-width: thin;
+                        scrollbar-color: rgba(139, 92, 246, 0.5) transparent;
+                      }
+                      
+                      .custom-scrollbar-mirror::-webkit-scrollbar {
+                        width: 6px;
+                      }
+                      
+                      .custom-scrollbar-mirror::-webkit-scrollbar-track {
+                        background: transparent;
+                      }
+                      
+                      .custom-scrollbar-mirror::-webkit-scrollbar-thumb {
+                        background: rgba(139, 92, 246, 0.4);
+                        border-radius: 10px;
+                        border: 1px solid transparent;
+                        background-clip: padding-box;
+                      }
+                      
+                      .custom-scrollbar-mirror::-webkit-scrollbar-thumb:hover {
+                        background: rgba(139, 92, 246, 0.6);
+                      }
+                      
                       .presentation-mirror h1 {
-                        font-size: 16px !important;
-                        font-weight: 700 !important;
-                        margin: 1em 0 0.5em 0 !important;
-                        color: #1f2937 !important;
-                        border-bottom: 2px solid #e5e7eb !important;
-                        padding-bottom: 0.3em !important;
+                        font-size: 18px !important;
+                        font-weight: 800 !important;
+                        margin: 1.2em 0 0.6em 0 !important;
+                        color: #ffffff !important;
+                        border-bottom: 2px solid rgba(139, 92, 246, 0.4) !important;
+                        padding-bottom: 0.4em !important;
+                        line-height: 1.3 !important;
                       }
                       
                       .presentation-mirror h2 {
-                        font-size: 14px !important;
-                        font-weight: 600 !important;
-                        margin: 0.8em 0 0.4em 0 !important;
-                        color: #374151 !important;
+                        font-size: 16px !important;
+                        font-weight: 700 !important;
+                        margin: 1em 0 0.5em 0 !important;
+                        color: #e2e8f0 !important;
+                        line-height: 1.4 !important;
                       }
                       
                       .presentation-mirror h3 {
-                        font-size: 12px !important;
+                        font-size: 14px !important;
                         font-weight: 600 !important;
-                        margin: 0.6em 0 0.3em 0 !important;
-                        color: #4b5563 !important;
+                        margin: 0.8em 0 0.4em 0 !important;
+                        color: #cbd5e1 !important;
+                        line-height: 1.5 !important;
                       }
                       
                       .presentation-mirror p {
-                        margin: 0.5em 0 !important;
-                        color: #6b7280 !important;
-                        line-height: 1.6 !important;
+                        margin: 0.6em 0 !important;
+                        color: #cbd5e1 !important;
+                        line-height: 1.7 !important;
                       }
                       
                       .presentation-mirror ul, .presentation-mirror ol {
-                        margin: 0.5em 0 0.5em 1.5em !important;
-                        color: #6b7280 !important;
+                        margin: 0.6em 0 0.6em 1.5em !important;
+                        color: #cbd5e1 !important;
                       }
                       
                       .presentation-mirror li {
-                        margin: 0.2em 0 !important;
+                        margin: 0.3em 0 !important;
+                        line-height: 1.6 !important;
                       }
                       
                       .presentation-mirror code {
-                        background-color: #f3f4f6 !important;
-                        padding: 0.1em 0.3em !important;
-                        border-radius: 0.25rem !important;
-                        font-family: 'Consolas', 'Monaco', monospace !important;
-                        font-size: 10px !important;
-                        color: #dc2626 !important;
+                        background-color: rgba(139, 92, 246, 0.15) !important;
+                        padding: 0.15em 0.4em !important;
+                        border-radius: 0.375rem !important;
+                        font-family: 'Consolas', 'Monaco', 'Courier New', monospace !important;
+                        font-size: 11px !important;
+                        color: #a78bfa !important;
+                        border: 1px solid rgba(139, 92, 246, 0.2) !important;
                       }
                       
                       .presentation-mirror pre {
-                        background-color: #1f2937 !important;
-                        color: #f9fafb !important;
-                        padding: 0.8em !important;
-                        border-radius: 0.5rem !important;
-                        margin: 0.5em 0 !important;
+                        background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%) !important;
+                        color: #e2e8f0 !important;
+                        padding: 1em !important;
+                        border-radius: 0.75rem !important;
+                        margin: 0.8em 0 !important;
                         overflow-x: auto !important;
-                        font-size: 9px !important;
+                        font-size: 10px !important;
+                        border: 1px solid rgba(139, 92, 246, 0.2) !important;
+                        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
+                      }
+                      
+                      .presentation-mirror pre code {
+                        background: transparent !important;
+                        padding: 0 !important;
+                        border: none !important;
+                        color: inherit !important;
                       }
                       
                       .presentation-mirror blockquote {
-                        border-left: 4px solid #6366f1 !important;
-                        margin: 0.5em 0 !important;
-                        padding-left: 1em !important;
-                        color: #6366f1 !important;
+                        border-left: 4px solid rgba(139, 92, 246, 0.6) !important;
+                        margin: 0.8em 0 !important;
+                        padding-left: 1.2em !important;
+                        color: #a78bfa !important;
                         font-style: italic !important;
+                        background: rgba(139, 92, 246, 0.05) !important;
+                        padding: 0.8em 1.2em !important;
+                        border-radius: 0 0.5rem 0.5rem 0 !important;
                       }
                       
                       .presentation-mirror strong {
                         font-weight: 700 !important;
-                        color: #1f2937 !important;
+                        color: #ffffff !important;
                       }
                       
                       .presentation-mirror em {
                         font-style: italic !important;
-                        color: #374151 !important;
+                        color: #cbd5e1 !important;
+                      }
+                      
+                      .presentation-mirror a {
+                        color: #a78bfa !important;
+                        text-decoration: underline !important;
+                        text-decoration-color: rgba(139, 92, 246, 0.4) !important;
+                      }
+                      
+                      .presentation-mirror a:hover {
+                        color: #c4b5fd !important;
                       }
                       
                       .presentation-mirror table {
                         width: 100% !important;
                         border-collapse: collapse !important;
-                        margin: 0.5em 0 !important;
-                        font-size: 10px !important;
+                        margin: 0.8em 0 !important;
+                        font-size: 11px !important;
+                        border-radius: 0.5rem !important;
+                        overflow: hidden !important;
                       }
                       
                       .presentation-mirror th, .presentation-mirror td {
-                        border: 1px solid #e5e7eb !important;
-                        padding: 0.3em 0.5em !important;
+                        border: 1px solid rgba(139, 92, 246, 0.2) !important;
+                        padding: 0.5em 0.8em !important;
                         text-align: left !important;
                       }
                       
                       .presentation-mirror th {
-                        background-color: #f9fafb !important;
+                        background: rgba(139, 92, 246, 0.2) !important;
                         font-weight: 600 !important;
-                        color: #1f2937 !important;
+                        color: #ffffff !important;
+                      }
+                      
+                      .presentation-mirror td {
+                        color: #cbd5e1 !important;
+                      }
+                      
+                      .presentation-mirror img {
+                        max-width: 100% !important;
+                        height: auto !important;
+                        border-radius: 0.5rem !important;
+                        margin: 0.8em 0 !important;
+                        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
                       }
                     `
                   }} />
                 </div>
               ) : (
-                <div className="flex items-center justify-center h-full bg-gray-50">
+                <div className="flex items-center justify-center h-full bg-slate-900/50">
                   <div className="text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-3"></div>
-                    <p className="text-gray-500 text-sm font-medium">Carregando apresentação...</p>
-                    <p className="text-gray-400 text-xs mt-1">Aguarde a sincronização</p>
+                    <div className="relative mb-4">
+                      <div className="absolute inset-0 bg-violet-500/20 rounded-full blur-lg"></div>
+                      <div className="relative animate-spin rounded-full h-10 w-10 border-2 border-violet-500 border-t-transparent mx-auto"></div>
+                    </div>
+                    <p className="text-slate-200 text-sm font-medium">Carregando apresentação...</p>
+                    <p className="text-slate-400 text-xs mt-1">Aguarde a sincronização</p>
                   </div>
                 </div>
               )}
             </div>
             
-            <div className="mt-3 flex items-center justify-between">
-              <p className="text-slate-400 text-xs flex items-center gap-2">
-                <span className="animate-pulse">👆</span>
-                Role na área acima para controlar a apresentação
-              </p>
+            <div className="mt-4 flex items-center justify-between pt-4 border-t border-white/10">
+              <div className="flex items-center gap-2 text-xs">
+                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-violet-500/10 border border-violet-500/20 rounded-full">
+                  <span className="text-violet-400 animate-pulse">👆</span>
+                  <span className="text-violet-300 font-medium">Role para sincronizar</span>
+                </div>
+              </div>
               <div className="flex items-center gap-2 text-xs">
                 {isConnected ? (
-                  <>
-                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                    <span className="text-green-400">Conectado</span>
-                  </>
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-green-500/10 border border-green-500/20 rounded-full">
+                    <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
+                    <span className="text-green-400 font-medium">Conectado</span>
+                  </div>
                 ) : (
-                  <>
-                    <div className="w-2 h-2 bg-red-400 rounded-full"></div>
-                    <span className="text-red-400">Desconectado</span>
-                  </>
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-red-500/10 border border-red-500/20 rounded-full">
+                    <div className="w-1.5 h-1.5 bg-red-400 rounded-full"></div>
+                    <span className="text-red-400 font-medium">Desconectado</span>
+                  </div>
                 )}
               </div>
             </div>
