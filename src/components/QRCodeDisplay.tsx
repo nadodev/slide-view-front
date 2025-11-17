@@ -21,23 +21,46 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [urlError, setUrlError] = useState<string | null>(null);
+  const [finalUrl, setFinalUrl] = useState<string>(qrUrl);
 
   useEffect(() => {
     const generateQR = async () => {
       if (!canvasRef.current) return;
 
-      // Validar URL antes de gerar
-      if (!qrUrl || (!qrUrl.startsWith('http://') && !qrUrl.startsWith('https://'))) {
-        console.error('❌ URL inválida para QR Code:', qrUrl);
-        setIsLoading(false);
-        return;
+      // Validar e corrigir URL se necessário
+      let urlToUse = qrUrl;
+      
+      if (!urlToUse || (!urlToUse.startsWith('http://') && !urlToUse.startsWith('https://'))) {
+        console.warn('⚠️ URL inválida do servidor, tentando corrigir...', urlToUse);
+        
+        // Tentar construir a URL usando window.location.origin
+        const baseUrl = window.location.origin;
+        urlToUse = `${baseUrl}/remote/${sessionId}`;
+        setUrlError('URL corrigida automaticamente');
+        console.log('✅ URL corrigida:', urlToUse);
+      } else {
+        // Verificar se a URL parece correta
+        const urlObj = new URL(urlToUse);
+        const currentOrigin = window.location.origin;
+        
+        // Se o hostname for localhost mas estamos em produção, pode estar errado
+        if (urlObj.hostname === 'localhost' && !currentOrigin.includes('localhost')) {
+          console.warn('⚠️ URL parece estar usando localhost incorretamente');
+          urlToUse = `${currentOrigin}/remote/${sessionId}`;
+          setUrlError('URL ajustada para o domínio atual');
+        } else {
+          setUrlError(null);
+        }
       }
+      
+      setFinalUrl(urlToUse);
 
       try {
         setIsLoading(true);
-        console.log('📱 Gerando QR Code para URL:', qrUrl);
+        console.log('📱 Gerando QR Code para URL:', urlToUse);
         
-        await QRCode.toCanvas(canvasRef.current, qrUrl, {
+        await QRCode.toCanvas(canvasRef.current, urlToUse, {
           width: 200,
           margin: 2,
           color: {
@@ -52,20 +75,25 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
       } catch (error) {
         console.error('❌ Erro ao gerar QR Code:', error);
         setIsLoading(false);
+        setUrlError('Erro ao gerar QR Code');
       }
     };
 
     generateQR();
-  }, [qrUrl]);
+  }, [qrUrl, sessionId]);
 
   const copyToClipboard = async () => {
     try {
-      await navigator.clipboard.writeText(qrUrl);
+      await navigator.clipboard.writeText(finalUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       console.error('Erro ao copiar:', error);
     }
+  };
+
+  const testUrl = () => {
+    window.open(finalUrl, '_blank');
   };
 
   return (
@@ -100,17 +128,34 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
           )}
         </div>
 
+        {/* URL Error/Warning */}
+        {urlError && (
+          <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+            <p className="text-yellow-400 text-xs text-center">{urlError}</p>
+          </div>
+        )}
+
         {/* QR Code */}
-        <div className="bg-white rounded-2xl p-4 mb-6 flex justify-center">
+        <div className="bg-white rounded-2xl p-4 mb-6 flex flex-col items-center">
           {isLoading ? (
             <div className="w-[200px] h-[200px] bg-slate-100 animate-pulse rounded-lg flex items-center justify-center">
               <QrCode className="text-slate-400" size={48} />
             </div>
           ) : (
-            <canvas
-              ref={canvasRef}
-              className="rounded-lg shadow-sm"
-            />
+            <>
+              <canvas
+                ref={canvasRef}
+                className="rounded-lg shadow-sm"
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={testUrl}
+                className="mt-3 border-violet-500 hover:border-violet-400 text-violet-400 hover:text-violet-300 text-xs"
+              >
+                🔗 Testar URL
+              </Button>
+            </>
           )}
         </div>
 
@@ -131,7 +176,7 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
           </div>
           <div className="flex items-center gap-2">
             <code className="flex-1 text-xs text-slate-400 bg-slate-900/50 p-2 rounded-lg break-all">
-              {qrUrl}
+              {finalUrl}
             </code>
             <Button
               size="sm"
