@@ -8,11 +8,7 @@ import {
   Eye,
   Sparkles,
 } from "lucide-react";
-
-type Slide = {
-  name: string;
-  html?: string;
-};
+import type { Slide } from "./slides/types";
 
 type SlideListProps = {
   slides: Slide[];
@@ -81,7 +77,7 @@ export default function SlideList({
 
   return (
     <div
-      className="w-full min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6"
+      className="w-full min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-slate-950 p-6"
       role="list"
       aria-label="Lista de slides"
     >
@@ -92,7 +88,7 @@ export default function SlideList({
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <Sparkles className="text-violet-400" size={28} />
-                <h2 className="text-4xl font-black bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 bg-clip-text text-transparent">
+                <h2 className="text-4xl font-black bg-linear-to-r from-violet-400 via-fuchsia-400 to-cyan-400 bg-clip-text text-transparent">
                   Seus Slides
                 </h2>
               </div>
@@ -120,9 +116,9 @@ export default function SlideList({
               <button
                 onClick={onStart}
                 aria-label="Iniciar apresentação"
-                className="group relative px-8 py-3 bg-gradient-to-r from-violet-600 via-fuchsia-600 to-cyan-600 text-white font-bold rounded-xl shadow-lg hover:shadow-2xl hover:shadow-violet-500/50 transform hover:-translate-y-1 transition-all duration-300 flex items-center gap-3 overflow-hidden"
+                className="group relative px-8 py-3 bg-linear-to-r from-violet-600 via-fuchsia-600 to-cyan-600 text-white font-bold rounded-xl shadow-lg hover:shadow-2xl hover:shadow-violet-500/50 transform hover:-translate-y-1 transition-all duration-300 flex items-center gap-3 overflow-hidden"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 via-fuchsia-600 to-violet-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="absolute inset-0 bg-linear-to-r from-cyan-600 via-fuchsia-600 to-violet-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 <Play size={20} fill="currentColor" className="relative" />
                 <span className="relative">Iniciar Apresentação</span>
               </button>
@@ -135,14 +131,14 @@ export default function SlideList({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {slides.map((s: Slide, idx: number) => (
               <div
-                key={s.name + "-" + idx}
+                key={`${s.name ?? "slide"}-${idx}`}
                 className="relative"
                 onMouseEnter={() => setHoveredIndex(idx)}
                 onMouseLeave={() => setHoveredIndex(null)}
               >
                 {/* Glow effect on hover */}
                 {hoveredIndex === idx && (
-                  <div className="absolute -inset-1 bg-gradient-to-r from-violet-600 to-cyan-600 rounded-3xl blur-xl opacity-30 animate-pulse"></div>
+                  <div className="absolute -inset-1 bg-linear-to-r from-violet-600 to-cyan-600 rounded-3xl blur-xl opacity-30 animate-pulse"></div>
                 )}
                 
                 <div
@@ -159,7 +155,7 @@ export default function SlideList({
                   onDrop={(e) => handleDrop(e, idx)}
                   role="listitem"
                   tabIndex={0}
-                  aria-label={`Slide ${idx + 1}: ${s.name}`}
+                  aria-label={`Slide ${idx + 1}: ${s.name ?? "Sem título"}`}
                   onKeyDown={(e: React.KeyboardEvent) => {
                     if (e.key === "ArrowLeft") {
                       move(idx, Math.max(0, idx - 1));
@@ -178,16 +174,16 @@ export default function SlideList({
                   </div>
 
                   {/* Slide Number Badge */}
-                  <div className="absolute top-4 right-4 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white text-sm font-bold px-4 py-1.5 rounded-full shadow-lg">
+                  <div className="absolute top-4 right-4 bg-linear-to-r from-violet-600 to-fuchsia-600 text-white text-sm font-bold px-4 py-1.5 rounded-full shadow-lg">
                     {idx + 1}
                   </div>
 
                   {/* Preview Area */}
                   <div className="p-6 pt-14">
                     <div className="relative">
-                      <div className="absolute inset-0 bg-gradient-to-br from-slate-800/50 to-slate-900/50 rounded-xl blur-sm"></div>
+                      <div className="absolute inset-0 bg-linear-to-br from-slate-800/50 to-slate-900/50 rounded-xl blur-sm"></div>
                       <div className="relative bg-slate-950/80 backdrop-blur-sm rounded-xl p-5 min-h-[180px] max-h-[180px] overflow-hidden border border-slate-700/50">
-                        <pre className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap break-words m-0 font-mono">
+                        <pre className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap wrap-break-word m-0 font-mono">
                           {shortPreview(s.html)}
                         </pre>
                       </div>
@@ -238,8 +234,8 @@ export default function SlideList({
         {slides.length === 0 && (
           <div className="text-center py-20">
             <div className="relative inline-flex items-center justify-center mb-6">
-              <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-cyan-600 rounded-full blur-2xl opacity-20"></div>
-              <div className="relative w-24 h-24 bg-gradient-to-br from-slate-800 to-slate-900 rounded-full flex items-center justify-center border-2 border-slate-700/50 shadow-2xl">
+              <div className="absolute inset-0 bg-linear-to-r from-violet-600 to-cyan-600 rounded-full blur-2xl opacity-20"></div>
+              <div className="relative w-24 h-24 bg-linear-to-br from-slate-800 to-slate-900 rounded-full flex items-center justify-center border-2 border-slate-700/50 shadow-2xl">
                 <Play size={40} className="text-slate-600" />
               </div>
             </div>

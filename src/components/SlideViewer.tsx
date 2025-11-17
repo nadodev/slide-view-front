@@ -55,55 +55,55 @@ export default function SlideViewer({
 
         /* Títulos */
         .custom-scroll h1 {
-          font-size: 3.5rem;
+          font-size: clamp(1.75rem, 3.5vw, 2.6rem);
           font-weight: 800;
           color: #ffffff;
-          margin-bottom: 2rem;
+          margin-bottom: 1.5rem;
           margin-top: 0;
-          line-height: 1.2;
-          letter-spacing: -0.02em;
+          line-height: 1.15;
+          letter-spacing: -0.01em;
         }
 
         .custom-scroll h2 {
-          font-size: 2.5rem;
+          font-size: clamp(1.5rem, 2.7vw, 2.1rem);
           font-weight: 700;
           color: #f9fafb;
-          margin-bottom: 1.5rem;
-          margin-top: 3rem;
-          line-height: 1.3;
+          margin-bottom: 1.25rem;
+          margin-top: 2.5rem;
+          line-height: 1.25;
         }
 
         .custom-scroll h3 {
-          font-size: 2rem;
+          font-size: clamp(1.35rem, 2.1vw, 1.7rem);
           font-weight: 600;
           color: #e5e7eb;
-          margin-bottom: 1.25rem;
-          margin-top: 2.5rem;
-          line-height: 1.4;
+          margin-bottom: 1rem;
+          margin-top: 2rem;
+          line-height: 1.3;
         }
 
         .custom-scroll h4 {
-          font-size: 1.5rem;
+          font-size: 1.35rem;
           font-weight: 600;
           color: #d1d5db;
-          margin-bottom: 1rem;
-          margin-top: 2rem;
+          margin-bottom: 0.85rem;
+          margin-top: 1.75rem;
         }
 
         .custom-scroll h5 {
-          font-size: 1.25rem;
+          font-size: 1.2rem;
           font-weight: 600;
           color: #d1d5db;
-          margin-bottom: 0.75rem;
-          margin-top: 1.5rem;
+          margin-bottom: 0.65rem;
+          margin-top: 1.4rem;
         }
 
         .custom-scroll h6 {
-          font-size: 1.125rem;
+          font-size: 1.05rem;
           font-weight: 600;
           color: #9ca3af;
-          margin-bottom: 0.75rem;
-          margin-top: 1.5rem;
+          margin-bottom: 0.6rem;
+          margin-top: 1.3rem;
         }
 
         .custom-scroll h1:first-child,
@@ -117,10 +117,10 @@ export default function SlideViewer({
 
         /* Parágrafos */
         .custom-scroll p {
-          font-size: 1.25rem;
-          line-height: 1.8;
+          font-size: 1.05rem;
+          line-height: 1.7;
           color: #d1d5db;
-          margin-bottom: 1.75rem;
+          margin-bottom: 1.25rem;
         }
 
         /* Links */
