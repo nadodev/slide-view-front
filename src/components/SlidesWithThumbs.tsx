@@ -20,6 +20,8 @@ type SlidesWithThumbsProps = {
   slideContainerRef: RefObject<HTMLElement | null>;
   slideContentRef: RefObject<HTMLElement | null>;
   onRemove?: (index: number) => void;
+  onReorder?: (fromIndex: number, toIndex: number) => void;
+  loading?: boolean;
 };
 
 export default function SlidesWithThumbs({
@@ -35,6 +37,8 @@ export default function SlidesWithThumbs({
   slideContainerRef,
   slideContentRef,
   onRemove,
+  onReorder,
+  loading = false,
 }: SlidesWithThumbsProps) {
   const { selectSlide } = useSlideNavigation(setCurrentSlide, setTransitionKey);
   const showSidebar = !focusMode && !presenterMode;
@@ -48,6 +52,8 @@ export default function SlidesWithThumbs({
           thumbsRailRef={thumbsRailRef}
           onSelect={selectSlide}
           onRemove={onRemove}
+          onReorder={onReorder}
+          loading={loading}
         />
       )}
 

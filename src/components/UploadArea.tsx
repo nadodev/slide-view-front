@@ -1,5 +1,9 @@
 import { useState, useRef } from "react";
 import { Upload, FileText, Settings, Sparkles, Bot, Wand2, Zap } from "lucide-react";
+import { Button } from "./ui/button";
+import { Progress } from "./ui/progress";
+import { Carregando } from "./ui/Carregando";
+import { toast } from "sonner";
 
 type UploadAreaProps = {
   onFilesChange?: (
@@ -24,6 +28,7 @@ export default function UploadArea({
   const [slideCount, setSlideCount] = useState<number>(6);
   const [preserveText, setPreserveText] = useState<boolean>(false);
   const [baseText, setBaseText] = useState<string>("");
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from((e.target.files || []) as File[]);
@@ -31,10 +36,36 @@ export default function UploadArea({
     if (invalid) {
       const msg = `Arquivo inválido: ${invalid.name}. Apenas .md é permitido.`;
       setLocalError(msg);
+      toast.error("Arquivo inválido", {
+        description: `${invalid.name} não é um arquivo Markdown válido.`
+      });
       if (typeof onFilesChange === "function")
         onFilesChange(null, { error: msg });
       return;
     }
+    
+    // Simular progress de upload
+    setUploadProgress(0);
+    toast.success("Upload iniciado", {
+      description: `${files.length} arquivo(s) sendo processado(s)...`,
+      position: "top-right",
+    });
+    
+    const progressInterval = setInterval(() => {
+      setUploadProgress(prev => {
+        const newProgress = prev + 20;
+        if (newProgress >= 100) {
+          clearInterval(progressInterval);
+          toast.success("Upload concluído!", {
+            description: "Arquivos processados com sucesso."
+          });
+          setTimeout(() => setUploadProgress(0), 1000); 
+          return 100;
+        }
+        return newProgress;
+      });
+    }, 200);
+    
     setLocalError("");
     if (typeof onFilesChange === "function")
       onFilesChange(e, { splitSingle, delimiter });
@@ -47,7 +78,14 @@ export default function UploadArea({
 
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
-    setIsDragging(false);
+    // Só remove o estado de dragging se realmente sair da área
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+    
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      setIsDragging(false);
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -72,9 +110,15 @@ export default function UploadArea({
   const handleAIGenerate = () => {
     if (!aiPrompt.trim()) {
       setLocalError("Por favor, descreva o que você gostaria de apresentar.");
+      toast.error("Prompt necessário", {
+        description: "Descreva o tema da sua apresentação para continuar."
+      });
       return;
     }
     setLocalError("");
+    toast.success("IA ativada!", {
+      description: `Gerando ${slideCount} slides sobre: ${aiPrompt.slice(0, 50)}...`
+    });
     if (onAIGenerate) {
       onAIGenerate(aiPrompt.trim(), slideCount, preserveText ? baseText : undefined);
     }
@@ -83,6 +127,7 @@ export default function UploadArea({
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4 md:p-6">
       <div className="w-full max-w-5xl">
+       
         {/* Header */}
         <div className="text-center mb-10">
           <div className="flex items-center justify-center gap-3 mb-4">
@@ -149,16 +194,47 @@ export default function UploadArea({
               /* Upload Area */
               <>
                 <div
-                  className={`relative transition-all duration-300 ${
+                  className={`relative transition-all duration-300 ease-out ${
                     isDragging
-                      ? "bg-violet-500/10"
+                      ? "bg-violet-500/10 border-4 border-dashed border-violet-400 rounded-2xl m-4 scale-[1.01] shadow-2xl shadow-violet-500/20"
                       : "bg-gradient-to-br from-slate-800/40 to-slate-900/40"
                   }`}
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
                 >
-                  <label className="block p-12 md:p-16 cursor-pointer">
+                  {/* Drag overlay with pattern */}
+                  {isDragging && (
+                    <div 
+                      className="absolute inset-4 rounded-2xl bg-violet-500/5 border-2 border-dashed border-violet-300/50 flex items-center justify-center z-50 animate-in fade-in-0 zoom-in-95 duration-200"
+                      style={{
+                        backgroundImage: `
+                          linear-gradient(45deg, rgba(139, 92, 246, 0.1) 25%, transparent 25%), 
+                          linear-gradient(-45deg, rgba(139, 92, 246, 0.1) 25%, transparent 25%), 
+                          linear-gradient(45deg, transparent 75%, rgba(139, 92, 246, 0.1) 75%), 
+                          linear-gradient(-45deg, transparent 75%, rgba(139, 92, 246, 0.1) 75%)
+                        `,
+                        backgroundSize: '20px 20px',
+                        backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px'
+                      }}
+                    >
+                      <div className="text-center space-y-4 bg-slate-900/80 backdrop-blur-sm p-8 rounded-2xl border border-violet-400/30">
+                        <div className="text-5xl animate-bounce">📁</div>
+                        <p className="text-violet-300 font-bold text-xl">
+                          ✨ Solte seus arquivos .md aqui
+                        </p>
+                        <p className="text-violet-400/80 text-sm max-w-xs">
+                          Arquivos Markdown serão processados automaticamente e convertidos em slides
+                        </p>
+                        <div className="flex items-center justify-center gap-2 text-violet-400/60 text-xs">
+                          <span>🔄</span>
+                          <span>Suporta múltiplos arquivos</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <label className={`block p-12 md:p-16 cursor-pointer ${isDragging ? 'opacity-30' : ''}`}>
                     <input
                       ref={inputRef}
                       type="file"
@@ -198,18 +274,26 @@ export default function UploadArea({
                       </div>
 
                       {/* Button */}
-                      <button
+                      <Button
                         type="button"
                         onClick={openFilePicker}
                         disabled={loading}
-                        className="group relative px-8 md:px-10 py-3 md:py-4 bg-gradient-to-r from-violet-600 via-fuchsia-600 to-cyan-600 text-white font-bold rounded-2xl shadow-lg hover:shadow-2xl hover:shadow-violet-500/50 transform hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none overflow-hidden"
+                        size="lg"
+                        className="group relative px-8 md:px-10 py-3 md:py-4 bg-gradient-to-r from-violet-600 via-fuchsia-600 to-cyan-600 hover:from-cyan-600 hover:via-fuchsia-600 hover:to-violet-600 text-white font-bold rounded-2xl shadow-lg hover:shadow-2xl hover:shadow-violet-500/50 transform hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none overflow-hidden border-0"
                       >
-                        <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 via-fuchsia-600 to-violet-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        <span className="relative flex items-center gap-3 text-base md:text-lg">
-                          <FileText size={22} />
-                          {loading ? "Processando..." : "Selecionar Arquivos"}
-                        </span>
-                      </button>
+                        <FileText size={22} />
+                        {loading ? "Processando..." : "Selecionar Arquivos"}
+                      </Button>
+
+                      {/* Progress Bar */}
+                      {uploadProgress > 0 && uploadProgress < 100 && (
+                        <div className="w-full max-w-md space-y-2">
+                          <Progress value={uploadProgress} className="h-2" />
+                          <p className="text-xs text-slate-400 text-center">
+                            Processando arquivos... {uploadProgress}%
+                          </p>
+                        </div>
+                      )}
 
                       <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-full">
                         <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
@@ -294,26 +378,30 @@ export default function UploadArea({
                     {/* Slide Count Control */}
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 bg-slate-800/60 rounded-xl p-4 border border-slate-700/50">
                       <label className="text-slate-300 font-semibold text-sm md:text-base">
-                        📊 Número exato de slides:
+                        Número exato de slides:
                       </label>
                       <div className="flex items-center gap-3 ml-auto">
-                        <button
+                        <Button
+                          variant="outline"
+                          size="icon"
                           onClick={() => setSlideCount(Math.max(3, slideCount - 1))}
                           disabled={slideCount <= 3 || loading}
-                          className="w-9 h-9 bg-slate-700 hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg flex items-center justify-center text-slate-200 font-bold transition-all hover:scale-105"
+                          className="w-9 h-9 bg-slate-700 hover:bg-slate-600 disabled:opacity-40 border-slate-600 text-slate-200 font-bold transition-all hover:scale-105"
                         >
                           −
-                        </button>
+                        </Button>
                         <div className="bg-gradient-to-r from-emerald-600 to-cyan-600 px-5 py-2 rounded-lg shadow-lg border border-emerald-400/30">
                           <span className="text-white font-bold text-lg">{slideCount}</span>
                         </div>
-                        <button
+                        <Button
+                          variant="outline"
+                          size="icon"
                           onClick={() => setSlideCount(Math.min(12, slideCount + 1))}
                           disabled={slideCount >= 12 || loading}
-                          className="w-9 h-9 bg-slate-700 hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg flex items-center justify-center text-slate-200 font-bold transition-all hover:scale-105"
+                          className="w-9 h-9 bg-slate-700 hover:bg-slate-600 disabled:opacity-40 border-slate-600 text-slate-200 font-bold transition-all hover:scale-105"
                         >
                           +
-                        </button>
+                        </Button>
                       </div>
                       <div className="text-xs text-slate-400 ml-auto sm:ml-0 text-center">
                         <div>3-12 slides</div>
@@ -337,10 +425,10 @@ export default function UploadArea({
                         </div>
                         <div className="flex-1">
                           <span className="text-slate-200 font-semibold text-sm md:text-base block">
-                            ✨ Preservar e expandir conteúdo existente
+                            Preservar e expandir conteúdo existente
                           </span>
                           <p className="text-xs text-slate-500 mt-1">
-                            A IA irá manter TODO o seu conteúdo original e apenas adicionar mais detalhes, exemplos e explicações
+                            A IA irá distribuir TODO o seu conteúdo pelos slides solicitados, expandindo cada seção com mais detalhes
                           </p>
                         </div>
                       </label>
@@ -349,12 +437,12 @@ export default function UploadArea({
                         <div className="space-y-3 animate-in fade-in duration-300">
                           <label className="block">
                             <span className="text-sm font-semibold text-slate-300 mb-2 block">
-                              📝 Conteúdo que será preservado 100% (a IA só adiciona, nunca remove):
+                              Conteúdo que será preservado 100% (a IA só adiciona, nunca remove):
                             </span>
                             <textarea
                               value={baseText}
                               onChange={(e) => setBaseText(e.target.value)}
-                              placeholder="Cole aqui seu conteúdo existente (títulos, textos, códigos). A IA vai manter TUDO exatamente como está e apenas adicionar mais detalhes e exemplos..."
+                              placeholder="Cole aqui seu conteúdo existente. A IA vai distribuir TODO este conteúdo pelos slides solicitados, expandindo cada seção com mais detalhes técnicos e exemplos práticos..."
                               className="w-full h-32 px-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none text-sm"
                               disabled={loading}
                             />
@@ -376,17 +464,15 @@ export default function UploadArea({
                       </div>
                     </div>
                     
-                    <button
+                    <Button
                       onClick={handleAIGenerate}
                       disabled={loading || !aiPrompt.trim()}
-                      className="group relative w-full px-10 py-4 bg-gradient-to-r from-emerald-600 via-cyan-600 to-blue-600 text-white font-bold rounded-2xl shadow-lg hover:shadow-2xl hover:shadow-emerald-500/50 transform hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none overflow-hidden"
+                      size="lg"
+                      className="group relative w-full px-10 py-4 bg-gradient-to-r from-emerald-600 via-cyan-600 to-blue-600 hover:from-blue-600 hover:via-cyan-600 hover:to-emerald-600 text-white font-bold rounded-2xl shadow-lg hover:shadow-2xl hover:shadow-emerald-500/50 transform hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none overflow-hidden border-0"
                     >
-                      <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-cyan-600 to-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                      <span className="relative flex items-center justify-center gap-3 text-base md:text-lg">
-                        <Wand2 size={22} className={loading ? "animate-spin" : ""} />
-                        {loading ? "Gerando slides mágicos..." : "✨ Gerar Apresentação"}
-                      </span>
-                    </button>
+                      <Wand2 size={22} className={loading ? "animate-spin" : ""} />
+                      {loading ? "Gerando slides mágicos..." : "✨ Gerar Apresentação"}
+                    </Button>
                   </div>
 
                   <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-full">
@@ -428,6 +514,14 @@ export default function UploadArea({
           </p>
         </div>
       </div>
+
+      {/* Loading Overlay */}
+      {loading && (
+        <Carregando 
+          message={mode === 'ai' ? "Gerando slides com IA..." : "Processando arquivos..."} 
+          showProgress={true}
+        />
+      )}
     </div>
   );
 }

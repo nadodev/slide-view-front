@@ -18,6 +18,7 @@ type SlidesWorkspaceProps = {
   slideContainerRef: RefObject<HTMLElement | null>;
   slideContentRef: RefObject<HTMLElement | null>;
   onRemove: (index: number) => void;
+  onReorder?: (fromIndex: number, toIndex: number) => void;
   setShowSlideList: (value: boolean | ((prev: boolean) => boolean)) => void;
   setEditing: (value: boolean) => void;
   setDraftContent: (value: string) => void;
@@ -26,6 +27,7 @@ type SlidesWorkspaceProps = {
   onRestart: () => void;
   highContrast: boolean;
   setHighContrast: (value: boolean | ((prev: boolean) => boolean)) => void;
+  loading?: boolean;
 };
 
 export default function SlidesWorkspace({
@@ -44,6 +46,7 @@ export default function SlidesWorkspace({
   slideContainerRef,
   slideContentRef,
   onRemove,
+  onReorder,
   setShowSlideList,
   setEditing,
   setDraftContent,
@@ -52,6 +55,7 @@ export default function SlidesWorkspace({
   onRestart,
   highContrast,
   setHighContrast,
+  loading = false,
 }: SlidesWorkspaceProps) {
   return (
     <div className="flex w-full flex-col">
@@ -69,6 +73,8 @@ export default function SlidesWorkspace({
           slideContainerRef={slideContainerRef}
           slideContentRef={slideContentRef}
           onRemove={onRemove}
+          onReorder={onReorder}
+          loading={loading}
         />
       </div>
       <div className="w-full border-t border-white/10">

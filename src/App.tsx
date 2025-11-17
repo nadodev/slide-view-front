@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import LandingPage from './components/LandingPage';
 import Presentation from './components/Presentation';
+import { Toaster } from './components/ui/sonner';
 import { JSX } from 'react';
 
 export default function App(): JSX.Element {
@@ -11,6 +12,7 @@ export default function App(): JSX.Element {
         <Route path="/landing" element={<LandingPage />} />
         <Route path="/app" element={<Presentation />} />
       </Routes>
+      <Toaster />
     </BrowserRouter>
   );
 }

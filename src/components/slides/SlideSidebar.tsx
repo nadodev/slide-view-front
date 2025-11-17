@@ -8,6 +8,8 @@ type SlideSidebarProps = {
   thumbsRailRef: RefObject<HTMLElement | null>;
   onSelect: (index: number) => void;
   onRemove?: (index: number) => void;
+  onReorder?: (fromIndex: number, toIndex: number) => void;
+  loading?: boolean;
 };
 
 export default function SlideSidebar({
@@ -16,6 +18,8 @@ export default function SlideSidebar({
   thumbsRailRef,
   onSelect,
   onRemove,
+  onReorder,
+  loading = false,
 }: SlideSidebarProps) {
   return (
     <aside
@@ -28,6 +32,8 @@ export default function SlideSidebar({
         currentSlide={currentSlide}
         onSelect={onSelect}
         onRemove={onRemove}
+        onReorder={onReorder}
+        loading={loading}
       />
       <SidebarFooter currentSlide={currentSlide} totalSlides={slides.length} />
     </aside>

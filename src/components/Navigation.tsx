@@ -9,6 +9,17 @@ import {
   RotateCw,
 } from "lucide-react";
 import { Button } from "./ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "./ui/alert-dialog";
 
 type NavigationProps = {
   currentSlide: number;
@@ -36,20 +47,12 @@ const Navigation = ({
   totalSlides,
   setCurrentSlide,
   setTransitionKey,
-  setSlideTransition,
-  slideTransition,
   focusMode,
   setFocusMode,
-  presenterMode,
-  setPresenterMode,
-  setShowSlideList,
-  setEditing,
   onStartEditing,
   duplicateSlide,
   onSaveAllSlides,
   onRestart,
-  highContrast,
-  setHighContrast,
 }: NavigationProps) => {
   
   const onPrev = () => {
@@ -94,7 +97,7 @@ const Navigation = ({
               disabled={currentSlide === 0}
               aria-label="Slide anterior"
               title="Anterior (←)"
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 font-medium text-sm border border-gray-700 hover:border-gray-600"
+              className="cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 font-medium text-sm border border-gray-700 hover:border-gray-600"
             >
               <ChevronLeft size={18} />
               <span>Anterior</span>
@@ -113,7 +116,7 @@ const Navigation = ({
               disabled={currentSlide === totalSlides - 1}
               aria-label="Próximo slide"
               title="Próximo (→)"
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 font-medium text-sm shadow-lg shadow-blue-900/30"
+              className="cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 font-medium text-sm shadow-lg shadow-blue-900/30"
             >
               <span>Próximo</span>
               <ChevronRight size={18} />
@@ -126,7 +129,7 @@ const Navigation = ({
               onClick={onEdit}
               aria-label="Editar slide atual"
               title="Editar"
-              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 transition-all duration-200 text-sm border border-gray-700 hover:border-gray-600"
+              className="cursor-pointer flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 transition-all duration-200 text-sm border border-gray-700 hover:border-gray-600"
             >
               <Pencil size={16} />
               <span className="hidden sm:inline">Editar</span>
@@ -138,7 +141,7 @@ const Navigation = ({
                 focusMode ? "Sair do modo de foco" : "Ativar modo de foco"
               }
               title={focusMode ? "Sair do foco" : "Modo foco"}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 text-sm border ${
+              className={`cursor-pointer flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 text-sm border ${
                 focusMode
                   ? "bg-purple-600 hover:bg-purple-500 text-white border-purple-500"
                   : "bg-gray-800 hover:bg-gray-700 text-gray-200 border-gray-700 hover:border-gray-600"
@@ -154,7 +157,7 @@ const Navigation = ({
               onClick={onDuplicate}
               aria-label="Duplicar slide atual"
               title="Duplicar (Ctrl+D)"
-              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 transition-all duration-200 text-sm border border-gray-700 hover:border-gray-600"
+              className="cursor-pointer flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 transition-all duration-200 text-sm border border-gray-700 hover:border-gray-600"
             >
               <Copy size={16} />
               <span className="hidden md:inline">Duplicar</span>
@@ -166,24 +169,55 @@ const Navigation = ({
                 onClick={onSaveAllSlides}
                 aria-label="Salvar todos os slides"
                 title="Salvar apresentação completa (.md)"
-                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white transition-all duration-200 text-sm border border-green-500 shadow-lg shadow-green-900/30"
+                className="cursor-pointer flex items-center gap-2 px-3 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white transition-all duration-200 text-sm border border-green-500 shadow-lg shadow-green-900/30"
               >
                 <Download size={16} />
                 <span className="hidden md:inline">Salvar Todos</span>
               </button>
             )}
 
-            {/* Botão Recomeçar */}
+            {/* Botão Recomençar */}
             {onRestart && (
-              <button
-                onClick={onRestart}
-                aria-label="Recomeçar - voltar à tela inicial"
-                title="Recomeçar apresentação"
-                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-orange-600 hover:bg-orange-500 text-white transition-all duration-200 text-sm border border-orange-500 shadow-lg shadow-orange-900/30"
-              >
-                <RotateCw size={16} />
-                <span className="hidden lg:inline">Recomeçar</span>
-              </button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <button
+                    aria-label="Recomençar - voltar à tela inicial"
+                    title="Recomençar apresentação"
+                    className="cursor-pointer flex items-center gap-2 px-3 py-2 rounded-lg bg-orange-600 hover:bg-orange-500 text-white transition-all duration-200 text-sm border border-orange-500 shadow-lg shadow-orange-900/30"
+                  >
+                    <RotateCw size={16} />
+                    <span className="hidden lg:inline">Recomençar</span>
+                  </button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="bg-slate-900 border-slate-700">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="text-white flex items-center gap-2">
+                      <RotateCw size={20} className="text-orange-400" />
+                      Recomençar Apresentação
+                    </AlertDialogTitle>
+                    <AlertDialogDescription className="text-slate-300">
+                      Tem certeza que deseja recomençar? Todos os slides atuais serão perdidos e você retornará à tela inicial.
+                      <div className="mt-3 p-3 bg-orange-900/20 border border-orange-800/50 rounded-lg">
+                        <div className="flex items-center gap-2 text-orange-300">
+                          <span className="text-orange-400">⚠️</span>
+                          <span className="text-sm font-medium">Esta ação não pode ser desfeita</span>
+                        </div>
+                      </div>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel className="bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700">
+                      Cancelar
+                    </AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={onRestart}
+                      className="bg-orange-600 hover:bg-orange-700 text-white"
+                    >
+                      Sim, Recomençar
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
 
             {/* {typeof onExportPdf === "function" && (
@@ -219,7 +253,7 @@ const Navigation = ({
               onClick={onReset}
               aria-label="Recarregar"
               title="Recarregar"
-              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 transition-all duration-200 text-sm border border-gray-700 hover:border-gray-600"
+              className="cursor-pointer flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 transition-all duration-200 text-sm border border-gray-700 hover:border-gray-600"
             >
               <RotateCw size={16} />
               <span className="hidden lg:inline">Recarregar</span>

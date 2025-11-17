@@ -386,6 +386,29 @@ export function useSlidesManager() {
     [slides],
   );
 
+  const reorderSlides = useCallback(
+    (fromIndex: number, toIndex: number) => {
+      if (fromIndex === toIndex) return;
+      
+      setSlides((prevSlides) => {
+        const newSlides = [...prevSlides];
+        const [movedSlide] = newSlides.splice(fromIndex, 1);
+        newSlides.splice(toIndex, 0, movedSlide);
+        return newSlides;
+      });
+
+      // Ajustar o slide atual se necessário
+      if (currentSlide === fromIndex) {
+        setCurrentSlide(toIndex);
+      } else if (currentSlide > fromIndex && currentSlide <= toIndex) {
+        setCurrentSlide(currentSlide - 1);
+      } else if (currentSlide < fromIndex && currentSlide >= toIndex) {
+        setCurrentSlide(currentSlide + 1);
+      }
+    },
+    [currentSlide],
+  );
+
   return {
     slides,
     setSlides,
@@ -402,6 +425,7 @@ export function useSlidesManager() {
     handleFileUpload,
     handleAIGeneration,
     duplicateSlide,
+    reorderSlides,
     saveSlideToFile,
     saveAllSlidesToFile,
     exportCombinedMarkdown,

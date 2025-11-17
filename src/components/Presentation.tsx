@@ -35,6 +35,7 @@ const Presentation = () => {
     saveSlideToFile,
     saveAllSlidesToFile,
     resetSlidesState,
+    reorderSlides,
   } = useSlidesManager();
   const slideContentRef = useRef<HTMLElement | null>(null);
   const slideContainerRef = useRef<HTMLElement | null>(null);
@@ -66,13 +67,6 @@ const Presentation = () => {
   const [transitionKey, setTransitionKey] = useState<number>(0);
 
   const handleRestart = () => {
-    if (slides.length > 0) {
-      const confirm = window.confirm(
-        "Tem certeza que deseja recomeçar? Todos os slides atuais serão perdidos."
-      );
-      if (!confirm) return;
-    }
-    
     resetSlidesState();
     setShowSlideList(false);
     setPresenterMode(false);
@@ -234,6 +228,7 @@ const Presentation = () => {
               slideContainerRef={slideContainerRef}
               slideContentRef={slideContentRef}
               onRemove={(idx: number) => handleRemoveSlide(idx)}
+              onReorder={reorderSlides}
               setShowSlideList={setShowSlideList}
               setEditing={setEditing}
               setDraftContent={setDraftContent}
@@ -242,6 +237,7 @@ const Presentation = () => {
               onRestart={handleRestart}
               highContrast={highContrast}
               setHighContrast={setHighContrast}
+              loading={loading}
             />
           )}
           {!showSlideList && slides.length > 0 && (

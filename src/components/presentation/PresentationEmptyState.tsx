@@ -1,6 +1,7 @@
 import type { ChangeEvent } from "react";
 import UploadArea from "../UploadArea";
 import { Sparkles, AlertCircle } from "lucide-react";
+import { Carregando } from "../ui/Carregando";
 
 type PresentationEmptyStateProps = {
   highContrast: boolean;
@@ -45,13 +46,10 @@ export default function PresentationEmptyState({
 
       {loading && (
         <>
-          <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" />
-          <div className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/70 px-4 py-2 text-white shadow-lg">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 animate-spin" />
-              Carregando...
-            </div>
-          </div>
+         <Carregando 
+          message={"Processando arquivos..."} 
+          showProgress={true}
+        />
         </>
       )}
 

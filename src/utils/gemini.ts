@@ -3,7 +3,6 @@ const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/
 
 export async function generateSlidesWithGemini(prompt: string, slideCount: number = 6, baseText?: string): Promise<string[]> {
   try {
-    // Construir contexto baseado no texto preservado
     const textContext = baseText ? `
 
 TEXTO BASE OBRIGATÓRIO PARA PRESERVAR E EXPANDIR:
@@ -14,7 +13,9 @@ INSTRUÇÕES CRÍTICAS DE PRESERVAÇÃO:
 - PRESERVE EXATAMENTE toda estrutura markdown existente (##, ###, listas, códigos)
 - MANTENHA TODAS as informações técnicas, comandos, códigos e tabelas já existentes
 - EXPANDA cada seção com mais detalhes, mas SEM REMOVER nada do original
-- Se o texto base tem 3 slides, crie ${slideCount} slides MANTENDO os 3 originais + novos
+- DISTRIBUA o conteúdo base pelos ${slideCount} slides solicitados
+- SUBDIVIDA slides longos em múltiplos slides menores mantendo todo conteúdo
+- ADICIONE seções técnicas relevantes baseadas no conteúdo original
 - NUNCA substitua informações do texto base, apenas ADICIONE mais conteúdo
 - Use o texto base como ESQUELETO OBRIGATÓRIO e adicione carne aos ossos` : '';
     
@@ -24,6 +25,17 @@ INSTRUÇÃO CRÍTICA: COMECE IMEDIATAMENTE COM O PRIMEIRO SLIDE. NÃO ESCREVA NE
 ${baseText ? 'MODO PRESERVAÇÃO: Use o texto base fornecido como ESQUELETO OBRIGATÓRIO. Mantenha TUDO e apenas expanda/detalhe.' : ''}
 
 TAREFA: Criar EXATAMENTE ${slideCount} slides técnicos EXTENSOS e DETALHADOS em markdown sobre: "${prompt}"${textContext}
+
+${baseText ? `
+ESTRATÉGIA DE DISTRIBUIÇÃO DO CONTEÚDO BASE:
+- ANALISE o texto base e IDENTIFIQUE suas ${slideCount} principais seções/temas
+- DISTRIBUA o conteúdo base de forma equilibrada pelos ${slideCount} slides
+- EXPANDA cada seção original com muito mais detalhes técnicos
+- SUBDIVIDA slides longos em múltiplos slides preservando todo conteúdo
+- ADICIONE exemplos práticos, códigos e tabelas em cada slide expandido
+- Se o texto base tem menos temas que ${slideCount}, APROFUNDE cada tema criando sub-slides
+- JAMAIS crie slides "Adicional" ou "Complementar" - use apenas o conteúdo base expandido
+` : ''}
 
 REGRAS ABSOLUTAS DE CONTAGEM:
 - NÚMERO OBRIGATÓRIO: ${slideCount} slides (nem mais, nem menos)
@@ -99,201 +111,6 @@ const exemplo = {
 - **Destaques importantes** em negrito
 - Separador obrigatório: ----'----
 
-EXEMPLO DE SLIDE RICO (SIGA ESTE PADRÃO):
-
-# Implementação de Design System com React e TypeScript
-
-## O que é um Design System moderno
-
-Um Design System é uma coleção de componentes reutilizáveis, guidelines e padrões que garantem consistência visual e funcional em produtos digitais. No contexto moderno, vai muito além de uma biblioteca de componentes - é uma estratégia completa de desenvolvimento.
-
-**Componentes principais:**
-- **Design Tokens**: Variáveis que definem cores, tipografia, espaçamentos
-- **Biblioteca de Componentes**: Blocos reutilizáveis (Button, Input, Modal)
-- **Documentação**: Guidelines de uso, exemplos e boas práticas
-- **Ferramental**: Scripts, CLI, automações para desenvolvimento
-
-## Arquitetura técnica recomendada
-
-### Monorepo com Lerna/Rush
-\`\`\`bash
-design-system/
-├── packages/
-│   ├── tokens/          # Design tokens
-│   ├── react/           # Componentes React
-│   ├── vue/             # Componentes Vue (opcional)
-│   ├── docs/            # Storybook/Docusaurus
-│   └── tools/           # Scripts e utilities
-├── apps/
-│   ├── playground/      # Ambiente de testes
-│   └── website/         # Site de documentação
-└── tools/
-    ├── build-tools/     # Ferramentas de build
-    └── scripts/         # Automações
-\`\`\`
-
-### Stack tecnológica detalhada
-
-| Tecnologia | Versão | Propósito | Configuração |
-|------------|--------|-----------|---------------|
-| React | 18+ | Biblioteca de componentes | JSX + Hooks |
-| TypeScript | 5+ | Type safety | Strict mode |
-| Styled Components | 5+ | CSS-in-JS | Theme provider |
-| Storybook | 7+ | Documentação | MDX + Controls |
-| Rollup | 4+ | Bundle | ESM + CJS |
-| Jest | 29+ | Testes | RTL + Coverage |
-
-## Implementação prática step-by-step
-
-### 1. Setup inicial do projeto
-\`\`\`bash
-# Criar estrutura base
-mkdir design-system && cd design-system
-npm init -y
-npm install lerna --save-dev
-lerna init
-
-# Configurar workspace
-echo '{ "npmClient": "npm", "useWorkspaces": true }' > lerna.json
-\`\`\`
-
-### 2. Configuração do pacote de tokens
-\`\`\`typescript
-// packages/tokens/src/index.ts
-export const colors = {
-  primary: {
-    50: '#eff6ff',
-    500: '#3b82f6',
-    900: '#1e3a8a'
-  },
-  semantic: {
-    success: '#10b981',
-    warning: '#f59e0b',
-    error: '#ef4444'
-  }
-} as const;
-
-export const spacing = {
-  xs: '0.25rem', // 4px
-  sm: '0.5rem',  // 8px
-  md: '1rem',    // 16px
-  lg: '1.5rem',  // 24px
-  xl: '2rem'     // 32px
-} as const;
-\`\`\`
-
-### 3. Componente base tipado
-\`\`\`tsx
-// packages/react/src/Button/Button.tsx
-import styled from 'styled-components';
-import { colors, spacing } from '@company/design-tokens';
-
-interface ButtonProps {
-  variant?: 'primary' | 'secondary' | 'ghost';
-  size?: 'sm' | 'md' | 'lg';
-  disabled?: boolean;
-  children: React.ReactNode;
-  onClick?: () => void;
-}
-
-const StyledButton = styled.button<ButtonProps>\`
-  /* Base styles */
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  
-  /* Size variants */
-  \${({ size = 'md' }) => {
-    switch (size) {
-      case 'sm': return \`
-        padding: \${spacing.xs} \${spacing.sm};
-        font-size: 14px;
-        height: 32px;
-      \`;
-      case 'lg': return \`
-        padding: \${spacing.sm} \${spacing.lg};
-        font-size: 16px;
-        height: 48px;
-      \`;
-      default: return \`
-        padding: \${spacing.xs} \${spacing.md};
-        font-size: 15px;
-        height: 40px;
-      \`;
-    }
-  }}
-  
-  /* Color variants */
-  \${({ variant = 'primary' }) => {
-    switch (variant) {
-      case 'secondary': return \`
-        background: \${colors.primary[50]};
-        color: \${colors.primary[500]};
-        &:hover { background: \${colors.primary[100]}; }
-      \`;
-      case 'ghost': return \`
-        background: transparent;
-        color: \${colors.primary[500]};
-        &:hover { background: \${colors.primary[50]}; }
-      \`;
-      default: return \`
-        background: \${colors.primary[500]};
-        color: white;
-        &:hover { background: \${colors.primary[600]}; }
-      \`;
-    }
-  }}
-  
-  /* Disabled state */
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    pointer-events: none;
-  }
-\`;
-
-export const Button: React.FC<ButtonProps> = (props) => {
-  return <StyledButton {...props} />;
-};
-\`\`\`
-
-## Problemas comuns e soluções
-
-### 1. Inconsistência entre times
-**Problema**: Cada desenvolvedor interpreta o design diferente
-**Solução**: Documentação com exemplos visuais no Storybook
-
-### 2. Breaking changes em componentes
-**Problema**: Atualizar componente quebra aplicações
-**Solução**: Versionamento semântico + testes de regressão visual
-
-### 3. Performance com muitos componentes
-**Problema**: Bundle muito grande
-**Solução**: Tree shaking + imports específicos
-
-\`\`\`typescript
-// ❌ Importa tudo
-import { Button, Input, Modal } from '@company/design-system';
-
-// ✅ Importa apenas o necessário
-import { Button } from '@company/design-system/button';
-\`\`\`
-
-## Métricas de sucesso
-
-- **Redução de código CSS**: 60-80% menos CSS customizado
-- **Velocidade de desenvolvimento**: 40-60% mais rápido para criar UIs
-- **Consistência**: 95% de aderência aos padrões visuais
-- **Manutenibilidade**: 70% menos bugs relacionados a UI
-- **Onboarding**: Novos devs produtivos em 2-3 dias vs 2 semanas
-
-----'----
-
 VOCABULÁRIO PROFISSIONAL MAS ACESSÍVEL:
 - Use termos técnicos corretos, mas sempre explique
 - Prefira exemplos práticos a teoria abstrata
@@ -325,11 +142,11 @@ APENAS OS ${slideCount} SLIDES PUROS:`;
           },
         ],
         generationConfig: {
-          temperature: 0.7, // Mais criatividade para conteúdo mais rico
-          topK: 40,          // Mais diversidade de tokens
-          topP: 0.95,        // Maior probabilidade para respostas mais criativas
-          maxOutputTokens: 16384, // Dobrar limite para conteúdo muito mais extenso
-          candidateCount: 1, // Foco em uma resposta de qualidade
+          temperature: 0.7, 
+          topK: 40,         
+          topP: 0.95,      
+          maxOutputTokens: 16384, 
+          candidateCount: 1,
         },
       }),
     });
@@ -397,32 +214,46 @@ APENAS OS ${slideCount} SLIDES PUROS:`;
       // Se tem mais slides que o solicitado, corta os extras
       console.log(`IA gerou ${slides.length} slides, cortando para ${slideCount}`);
       return slides.slice(0, slideCount);
-    } else if (slides.length < slideCount) {
-      // Se tem menos slides, duplica os últimos ou cria genéricos
-      console.log(`IA gerou apenas ${slides.length} slides, solicitado ${slideCount}`);
+    } else if (slides.length < slideCount && !baseText) {
+      // Só cria slides extras se NÃO houver texto base (modo criação livre)
+      console.log(`IA gerou apenas ${slides.length} slides, solicitado ${slideCount} (modo livre)`);
       const remainingSlides = slideCount - slides.length;
       
       for (let i = 0; i < remainingSlides; i++) {
         const slideNumber = slides.length + i + 1;
-        const genericSlide = `# Slide Adicional ${slideNumber}
+        const topicSlide = `# Slide ${slideNumber}: ${prompt} - Aspectos Adicionais
 
-## Conteúdo complementar
+## Detalhamento técnico
 
-Este slide foi criado para completar o número solicitado de ${slideCount} slides.
+Aspectos técnicos importantes relacionados ao tema ${prompt}:
 
-**Tópicos adicionais:**
-- Informação complementar sobre ${prompt}
-- Detalhes técnicos extras
-- Considerações finais
+**Considerações de implementação:**
+- Planejamento e arquitetura
+- Escolha de tecnologias adequadas  
+- Boas práticas de desenvolvimento
+- Testes e validação
+
+## Fatores de qualidade
+
+**Critérios essenciais:**
+- Performance e otimização
+- Escalabilidade do sistema
+- Manutenibilidade do código
+- Documentação adequada
 
 ## Próximos passos
 
-- Continue desenvolvendo este conteúdo
-- Adicione informações específicas
-- Personalize conforme necessário`;
+**Ações recomendadas:**
+- Definir roadmap de desenvolvimento
+- Estabelecer métricas de sucesso
+- Criar protótipos e validações
+- Implementar gradualmente`;
         
-        slides.push(genericSlide);
+        slides.push(topicSlide);
       }
+    } else if (slides.length < slideCount && baseText) {
+      // Se houver texto base e poucos slides, sugere regeneração ao invés de slides genéricos
+      console.log(`⚠️ Texto base fornecido mas IA gerou apenas ${slides.length}/${slideCount} slides. Considere regenerar ou ajustar o prompt.`);
     }
 
     console.log(`Slides finais: ${slides.length} (solicitado: ${slideCount})`);

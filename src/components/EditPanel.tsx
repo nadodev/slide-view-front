@@ -1,6 +1,11 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import { Maximize2, Minimize2, Eye, EyeOff, X, Save } from "lucide-react";
 import parseMarkdownSafe from "../utils/markdown";
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from "./ui/resizable";
 
 type EditPanelProps = {
   open: boolean;
@@ -214,25 +219,22 @@ export default function EditPanel({
         </header>
 
         {/* Área de Edição */}
-        <div className="flex-1 flex overflow-hidden">
-          {/* Editor */}
-          <div
-            className={`flex flex-col relative ${
-              focusOn ? "w-full" : showPreview ? "w-1/2" : "w-full"
-            }`}
-          >
-            <div className="absolute top-4 left-4 z-10">
-              <span className="px-3 py-1 bg-slate-800/90 backdrop-blur-sm border border-slate-700/50 rounded-full text-xs font-medium text-slate-300">
-                📝 Markdown
-              </span>
-            </div>
-            <textarea
-              ref={textareaRef}
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-              onScroll={onEditorScroll}
-              spellCheck={false}
-              placeholder="# Título do Slide
+        <div className="flex-1 overflow-hidden">
+          {focusOn ? (
+            /* Modo Foco - Apenas Editor */
+            <div className="h-full flex flex-col">
+              <div className="absolute top-4 left-4 z-10">
+                <span className="px-3 py-1 bg-slate-800/90 backdrop-blur-sm border border-slate-700/50 rounded-full text-xs font-medium text-slate-300">
+                  📝 Markdown
+                </span>
+              </div>
+              <textarea
+                ref={textareaRef}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                onScroll={onEditorScroll}
+                spellCheck={false}
+                placeholder="# Título do Slide
 
 Comece a digitar seu conteúdo em Markdown aqui...
 
@@ -240,48 +242,109 @@ Comece a digitar seu conteúdo em Markdown aqui...
 - Outro item
 
 **Texto em negrito** e *itálico*"
-              aria-label="Editor de Markdown do slide"
-              className="flex-1 w-full h-full pt-16 px-6 pb-6 bg-slate-950 text-slate-100 font-mono text-[15px] leading-relaxed resize-none outline-none border-none overflow-auto custom-scrollbar placeholder:text-slate-600"
-            />
-          </div>
+                aria-label="Editor de Markdown do slide"
+                className="flex-1 w-full h-full pt-16 px-6 pb-6 bg-slate-950 text-slate-100 font-mono text-[15px] leading-relaxed resize-none outline-none border-none overflow-auto custom-scrollbar placeholder:text-slate-600"
+              />
+            </div>
+          ) : showPreview ? (
+            /* Modo Split - Editor + Preview com Resizable */
+            <ResizablePanelGroup direction="horizontal" className="h-full">
+              <ResizablePanel defaultSize={50} minSize={30}>
+                <div className="h-full flex flex-col relative">
+                  <div className="absolute top-4 left-4 z-10">
+                    <span className="px-3 py-1 bg-slate-800/90 backdrop-blur-sm border border-slate-700/50 rounded-full text-xs font-medium text-slate-300">
+                      📝 Markdown
+                    </span>
+                  </div>
+                  <textarea
+                    ref={textareaRef}
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    onScroll={onEditorScroll}
+                    spellCheck={false}
+                    placeholder="# Título do Slide
 
-          {/* Preview */}
-          {showPreview && !focusOn && (
-            <div
-              ref={previewScrollRef}
-              className="w-1/2 border-l border-slate-700/50 flex flex-col overflow-auto bg-gradient-to-br from-slate-900 to-slate-800 custom-scrollbar"
-            >
-              <div className="sticky top-0 z-10 px-6 py-4 bg-slate-900/95 backdrop-blur-sm border-b border-slate-700/50 flex items-center justify-between shadow-lg">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <h3 className="text-sm font-semibold text-white">
-                    Preview ao Vivo
-                  </h3>
+Comece a digitar seu conteúdo em Markdown aqui...
+
+- Lista de itens
+- Outro item
+
+**Texto em negrito** e *itálico*"
+                    aria-label="Editor de Markdown do slide"
+                    className="flex-1 w-full h-full pt-16 px-6 pb-6 bg-slate-950 text-slate-100 font-mono text-[15px] leading-relaxed resize-none outline-none border-none overflow-auto custom-scrollbar placeholder:text-slate-600"
+                  />
                 </div>
-                <span className="px-2 py-1 bg-slate-800/50 border border-slate-700/50 rounded text-[10px] font-medium text-slate-400 uppercase tracking-wider">
-                  Sync
+              </ResizablePanel>
+              
+              <ResizableHandle className="w-2 bg-slate-700/30 hover:bg-slate-600/50 transition-all duration-200 relative group border-l border-r border-slate-600/20 hover:border-slate-500/40">
+                <div className="absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-slate-500/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-8 bg-slate-400/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+              </ResizableHandle>
+              
+              <ResizablePanel defaultSize={50} minSize={30}>
+                <div
+                  ref={previewScrollRef}
+                  className="h-full flex flex-col overflow-auto bg-gradient-to-br from-slate-900 to-slate-800 custom-scrollbar"
+                >
+                  <div className="sticky top-0 z-10 px-6 py-4 bg-slate-900/95 backdrop-blur-sm border-b border-slate-700/50 flex items-center justify-between shadow-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <h3 className="text-sm font-semibold text-white">
+                        Preview ao Vivo
+                      </h3>
+                    </div>
+                    <span className="px-2 py-1 bg-slate-800/50 border border-slate-700/50 rounded text-[10px] font-medium text-slate-400 uppercase tracking-wider">
+                      Sync
+                    </span>
+                  </div>
+                  <div className="p-8">
+                    {previewHtml.trim() ? (
+                      <div
+                        className="markdown-preview"
+                        dangerouslySetInnerHTML={{ __html: previewHtml }}
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-64 text-center">
+                        <div className="w-16 h-16 rounded-full bg-slate-800/50 border-2 border-dashed border-slate-700 flex items-center justify-center mb-4">
+                          <Eye size={24} className="text-slate-600" />
+                        </div>
+                        <p className="text-sm text-slate-500 italic">
+                          Nada para pré-visualizar ainda
+                        </p>
+                        <p className="text-xs text-slate-600 mt-1">
+                          Digite markdown no editor para ver o resultado aqui
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </ResizablePanel>
+            </ResizablePanelGroup>
+          ) : (
+            /* Modo Apenas Editor */
+            <div className="h-full flex flex-col">
+              <div className="absolute top-4 left-4 z-10">
+                <span className="px-3 py-1 bg-slate-800/90 backdrop-blur-sm border border-slate-700/50 rounded-full text-xs font-medium text-slate-300">
+                  📝 Markdown
                 </span>
               </div>
-              <div className="p-8">
-                {previewHtml.trim() ? (
-                  <div
-                    className="markdown-preview"
-                    dangerouslySetInnerHTML={{ __html: previewHtml }}
-                  />
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-64 text-center">
-                    <div className="w-16 h-16 rounded-full bg-slate-800/50 border-2 border-dashed border-slate-700 flex items-center justify-center mb-4">
-                      <Eye size={24} className="text-slate-600" />
-                    </div>
-                    <p className="text-sm text-slate-500 italic">
-                      Nada para pré-visualizar ainda
-                    </p>
-                    <p className="text-xs text-slate-600 mt-1">
-                      Digite markdown no editor para ver o resultado aqui
-                    </p>
-                  </div>
-                )}
-              </div>
+              <textarea
+                ref={textareaRef}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                onScroll={onEditorScroll}
+                spellCheck={false}
+                placeholder="# Título do Slide
+
+Comece a digitar seu conteúdo em Markdown aqui...
+
+- Lista de itens
+- Outro item
+
+**Texto em negrito** e *itálico*"
+                aria-label="Editor de Markdown do slide"
+                className="flex-1 w-full h-full pt-16 px-6 pb-6 bg-slate-950 text-slate-100 font-mono text-[15px] leading-relaxed resize-none outline-none border-none overflow-auto custom-scrollbar placeholder:text-slate-600"
+              />
             </div>
           )}
         </div>
@@ -308,6 +371,10 @@ Comece a digitar seu conteúdo em Markdown aqui...
                   <div className="w-px h-4 bg-slate-700/50" />
                   <span className="text-emerald-400 font-medium">
                     ⚡ Preview sincronizado
+                  </span>
+                  <div className="w-px h-4 bg-slate-700/50" />
+                  <span className="text-blue-400 font-medium flex items-center gap-1">
+                    ↔️ Redimensionável
                   </span>
                 </>
               )}
