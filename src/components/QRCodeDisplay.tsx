@@ -62,6 +62,14 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
       try {
         setIsLoading(true);
         
+        // Limpar canvas antes de gerar
+        if (canvasRef.current) {
+          const ctx = canvasRef.current.getContext('2d');
+          if (ctx) {
+            ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+          }
+        }
+        
         await QRCode.toCanvas(canvasRef.current, urlToUse, {
           width: 200,
           margin: 2,
@@ -73,6 +81,11 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
         });
         
         console.log('✅ QR Code gerado com sucesso para:', urlToUse);
+        console.log('📐 Canvas dimensions:', {
+          width: canvasRef.current?.width,
+          height: canvasRef.current?.height,
+          display: window.getComputedStyle(canvasRef.current!).display
+        });
         setIsLoading(false);
       } catch (error) {
         console.error('❌ Erro ao gerar QR Code:', error);
@@ -81,7 +94,12 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
       }
     };
 
-    generateQR();
+    // Pequeno delay para garantir que o canvas está renderizado
+    const timer = setTimeout(() => {
+      generateQR();
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, [qrUrl, sessionId]);
 
   const copyToClipboard = async () => {
@@ -147,7 +165,10 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
             <>
               <canvas
                 ref={canvasRef}
+                width={200}
+                height={200}
                 className="rounded-lg shadow-sm"
+                style={{ display: 'block', maxWidth: '100%', height: 'auto' }}
               />
               <Button
                 size="sm"
