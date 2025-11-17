@@ -86,6 +86,8 @@ const Presentation = () => {
   // Setup remote control command handling
   useEffect(() => {
     onRemoteCommand((command) => {
+      console.log('Presentation - Comando recebido:', command);
+      
       if (command.command === 'next') {
         setCurrentSlide((prev) => Math.min(prev + 1, slides.length - 1));
       } else if (command.command === 'previous') {
@@ -93,10 +95,12 @@ const Presentation = () => {
       } else if (command.command === 'goto' && command.slideIndex !== undefined) {
         setCurrentSlide(Math.max(0, Math.min(command.slideIndex, slides.length - 1)));
       } else if (command.command === 'scroll' && command.scrollDirection) {
+        console.log('Executando scroll:', command.scrollDirection);
         // Scroll da apresentação
         const scrollAmount = 150; // pixels
         const direction = command.scrollDirection === 'up' ? -scrollAmount : scrollAmount;
         
+        console.log('Scrolling by:', direction, 'pixels');
         window.scrollBy({
           top: direction,
           behavior: 'smooth'

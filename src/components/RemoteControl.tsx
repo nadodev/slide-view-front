@@ -145,6 +145,8 @@ export const RemoteControl: React.FC = () => {
   }, [sessionId]);
 
   const sendCommand = (command: 'next' | 'previous' | 'goto' | 'scroll', slideIndex?: number, scrollDirection?: 'up' | 'down') => {
+    console.log('RemoteControl - Enviando comando:', { command, slideIndex, scrollDirection });
+    
     if (!socket || !isConnected) {
       toast.error('Não conectado', {
         description: 'Verifique a conexão'
@@ -313,7 +315,10 @@ export const RemoteControl: React.FC = () => {
             <h3 className="text-slate-300 text-sm font-medium mb-3">🖱️ Controles de Rolagem:</h3>
             <div className="grid grid-cols-2 gap-4">
               <Button
-                onClick={() => sendCommand('scroll', undefined, 'up')}
+                onClick={() => {
+                  console.log('Botão scroll UP clicado!');
+                  sendCommand('scroll', undefined, 'up');
+                }}
                 disabled={!isConnected}
                 size="lg"
                 className="h-14 bg-indigo-800 hover:bg-indigo-700 border border-indigo-600 flex flex-col items-center gap-1"
@@ -323,7 +328,10 @@ export const RemoteControl: React.FC = () => {
               </Button>
 
               <Button
-                onClick={() => sendCommand('scroll', undefined, 'down')}
+                onClick={() => {
+                  console.log('Botão scroll DOWN clicado!');
+                  sendCommand('scroll', undefined, 'down');
+                }}
                 disabled={!isConnected}
                 size="lg"
                 className="h-14 bg-indigo-800 hover:bg-indigo-700 border border-indigo-600 flex flex-col items-center gap-1"
