@@ -121,6 +121,8 @@ export const useSocket = (): UseSocketReturn => {
   };
 
   const createPresentation = () => {
+    console.log('🎯 createPresentation chamado - Platform:', platform, 'Supported:', isSupported);
+    
     // Verificar se a plataforma suporta WebSockets
     if (!isSupported) {
       setError(`Controle remoto não disponível em ${platform}. Use Railway, Render ou Heroku.`);
@@ -135,7 +137,9 @@ export const useSocket = (): UseSocketReturn => {
           if (!response.ok) {
             throw new Error('Servidor não respondeu');
           }
+          console.log('✅ Servidor de desenvolvimento OK');
         } catch (error) {
+          console.error('❌ Servidor de desenvolvimento não disponível:', error);
           setError('Servidor Socket.IO não está rodando. Execute: npm run dev:full');
           setIsConnecting(false);
           return;
@@ -145,6 +149,7 @@ export const useSocket = (): UseSocketReturn => {
     }
 
     if (!socketRef.current) {
+      console.log('🔌 Conectando ao Socket.IO...');
       connect();
     }
 
@@ -152,7 +157,9 @@ export const useSocket = (): UseSocketReturn => {
     setError(null);
 
     if (socketRef.current) {
+      console.log('📡 Enviando create-presentation...');
       socketRef.current.emit('create-presentation', (response: any) => {
+        console.log('📺 Resposta create-presentation:', response);
         setIsConnecting(false);
 
         if (response.success) {
@@ -162,11 +169,16 @@ export const useSocket = (): UseSocketReturn => {
             isConnected: true,
             remoteClients: 0,
           });
-          console.log('📺 Apresentação criada:', response.sessionId);
+          console.log('✅ Apresentação criada:', response.sessionId, 'QR URL:', response.qrUrl);
         } else {
+          console.error('❌ Erro ao criar apresentação:', response);
           setError('Erro ao criar apresentação');
         }
       });
+    } else {
+      console.error('❌ Socket não disponível para create-presentation');
+      setError('Conexão não disponível');
+      setIsConnecting(false);
     }
   };
 

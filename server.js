@@ -74,15 +74,24 @@ io.on('connection', (socket) => {
     // Determinar URL base dinamicamente
     const isProduction = process.env.NODE_ENV === 'production';
     const vercelUrl = process.env.VERCEL_URL;
+    const isRailway = process.env.RAILWAY_ENVIRONMENT;
     
     let baseUrl;
     if (isProduction && vercelUrl) {
+      // Vercel
       baseUrl = `https://${vercelUrl}`;
+    } else if (isProduction && isRailway) {
+      // Railway - usar a URL da aplicação
+      baseUrl = 'https://slide-view-production.up.railway.app';
     } else if (isProduction) {
+      // Outras plataformas de produção
       baseUrl = process.env.VITE_API_URL || process.env.BASE_URL || `http://localhost:${PORT}`;
     } else {
+      // Desenvolvimento
       baseUrl = process.env.VITE_API_URL || 'http://localhost:5173';
     }
+    
+    console.log('🔗 QR Code URL gerada:', `${baseUrl}/remote/${sessionId}`);
     
     callback({
       success: true,
