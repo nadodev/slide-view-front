@@ -81,16 +81,22 @@ io.on('connection', (socket) => {
       // Vercel
       baseUrl = `https://${vercelUrl}`;
     } else if (isProduction && isRailway) {
-      // Railway - usar a URL da aplicação
-      baseUrl = 'https://slide-view-production.up.railway.app';
+      // Railway - usar a URL do environment ou fallback
+      baseUrl = process.env.VITE_BASE_URL || 'https://slide-view-production.up.railway.app';
     } else if (isProduction) {
       // Outras plataformas de produção
-      baseUrl = process.env.VITE_API_URL || process.env.BASE_URL || `http://localhost:${PORT}`;
+      baseUrl = process.env.VITE_BASE_URL || process.env.VITE_API_URL || process.env.BASE_URL || `http://localhost:${PORT}`;
     } else {
       // Desenvolvimento
-      baseUrl = process.env.VITE_API_URL || 'http://localhost:5173';
+      baseUrl = process.env.VITE_BASE_URL || process.env.VITE_API_URL || 'http://localhost:5173';
     }
     
+    console.log('🔧 Environment vars:', {
+      NODE_ENV: process.env.NODE_ENV,
+      RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT,
+      VITE_BASE_URL: process.env.VITE_BASE_URL,
+      VITE_API_URL: process.env.VITE_API_URL
+    });
     console.log('🔗 QR Code URL gerada:', `${baseUrl}/remote/${sessionId}`);
     
     callback({
