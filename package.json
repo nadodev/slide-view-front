@@ -6,15 +6,14 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:production": "node scripts/build-production.js",
+    "build:full": "vite build && node scripts/build-production.js",
     "lint": "eslint .",
     "preview": "vite preview",
     "server": "node server.js",
     "server:production": "NODE_ENV=production node server.js",
     "start": "NODE_ENV=production node server.js",
     "dev:full": "concurrently \"npm run dev\" \"npm run server\"",
-    "production": "npm run build:production && cd dist && npm install && npm start",
-    "deploy": "npm run build:production"
+    "postbuild": "echo Build completed successfully"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.15",
