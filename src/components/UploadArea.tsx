@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import InteractiveSplitModal from "./InteractiveSplitModal";
 import { Upload, FileText, Settings, Sparkles, Bot, Wand2, Zap } from "lucide-react";
 import { Button } from "./ui/button";
 import { Progress } from "./ui/progress";
@@ -30,7 +31,11 @@ export default function UploadArea({
   const [baseText, setBaseText] = useState<string>("");
   const [uploadProgress, setUploadProgress] = useState<number>(0);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [showSplitModal, setShowSplitModal] = useState(false);
+  const [modalContent, setModalContent] = useState<string>("");
+  const [modalFilename, setModalFilename] = useState<string>("");
+
+  const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from((e.target.files || []) as File[]);
     const invalid = files.find((f: File) => !/\.md$/i.test(f.name));
     if (invalid) {
@@ -67,8 +72,26 @@ export default function UploadArea({
     }, 200);
     
     setLocalError("");
-    if (typeof onFilesChange === "function")
+    if (typeof onFilesChange === "function") {
+      // If single large file, show interactive split modal first
+      if (files.length === 1) {
+        try {
+          const file = files[0];
+          const txt = await file.text();
+          const LARGE_THRESHOLD = 5000; // characters
+          if (txt && txt.length > LARGE_THRESHOLD) {
+            setModalFilename(file.name);
+            setModalContent(txt);
+            setShowSplitModal(true);
+            return; // wait for modal confirm
+          }
+        } catch (err) {
+          // fallback to normal behavior
+        }
+      }
+
       onFilesChange(e, { splitSingle, delimiter });
+    }
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -520,6 +543,28 @@ export default function UploadArea({
         <Carregando 
           message={mode === 'ai' ? "Gerando slides com IA..." : "Processando arquivos..."} 
           showProgress={true}
+        />
+      )}
+
+      {showSplitModal && (
+        <InteractiveSplitModal
+          filename={modalFilename}
+          content={modalContent}
+          onCancel={() => {
+            setShowSplitModal(false);
+            setModalContent("");
+            setModalFilename("");
+          }}
+          onConfirm={(parts) => {
+            // convert parts to File[] and call onFilesChange
+            const files = parts.map((p) => new File([p.content], `${p.name}.md`, { type: 'text/markdown' }));
+            if (typeof onFilesChange === 'function') {
+              (onFilesChange as any)({ target: { files } }, { splitSingle: false, delimiter });
+            }
+            setShowSplitModal(false);
+            setModalContent("");
+            setModalFilename("");
+          }}
         />
       )}
     </div>
