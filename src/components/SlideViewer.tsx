@@ -1,5 +1,4 @@
-import React from 'react';
-import type { RefObject } from 'react';
+import type { RefObject } from "react";
 
 type SlideViewerProps = {
   html?: string;
@@ -7,13 +6,296 @@ type SlideViewerProps = {
   slideContentRef?: RefObject<HTMLElement | null>;
 };
 
-export default function SlideViewer({ html = '', slideContainerRef, slideContentRef }: SlideViewerProps) {
+export default function SlideViewer({
+  html = "",
+  slideContainerRef,
+  slideContentRef,
+}: SlideViewerProps) {
   return (
     <div
       ref={slideContainerRef as any}
-      className="slide-container bg-gradient-to-br from-white to-gray-50 w-[90%] max-w-[1400px] h-[76vh] rounded-2xl shadow-2xl p-12 overflow-y-auto"
+      className="w-full h-full rounded-2xl shadow-2xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex flex-col"
     >
-      <div ref={slideContentRef as any} className="slide-content max-w-full" dangerouslySetInnerHTML={{ __html: html }} />
+      <div
+        ref={slideContentRef as any}
+        className="flex-1 overflow-y-scroll p-8 md:p-12 lg:p-16 custom-scroll"
+        style={{ maxHeight: "100%" }}
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+
+      <style jsx global>{`
+        /* Scrollbar customizada para o conteúdo */
+        .custom-scroll::-webkit-scrollbar {
+          width: 10px;
+        }
+
+        .custom-scroll::-webkit-scrollbar-track {
+          background: rgba(31, 41, 55, 0.5);
+          border-radius: 5px;
+          margin: 8px 0;
+        }
+
+        .custom-scroll::-webkit-scrollbar-thumb {
+          background: #4b5563;
+          border-radius: 5px;
+          border: 2px solid transparent;
+          background-clip: padding-box;
+        }
+
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+          background: #6b7280;
+          border: 2px solid transparent;
+          background-clip: padding-box;
+        }
+
+        /* Estilos para o conteúdo Markdown renderizado */
+        .custom-scroll {
+          color: #f3f4f6;
+        }
+
+        /* Títulos */
+        .custom-scroll h1 {
+          font-size: 3.5rem;
+          font-weight: 800;
+          color: #ffffff;
+          margin-bottom: 2rem;
+          margin-top: 0;
+          line-height: 1.2;
+          letter-spacing: -0.02em;
+        }
+
+        .custom-scroll h2 {
+          font-size: 2.5rem;
+          font-weight: 700;
+          color: #f9fafb;
+          margin-bottom: 1.5rem;
+          margin-top: 3rem;
+          line-height: 1.3;
+        }
+
+        .custom-scroll h3 {
+          font-size: 2rem;
+          font-weight: 600;
+          color: #e5e7eb;
+          margin-bottom: 1.25rem;
+          margin-top: 2.5rem;
+          line-height: 1.4;
+        }
+
+        .custom-scroll h4 {
+          font-size: 1.5rem;
+          font-weight: 600;
+          color: #d1d5db;
+          margin-bottom: 1rem;
+          margin-top: 2rem;
+        }
+
+        .custom-scroll h5 {
+          font-size: 1.25rem;
+          font-weight: 600;
+          color: #d1d5db;
+          margin-bottom: 0.75rem;
+          margin-top: 1.5rem;
+        }
+
+        .custom-scroll h6 {
+          font-size: 1.125rem;
+          font-weight: 600;
+          color: #9ca3af;
+          margin-bottom: 0.75rem;
+          margin-top: 1.5rem;
+        }
+
+        .custom-scroll h1:first-child,
+        .custom-scroll h2:first-child,
+        .custom-scroll h3:first-child,
+        .custom-scroll h4:first-child,
+        .custom-scroll h5:first-child,
+        .custom-scroll h6:first-child {
+          margin-top: 0;
+        }
+
+        /* Parágrafos */
+        .custom-scroll p {
+          font-size: 1.25rem;
+          line-height: 1.8;
+          color: #d1d5db;
+          margin-bottom: 1.75rem;
+        }
+
+        /* Links */
+        .custom-scroll a {
+          color: #60a5fa;
+          text-decoration: underline;
+          text-decoration-color: rgba(96, 165, 250, 0.3);
+          text-underline-offset: 3px;
+          transition: all 0.2s;
+        }
+
+        .custom-scroll a:hover {
+          color: #93c5fd;
+          text-decoration-color: rgba(147, 197, 253, 0.6);
+        }
+
+        /* Listas */
+        .custom-scroll ul,
+        .custom-scroll ol {
+          margin-bottom: 2rem;
+          padding-left: 2.5rem;
+          color: #d1d5db;
+        }
+
+        .custom-scroll ul {
+          list-style-type: disc;
+        }
+
+        .custom-scroll ol {
+          list-style-type: decimal;
+        }
+
+        .custom-scroll li {
+          font-size: 1.125rem;
+          line-height: 1.8;
+          margin-bottom: 1rem;
+        }
+
+        .custom-scroll li::marker {
+          color: #60a5fa;
+        }
+
+        /* Listas aninhadas */
+        .custom-scroll ul ul,
+        .custom-scroll ol ul,
+        .custom-scroll ul ol,
+        .custom-scroll ol ol {
+          margin-top: 0.75rem;
+          margin-bottom: 0.75rem;
+        }
+
+        /* Código inline */
+        .custom-scroll code {
+          background-color: rgba(59, 130, 246, 0.1);
+          color: #93c5fd;
+          padding: 0.25rem 0.5rem;
+          border-radius: 0.375rem;
+          font-size: 0.95em;
+          font-family: "Consolas", "Monaco", "Courier New", monospace;
+          border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        /* Blocos de código */
+        .custom-scroll pre {
+          background-color: #1f2937;
+          border: 1px solid #374151;
+          border-radius: 0.75rem;
+          padding: 1.5rem;
+          margin-bottom: 2rem;
+          overflow-x: auto;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+
+        .custom-scroll pre code {
+          background-color: transparent;
+          color: #e5e7eb;
+          padding: 0;
+          border: none;
+          font-size: 0.95rem;
+          line-height: 1.6;
+        }
+
+        /* Citações */
+        .custom-scroll blockquote {
+          border-left: 4px solid #3b82f6;
+          padding-left: 1.5rem;
+          margin: 2rem 0;
+          color: #9ca3af;
+          font-style: italic;
+          background-color: rgba(59, 130, 246, 0.05);
+          padding: 1.25rem 1.5rem;
+          border-radius: 0.5rem;
+        }
+
+        .custom-scroll blockquote p {
+          margin-bottom: 0.5rem;
+        }
+
+        .custom-scroll blockquote p:last-child {
+          margin-bottom: 0;
+        }
+
+        /* Linha horizontal */
+        .custom-scroll hr {
+          border: none;
+          border-top: 2px solid #374151;
+          margin: 2.5rem 0;
+        }
+
+        /* Tabelas */
+        .custom-scroll table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 2rem;
+          background-color: #1f2937;
+          border-radius: 0.5rem;
+          overflow: hidden;
+        }
+
+        .custom-scroll thead {
+          background-color: #374151;
+        }
+
+        .custom-scroll th {
+          padding: 1rem;
+          text-align: left;
+          font-weight: 600;
+          color: #f9fafb;
+          border-bottom: 2px solid #4b5563;
+        }
+
+        .custom-scroll td {
+          padding: 0.875rem 1rem;
+          color: #d1d5db;
+          border-bottom: 1px solid #374151;
+        }
+
+        .custom-scroll tbody tr:hover {
+          background-color: rgba(55, 65, 81, 0.5);
+        }
+
+        /* Imagens */
+        .custom-scroll img {
+          max-width: 100%;
+          height: auto;
+          border-radius: 0.75rem;
+          margin: 2rem 0;
+          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Ênfase */
+        .custom-scroll strong,
+        .custom-scroll b {
+          font-weight: 700;
+          color: #ffffff;
+        }
+
+        .custom-scroll em,
+        .custom-scroll i {
+          font-style: italic;
+          color: #e5e7eb;
+        }
+
+        /* Texto riscado */
+        .custom-scroll del,
+        .custom-scroll s {
+          text-decoration: line-through;
+          color: #9ca3af;
+        }
+
+        /* Espaçamento entre elementos adjacentes */
+        .custom-scroll > *:last-child {
+          margin-bottom: 0;
+        }
+      `}</style>
     </div>
   );
 }

@@ -1,84 +1,234 @@
-import { ChevronLeft, ChevronRight, Pencil, Eye, EyeOff, Download, Copy } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Pencil,
+  Eye,
+  EyeOff,
+  Download,
+  Copy,
+  RotateCw,
+} from "lucide-react";
+import { Button } from "./ui/button";
 
 type NavigationProps = {
   currentSlide: number;
-  slidesLength: number;
-  onPrev: () => void;
-  onNext: () => void;
-  onReset: () => void;
-  onEdit?: () => void;
-  onToggleFocus?: () => void;
-  focusMode?: boolean;
-  onExport?: () => void;
-  onExportPdf?: () => void;
-  onDuplicate?: () => void;
+  totalSlides: number;
+  setCurrentSlide: (slide: number) => void;
+  setTransitionKey: (updater: number | ((prev: number) => number)) => void;
+  setSlideTransition: (transition: string) => void;
+  slideTransition: string;
+  focusMode: boolean;
+  setFocusMode: (mode: boolean) => void;
+  presenterMode: boolean;
+  setPresenterMode: (mode: boolean) => void;
+  setShowSlideList: (show: boolean) => void;
+  setEditing: (editing: boolean) => void;
+  onStartEditing: () => void;
+  duplicateSlide: () => void;
+  onSaveAllSlides?: () => void;
+  onRestart?: () => void;
+  highContrast: boolean;
+  setHighContrast: (contrast: boolean) => void;
 };
 
-export default function Navigation({ currentSlide, slidesLength, onPrev, onNext, onReset, onEdit, onToggleFocus, focusMode, onExport, onExportPdf, onDuplicate }: NavigationProps) {
+const Navigation = ({
+  currentSlide,
+  totalSlides,
+  setCurrentSlide,
+  setTransitionKey,
+  setSlideTransition,
+  slideTransition,
+  focusMode,
+  setFocusMode,
+  presenterMode,
+  setPresenterMode,
+  setShowSlideList,
+  setEditing,
+  onStartEditing,
+  duplicateSlide,
+  onSaveAllSlides,
+  onRestart,
+  highContrast,
+  setHighContrast,
+}: NavigationProps) => {
+  
+  const onPrev = () => {
+    if (currentSlide > 0) {
+      setCurrentSlide(currentSlide - 1);
+      setTransitionKey(prev => prev + 1);
+    }
+  };
+  
+  const onNext = () => {
+    if (currentSlide < totalSlides - 1) {
+      setCurrentSlide(currentSlide + 1);
+      setTransitionKey(prev => prev + 1);
+    }
+  };
+  
+  const onReset = () => {
+    setCurrentSlide(0);
+    setTransitionKey(prev => prev + 1);
+  };
+  
+  const onEdit = () => {
+    onStartEditing();
+  };
+  
+  const onToggleFocus = () => {
+    setFocusMode(!focusMode);
+  };
+  
+  const onDuplicate = () => {
+    duplicateSlide();
+  };
+
   return (
-    <div className="navigation">
-      <div style={{ width: '96%', maxWidth: 1100, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button
-            className="nav-btn"
-            onClick={onPrev}
-            disabled={currentSlide === 0}
-            aria-label="Slide anterior"
-            title="Anterior (←)"
-          >
-            <ChevronLeft size={18} />
-            <span style={{ marginLeft: 8 }}>Anterior</span>
-          </button>
-
-          <span className="slide-counter" aria-live="polite">{currentSlide + 1} / {slidesLength}</span>
-
-          <button
-            className="nav-btn"
-            onClick={onNext}
-            disabled={currentSlide === slidesLength - 1}
-            aria-label="Próximo slide"
-            title="Próximo (→)"
-          >
-            <span style={{ marginRight: 8 }}>Próximo</span>
-            <ChevronRight size={18} />
-          </button>
-        </div>
-
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          {typeof onEdit === 'function' && (
-            <button className="nav-btn" onClick={onEdit} aria-label="Editar slide atual" title="Editar" style={{ padding: '6px 10px', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-              <Pencil size={14} /> <span style={{ fontSize: 13 }}>Editar</span>
+    <nav className="w-full bg-gray-900 border-b border-gray-800 shadow-lg">
+      <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="flex items-center justify-between gap-6">
+          {/* Navegação de Slides */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onPrev}
+              disabled={currentSlide === 0}
+              aria-label="Slide anterior"
+              title="Anterior (←)"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 font-medium text-sm border border-gray-700 hover:border-gray-600"
+            >
+              <ChevronLeft size={18} />
+              <span>Anterior</span>
             </button>
-          )}
 
-          {typeof onToggleFocus === 'function' && (
-            <button className="nav-btn" onClick={onToggleFocus} aria-label={focusMode ? 'Sair do modo de foco' : 'Ativar modo de foco'} title="Foco" style={{ padding: '6px 10px', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-              {focusMode ? <Eye size={14} /> : <EyeOff size={14} />} <span style={{ fontSize: 13 }}>{focusMode ? 'Sair foco' : 'Foco'}</span>
+            <div className="flex items-center gap-2 px-4 py-2 bg-gray-800 rounded-lg border border-gray-700 min-w-[100px] justify-center">
+              <span className="text-sm font-semibold text-white">
+                {currentSlide + 1}
+              </span>
+              <span className="text-xs text-gray-500">/</span>
+              <span className="text-sm text-gray-400">{totalSlides}</span>
+            </div>
+
+            <button
+              onClick={onNext}
+              disabled={currentSlide === totalSlides - 1}
+              aria-label="Próximo slide"
+              title="Próximo (→)"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 font-medium text-sm shadow-lg shadow-blue-900/30"
+            >
+              <span>Próximo</span>
+              <ChevronRight size={18} />
             </button>
-          )}
+          </div>
 
-          {typeof onExport === 'function' && (
-            <button className="nav-btn" onClick={onExport} aria-label="Exportar todos os slides como .md" title="Exportar .md" style={{ padding: '6px 10px', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-              <Download size={14} /> <span style={{ fontSize: 13 }}>Exportar</span>
+          {/* Ações */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onEdit}
+              aria-label="Editar slide atual"
+              title="Editar"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 transition-all duration-200 text-sm border border-gray-700 hover:border-gray-600"
+            >
+              <Pencil size={16} />
+              <span className="hidden sm:inline">Editar</span>
             </button>
-          )}
 
-          {typeof onExportPdf === 'function' && (
-            <button className="nav-btn" onClick={onExportPdf} aria-label="Exportar slide atual como PDF" title="Exportar PDF" style={{ padding: '6px 10px', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M21 8v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8"/><path d="M7 8V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v3"/><path d="M12 12v6"/><path d="M9 15l3-3 3 3"/></svg>
-              <span style={{ fontSize: 13 }}>PDF</span>
+            <button
+              onClick={onToggleFocus}
+              aria-label={
+                focusMode ? "Sair do modo de foco" : "Ativar modo de foco"
+              }
+              title={focusMode ? "Sair do foco" : "Modo foco"}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 text-sm border ${
+                focusMode
+                  ? "bg-purple-600 hover:bg-purple-500 text-white border-purple-500"
+                  : "bg-gray-800 hover:bg-gray-700 text-gray-200 border-gray-700 hover:border-gray-600"
+              }`}
+            >
+              {focusMode ? <Eye size={16} /> : <EyeOff size={16} />}
+              <span className="hidden sm:inline">
+                {focusMode ? "Sair" : "Foco"}
+              </span>
             </button>
-          )}
 
-          {typeof onDuplicate === 'function' && (
-            <button className="nav-btn" onClick={onDuplicate} aria-label="Duplicar slide atual (Ctrl+D)" title="Duplicar" style={{ padding: '6px 10px', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-              <Copy size={14} /> <span style={{ fontSize: 13 }}>Duplicar</span>
+            <button
+              onClick={onDuplicate}
+              aria-label="Duplicar slide atual"
+              title="Duplicar (Ctrl+D)"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 transition-all duration-200 text-sm border border-gray-700 hover:border-gray-600"
+            >
+              <Copy size={16} />
+              <span className="hidden md:inline">Duplicar</span>
             </button>
-          )}
 
-          <button className="reload-btn" onClick={onReset} title="Recarregar">Recarregar</button>
+            {/* Botão de Salvar Todos */}
+            {onSaveAllSlides && (
+              <button
+                onClick={onSaveAllSlides}
+                aria-label="Salvar todos os slides"
+                title="Salvar apresentação completa (.md)"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white transition-all duration-200 text-sm border border-green-500 shadow-lg shadow-green-900/30"
+              >
+                <Download size={16} />
+                <span className="hidden md:inline">Salvar Todos</span>
+              </button>
+            )}
+
+            {/* Botão Recomeçar */}
+            {onRestart && (
+              <button
+                onClick={onRestart}
+                aria-label="Recomeçar - voltar à tela inicial"
+                title="Recomeçar apresentação"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-orange-600 hover:bg-orange-500 text-white transition-all duration-200 text-sm border border-orange-500 shadow-lg shadow-orange-900/30"
+              >
+                <RotateCw size={16} />
+                <span className="hidden lg:inline">Recomeçar</span>
+              </button>
+            )}
+
+            {/* {typeof onExportPdf === "function" && (
+              <button
+                onClick={onExportPdf}
+                aria-label="Exportar slide atual como PDF"
+                title="Exportar PDF"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 transition-all duration-200 text-sm border border-gray-700 hover:border-gray-600"
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M21 8v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8" />
+                  <path d="M7 8V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v3" />
+                  <path d="M12 12v6" />
+                  <path d="M9 15l3-3 3 3" />
+                </svg>
+                <span className="hidden md:inline">PDF</span>
+              </button>
+            )} */}
+
+            <div className="h-6 w-px bg-gray-700 mx-1" />
+
+            <button
+              onClick={onReset}
+              aria-label="Recarregar"
+              title="Recarregar"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 transition-all duration-200 text-sm border border-gray-700 hover:border-gray-600"
+            >
+              <RotateCw size={16} />
+              <span className="hidden lg:inline">Recarregar</span>
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </nav>
   );
-}
+};
+
+export default Navigation;

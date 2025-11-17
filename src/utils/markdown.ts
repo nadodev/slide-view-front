@@ -3,23 +3,30 @@ import hljs from 'highlight.js';
 import 'highlight.js/styles/github-dark.min.css';
 import generateSlug from './slug';
 
+// Configurar marked
 marked.setOptions({
-  highlight: function(code: string, lang?: string): string {
-    if (lang && hljs.getLanguage(lang)) {
-      try {
-        return (hljs.highlight(code, { language: lang }) as any).value;
-      } catch (err) {
-        return (hljs.highlightAuto(code) as any).value;
-      }
-    }
-    return (hljs.highlightAuto(code) as any).value;
-  },
   breaks: true,
   gfm: true
 });
 
+// Configurar highlight.js para sintaxe colorida
+const renderer = new marked.Renderer();
+renderer.code = function(code: {text: string, lang?: string, escaped?: boolean}) {
+  const { text, lang } = code;
+  if (lang && hljs.getLanguage(lang)) {
+    try {
+      const highlighted = hljs.highlight(text, { language: lang }).value;
+      return `<pre><code class="hljs language-${lang}">${highlighted}</code></pre>`;
+    } catch (err) {
+      // Fallback para auto-detection
+    }
+  }
+  const highlighted = hljs.highlightAuto(text).value;
+  return `<pre><code class="hljs">${highlighted}</code></pre>`;
+};
+
 export function parseMarkdownSafe(md: string = ''): string {
-  let html: string = marked.parse(md || '') as string;
+  let html: string = marked.parse(md || '', { renderer }) as string;
   html = html.replace(/<pre><code class="language-(\w+)">/g, '<pre class="code-block"><code class="hljs language-$1">');
   html = html.replace(/<pre><code class="hljs language-(\w+)">/g, '<pre class="code-block"><code class="hljs language-$1">');
   html = html.replace(/<pre><code>/g, '<pre class="code-block"><code class="hljs">');
