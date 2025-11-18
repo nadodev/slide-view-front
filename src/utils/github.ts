@@ -50,8 +50,14 @@ export async function fetchFilesFromGitHub(config: GitHubConfig): Promise<GitHub
         
         if (contentResponse.ok) {
           const fileData = await contentResponse.json();
-          // Decodificar o conteúdo base64
-          const content = atob(fileData.content.replace(/\s/g, ''));
+          // Decodificar o conteúdo base64 corretamente para UTF-8
+          const base64Content = fileData.content.replace(/\s/g, '');
+          const binaryString = atob(base64Content);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          const content = new TextDecoder('utf-8').decode(bytes);
           markdownFiles.push({
             name: file.name,
             content,
