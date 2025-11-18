@@ -29,8 +29,21 @@ export default function PresenterView({
   // Usar a ref externa se fornecida, senão usar a interna
   const scrollRef = scrollContainerRef || internalScrollRef;
 
+  // Otimizar atualização do relógio - apenas minutos para reduzir re-renders
   useEffect(() => {
-    const t = setInterval(() => setClockNow(new Date()), 1000);
+    const updateClock = () => {
+      const now = new Date();
+      setClockNow(prevTime => {
+        // Só atualizar se mudou o minuto (reduz re-renders)
+        if (prevTime.getMinutes() !== now.getMinutes() || 
+            prevTime.getHours() !== now.getHours()) {
+          return now;
+        }
+        return prevTime;
+      });
+    };
+    
+    const t = setInterval(updateClock, 1000);
     return () => clearInterval(t);
   }, []);
 
@@ -46,17 +59,17 @@ export default function PresenterView({
   const progress = ((currentIndex + 1) / slidesLength) * 100;
 
   return (
-    <div className="fixed inset-0 bg-linear-to-br from-gray-950 via-gray-900 to-black flex flex-col overflow-hidden">
+    <div className="fixed inset-0 bg-gradient-to-br from-gray-950 via-gray-900 to-black flex flex-col overflow-hidden">
       {/* Barra de Progresso Elegante */}
-      <div className="absolute top-0 left-0 right-0 h-1 bg-linear-to-r from-transparent via-white/5 to-transparent">
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-white/5 to-transparent">
         <div
-          className="h-full bg-linear-to-r from-blue-500 via-purple-500 to-pink-500 transition-all duration-700 ease-out shadow-lg shadow-purple-500/50"
+          className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 transition-all duration-700 ease-out shadow-lg shadow-purple-500/50"
           style={{ width: `${progress}%` }}
         />
       </div>
 
       {/* Info Bar Superior */}
-      <div className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-10 py-5 bg-linear-to-b from-black/40 via-black/20 to-transparent backdrop-blur-sm">
+      <div className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-10 py-5 bg-gradient-to-b from-black/40 via-black/20 to-transparent backdrop-blur-sm">
         <div className="flex items-center gap-8 text-white/60 text-sm">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse shadow-lg shadow-green-400/50"></div>
@@ -93,7 +106,7 @@ export default function PresenterView({
           className="w-full max-w-6xl h-full overflow-y-auto custom-scrollbar py-4"
         >
           <div
-            className="slide-content animate-fadeIn"
+            className="slide-content"
             dangerouslySetInnerHTML={{ __html: currentHtml }}
           />
         </div>
@@ -151,15 +164,6 @@ export default function PresenterView({
       </div>
 
       <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-
-        .animate-fadeIn {
-          animation: fadeIn 0.6s ease-out;
-        }
-
         .slide-content {
           color: #f3f4f6;
           line-height: 1.75;
