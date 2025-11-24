@@ -36,7 +36,6 @@ export default function GitHubIntegrationModal({
   const [selectedPath, setSelectedPath] = useState('');
   const [operation, setOperation] = useState<'pull' | 'push' | null>(null);
 
-  // Escutar eventos de autenticação
   useEffect(() => {
     const handleAuthSuccess = (event: CustomEvent) => {
       setAuthState({
@@ -64,14 +63,12 @@ export default function GitHubIntegrationModal({
     };
   }, []);
 
-  // Carregar repositórios ao autenticar
   useEffect(() => {
     if (authState.isAuthenticated && authState.token && repositories.length === 0) {
       loadRepositories(authState.token);
     }
   }, [authState.isAuthenticated, authState.token, repositories.length]);
 
-  // Validar token ao abrir modal
   useEffect(() => {
     if (isOpen && authState.isAuthenticated && authState.token) {
       validateUserToken();
@@ -80,7 +77,7 @@ export default function GitHubIntegrationModal({
 
   const validateUserToken = async () => {
     if (!authState.token) return;
-    
+
     const isValid = await validateToken(authState.token);
     if (!isValid) {
       logoutGitHub();
@@ -134,7 +131,6 @@ export default function GitHubIntegrationModal({
         return;
       }
 
-      // Converter para formato esperado
       const convertedFiles = files.map((file, index) => ({
         id: Date.now().toString() + index,
         name: file.name,
@@ -182,7 +178,7 @@ export default function GitHubIntegrationModal({
       }));
 
       await pushFilesToGitHub(config, files, 'Update slides from slide-view app');
-      
+
       toast.success('Arquivos enviados com sucesso!');
       onClose();
     } catch (error: any) {
@@ -199,7 +195,6 @@ export default function GitHubIntegrationModal({
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-slate-900 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-        {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-700">
           <div className="flex items-center gap-3">
             <Github className="w-6 h-6 text-violet-400" />
@@ -215,14 +210,13 @@ export default function GitHubIntegrationModal({
 
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
           {!authState.isAuthenticated ? (
-            /* Tela de Login */
             <div className="text-center py-12">
               <Github className="w-16 h-16 text-violet-400 mx-auto mb-6" />
               <h3 className="text-2xl font-semibold text-slate-100 mb-4">
                 Conecte-se ao GitHub
               </h3>
               <p className="text-slate-400 mb-8 max-w-md mx-auto">
-                Faça login com sua conta GitHub para acessar seus repositórios e 
+                Faça login com sua conta GitHub para acessar seus repositórios e
                 sincronizar seus slides automaticamente.
               </p>
               <button
@@ -234,9 +228,7 @@ export default function GitHubIntegrationModal({
               </button>
             </div>
           ) : (
-            /* Interface Principal */
             <div className="space-y-6">
-              {/* Usuário Logado */}
               <div className="flex items-center justify-between p-4 bg-slate-800 rounded-lg">
                 <div className="flex items-center gap-3">
                   <img
@@ -270,7 +262,6 @@ export default function GitHubIntegrationModal({
                 </div>
               </div>
 
-              {/* Seletor de Repositório */}
               <div>
                 <h4 className="text-lg font-semibold text-slate-200 mb-4">
                   Selecionar Repositório
@@ -283,14 +274,13 @@ export default function GitHubIntegrationModal({
                 />
               </div>
 
-              {/* Configurações */}
               {selectedRepository && (
                 <div className="space-y-4">
                   <h4 className="text-lg font-semibold text-slate-200 flex items-center gap-2">
                     <Settings className="w-5 h-5" />
                     Configurações
                   </h4>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-slate-300 mb-2">
@@ -304,7 +294,7 @@ export default function GitHubIntegrationModal({
                         className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-slate-300 mb-2">
                         Caminho (opcional)
@@ -321,7 +311,6 @@ export default function GitHubIntegrationModal({
                 </div>
               )}
 
-              {/* Ações */}
               {selectedRepository && (
                 <div className="flex gap-3 pt-4 border-t border-slate-700">
                   <button
@@ -336,7 +325,7 @@ export default function GitHubIntegrationModal({
                     )}
                     Pull (Baixar)
                   </button>
-                  
+
                   <button
                     onClick={handlePushFiles}
                     disabled={loading || currentFiles.length === 0}

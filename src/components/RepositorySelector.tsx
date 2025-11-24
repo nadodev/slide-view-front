@@ -26,7 +26,6 @@ export default function RepositorySelector({
       repo.language?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // Ordenar repositórios
     filtered = filtered.sort((a, b) => {
       switch (sortBy) {
         case 'name':
@@ -87,7 +86,6 @@ export default function RepositorySelector({
         </select>
       </div>
 
-      {/* Lista de repositórios */}
       <div className="max-h-96 overflow-y-auto space-y-2 border border-slate-700 rounded-lg">
         {filteredRepos.length === 0 ? (
           <div className="text-center py-8 text-slate-500">
@@ -98,11 +96,10 @@ export default function RepositorySelector({
             <div
               key={repo.id}
               onClick={() => onSelectRepository(repo)}
-              className={`p-4 cursor-pointer transition-all hover:bg-slate-700/50 ${
-                selectedRepository?.id === repo.id
-                  ? 'bg-violet-500/10 border-l-4 border-violet-500'
-                  : 'border-l-4 border-transparent'
-              }`}
+              className={`p-4 cursor-pointer transition-all hover:bg-slate-700/50 ${selectedRepository?.id === repo.id
+                ? 'bg-violet-500/10 border-l-4 border-violet-500'
+                : 'border-l-4 border-transparent'
+                }`}
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
@@ -116,11 +113,11 @@ export default function RepositorySelector({
                       <Globe size={14} className="text-green-400 flex-shrink-0" />
                     )}
                   </div>
-                  
+
                   <p className="text-sm text-slate-500 mb-2 line-clamp-2">
                     {repo.description || 'Sem descrição'}
                   </p>
-                  
+
                   <div className="flex items-center gap-4 text-xs text-slate-400">
                     {repo.language && (
                       <div className="flex items-center gap-1">
@@ -128,19 +125,19 @@ export default function RepositorySelector({
                         <span>{repo.language}</span>
                       </div>
                     )}
-                    
+
                     <div className="flex items-center gap-1">
                       <GitBranch size={12} />
                       <span>{repo.default_branch}</span>
                     </div>
-                    
+
                     <div className="flex items-center gap-1">
                       <Calendar size={12} />
                       <span>{formatDate(repo.updated_at)}</span>
                     </div>
                   </div>
                 </div>
-                
+
                 {selectedRepository?.id === repo.id && (
                   <div className="flex-shrink-0 ml-3">
                     <div className="w-6 h-6 bg-violet-500 rounded-full flex items-center justify-center">
@@ -154,7 +151,6 @@ export default function RepositorySelector({
         )}
       </div>
 
-      {/* Repositório selecionado */}
       {selectedRepository && (
         <div className="mt-4 p-4 bg-violet-500/10 border border-violet-500/30 rounded-lg">
           <h4 className="font-semibold text-violet-300 mb-2">Repositório Selecionado</h4>

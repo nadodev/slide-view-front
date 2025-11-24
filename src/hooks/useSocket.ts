@@ -36,19 +36,18 @@ export const useSocket = (): UseSocketReturn => {
   const socketRef = useRef<Socket | null>(null);
   const commandCallbackRef = useRef<((command: RemoteCommand) => void) | null>(null);
 
-  // Detectar plataforma e suporte a WebSockets
   const [platform, setPlatform] = useState<string>('unknown');
   const [isSupported, setIsSupported] = useState<boolean>(true);
 
   useEffect(() => {
     const hostname = window.location.hostname;
-    
+
     if (hostname.includes('vercel.app')) {
       setPlatform('vercel');
-      setIsSupported(false); // Vercel não suporta WebSockets adequadamente
+      setIsSupported(false);
     } else if (hostname.includes('netlify.app')) {
       setPlatform('netlify');
-      setIsSupported(false); // Netlify não suporta WebSockets
+      setIsSupported(false);
     } else if (hostname.includes('railway.app')) {
       setPlatform('railway');
       setIsSupported(true);
@@ -63,11 +62,10 @@ export const useSocket = (): UseSocketReturn => {
       setIsSupported(true);
     } else {
       setPlatform('custom');
-      setIsSupported(true); // Assumir que suporta, testar depois
+      setIsSupported(true);
     }
   }, []);
 
-  // Conectar ao servidor
   const connect = () => {
     if (socketRef.current?.connected) return;
 
@@ -80,17 +78,14 @@ export const useSocket = (): UseSocketReturn => {
       });
 
       socketRef.current.on('connect', () => {
-        console.log('🔌 Conectado ao servidor Socket.IO');
         setError(null);
       });
 
       socketRef.current.on('disconnect', () => {
-        console.log('🔌 Desconectado do servidor Socket.IO');
         setSession(prev => prev ? { ...prev, isConnected: false } : null);
       });
 
       socketRef.current.on('connect_error', (err) => {
-        console.error('❌ Erro de conexão:', err);
         if (platform === 'development') {
           setError('Servidor não está rodando. Execute: npm run dev:full');
         } else {
@@ -99,7 +94,6 @@ export const useSocket = (): UseSocketReturn => {
         setIsConnecting(false);
       });
 
-      // Eventos de controle remoto
       socketRef.current.on('remote-connected', ({ totalRemotes }) => {
         setSession(prev => prev ? { ...prev, remoteClients: totalRemotes } : null);
       });
@@ -115,22 +109,18 @@ export const useSocket = (): UseSocketReturn => {
       });
 
     } catch (err) {
-      console.error('❌ Erro ao inicializar socket:', err);
       setError('Erro ao inicializar conexão');
       setIsConnecting(false);
     }
   };
 
   const createPresentation = () => {
-    console.log('🎯 createPresentation chamado - Platform:', platform, 'Supported:', isSupported);
-    
-    // Verificar se a plataforma suporta WebSockets
+
     if (!isSupported) {
       setError(`Controle remoto não disponível em ${platform}. Use Railway, Render ou Heroku.`);
       return;
     }
 
-    // No desenvolvimento, verificar se servidor está rodando
     if (platform === 'development') {
       const checkServer = async () => {
         try {
@@ -138,9 +128,7 @@ export const useSocket = (): UseSocketReturn => {
           if (!response.ok) {
             throw new Error('Servidor não respondeu');
           }
-          console.log('✅ Servidor de desenvolvimento OK');
         } catch (error) {
-          console.error('❌ Servidor de desenvolvimento não disponível:', error);
           setError('Servidor Socket.IO não está rodando. Execute: npm run dev:full');
           setIsConnecting(false);
           return;
@@ -150,7 +138,6 @@ export const useSocket = (): UseSocketReturn => {
     }
 
     if (!socketRef.current) {
-      console.log('🔌 Conectando ao Socket.IO...');
       connect();
     }
 
@@ -158,40 +145,28 @@ export const useSocket = (): UseSocketReturn => {
     setError(null);
 
     if (socketRef.current) {
-      console.log('📡 Enviando create-presentation...');
       socketRef.current.emit('create-presentation', (response: any) => {
-        console.log('📺 Resposta create-presentation:', response);
         setIsConnecting(false);
 
         if (response.success) {
-          // Validar e corrigir URL se necessário
           let qrUrl = response.qrUrl;
-          
-          // Se a URL não começar com http/https, construir usando window.location
+
           if (!qrUrl || (!qrUrl.startsWith('http://') && !qrUrl.startsWith('https://'))) {
             const baseUrl = window.location.origin;
             qrUrl = `${baseUrl}/remote/${response.sessionId}`;
-            console.log('⚠️ URL corrigida usando window.location.origin:', qrUrl);
           }
-          
-          // Verificar se a URL está acessível (opcional, apenas log)
-          console.log('🔍 URL do QR Code:', qrUrl);
-          console.log('🔍 Session ID:', response.sessionId);
-          
+
           setSession({
             sessionId: response.sessionId,
             qrUrl: qrUrl,
             isConnected: true,
             remoteClients: 0,
           });
-          console.log('✅ Apresentação criada:', response.sessionId, 'QR URL:', qrUrl);
         } else {
-          console.error('❌ Erro ao criar apresentação:', response);
           setError('Erro ao criar apresentação');
         }
       });
     } else {
-      console.error('❌ Socket não disponível para create-presentation');
       setError('Conexão não disponível');
       setIsConnecting(false);
     }
@@ -199,20 +174,18 @@ export const useSocket = (): UseSocketReturn => {
 
   const updateSlide = (currentSlide: number, totalSlides: number) => {
     if (socketRef.current && session) {
-      console.log('📡 useSocket - Enviando update-presentation:', { sessionId: session.sessionId, currentSlide, totalSlides });
       socketRef.current.emit('update-presentation', {
         sessionId: session.sessionId,
         currentSlide,
         totalSlides,
       });
     } else {
-      console.warn('❌ useSocket - updateSlide ignorado:', { hasSocket: !!socketRef.current, hasSession: !!session });
+      console.warn('useSocket - updateSlide ignorado:', { hasSocket: !!socketRef.current, hasSession: !!session });
     }
   };
 
   const shareContent = (content: string) => {
     if (socketRef.current && session) {
-      console.log('📤 Compartilhando conteúdo da apresentação...');
       socketRef.current.emit('share-presentation-content', session.sessionId, content);
     }
   };
@@ -231,7 +204,6 @@ export const useSocket = (): UseSocketReturn => {
     commandCallbackRef.current = callback;
   };
 
-  // Cleanup ao desmontar
   useEffect(() => {
     return () => {
       disconnect();

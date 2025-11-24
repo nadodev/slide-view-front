@@ -18,7 +18,6 @@ import { QRCodeDisplay } from "./QRCodeDisplay";
 import { RemoteControlModal } from "./RemoteControlModal";
 import { toast } from "sonner";
 
-// Função helper para extrair notas (mesma lógica do useSlidesManager)
 function extractNotes(text: string) {
   const notes: string[] = [];
   if (!text) return { clean: "", notes };
@@ -72,7 +71,7 @@ const Presentation = () => {
         "presentation-high-contrast",
         highContrast ? "1" : "0",
       );
-    } catch {}
+    } catch { }
   }, [highContrast]);
 
   const [presenterMode, setPresenterMode] = useState<boolean>(false);
@@ -85,7 +84,6 @@ const Presentation = () => {
   const thumbsRailRef = useRef<HTMLElement | null>(null);
   const [transitionKey, setTransitionKey] = useState<number>(0);
 
-  // Remote control states
   const [showQRCode, setShowQRCode] = useState<boolean>(false);
   const {
     session,
@@ -100,17 +98,16 @@ const Presentation = () => {
     platform,
   } = useSocket();
 
-  // Setup remote control command handling
   useEffect(() => {
     onRemoteCommand((command) => {
-      console.log('📺 Presentation - Comando recebido:', command);
-      console.log('🔍 Detalhes:', {
+      console.log('Presentation - Comando recebido:', command);
+      console.log('Detalhes:', {
         command: command.command,
         slideIndex: command.slideIndex,
         scrollDirection: command.scrollDirection,
         fromClient: command.fromClient
       });
-      
+
       if (command.command === 'next') {
         setCurrentSlide((prev) => Math.min(prev + 1, slides.length - 1));
       } else if (command.command === 'previous') {
@@ -118,29 +115,28 @@ const Presentation = () => {
       } else if (command.command === 'goto' && command.slideIndex !== undefined) {
         setCurrentSlide(Math.max(0, Math.min(command.slideIndex, slides.length - 1)));
       } else if (command.command === 'scroll' && command.scrollDirection) {
-        console.log('🖱️ Executando scroll:', command.scrollDirection);
-        
-        // Escolher o container correto baseado no modo
-        const scrollContainer = presenterMode 
-          ? presenterScrollRef.current 
+        console.log('Executando scroll:', command.scrollDirection);
+
+        const scrollContainer = presenterMode
+          ? presenterScrollRef.current
           : slideContentRef.current;
-        
+
         if (!scrollContainer) {
-          console.warn('⚠️ Container de scroll não encontrado', { 
-            presenterMode, 
+          console.warn('Container de scroll não encontrado', {
+            presenterMode,
             hasPresenterRef: !!presenterScrollRef.current,
-            hasSlideRef: !!slideContentRef.current 
+            hasSlideRef: !!slideContentRef.current
           });
           return;
         }
-        
+
         const scrollAmount = 200;
         const direction = command.scrollDirection === 'up' ? -scrollAmount : scrollAmount;
         const currentPosition = scrollContainer.scrollTop;
         const maxScroll = scrollContainer.scrollHeight - scrollContainer.clientHeight;
         const newPosition = Math.max(0, Math.min(currentPosition + direction, maxScroll));
-        
-        console.log('📊 Scroll details:', {
+
+        console.log('Scroll details:', {
           scrollAmount,
           direction,
           currentPosition,
@@ -150,119 +146,83 @@ const Presentation = () => {
           clientHeight: scrollContainer.clientHeight,
           mode: presenterMode ? 'presenter' : 'normal'
         });
-        
+
         scrollContainer.scrollTo({
           top: newPosition,
           behavior: 'smooth'
         });
-        
-        // Verificar se realmente rolou após um tempo
-        setTimeout(() => {
-          console.log('📍 Nova posição após scroll:', scrollContainer.scrollTop);
-        }, 500);
+
       } else if (command.command === 'scroll-sync' && command.scrollPosition !== undefined) {
-        console.log('Sincronizando scroll para posição:', command.scrollPosition);
-        
-        // Escolher o container correto baseado no modo
-        const scrollContainer = presenterMode 
-          ? presenterScrollRef.current 
+        const scrollContainer = presenterMode
+          ? presenterScrollRef.current
           : slideContentRef.current;
-        
+
         if (scrollContainer) {
           scrollContainer.scrollTo({
             top: command.scrollPosition,
             behavior: 'smooth'
           });
         } else {
-          // Fallback para window se o container não estiver disponível
-          console.warn('⚠️ Usando fallback window.scrollTo');
           window.scrollTo({
             top: command.scrollPosition,
             behavior: 'smooth'
           });
         }
       } else if (command.command === 'presenter') {
-        // Verificar se o toggle foi especificado explicitamente
         const toggleValue = (command as any).toggle;
         const shouldActivate = toggleValue !== undefined ? toggleValue : !presenterMode;
-        console.log('Toggle modo apresentação:', { 
-          toggleValue, 
-          shouldActivate, 
-          currentState: presenterMode 
-        });
         setPresenterMode(shouldActivate);
         toast.success('Modo Apresentação', {
           description: shouldActivate ? 'Ativado via controle remoto' : 'Desativado via controle remoto'
         });
       } else if (command.command === 'focus') {
-        // Verificar se o toggle foi especificado explicitamente
         const toggleValue = (command as any).toggle;
         const shouldActivate = toggleValue !== undefined ? toggleValue : !focusMode;
-        console.log('Toggle modo foco:', { 
-          toggleValue, 
-          shouldActivate, 
-          currentState: focusMode 
-        });
         setFocusMode(shouldActivate);
         toast.success('Modo Foco', {
           description: shouldActivate ? 'Ativado via controle remoto' : 'Desativado via controle remoto'
         });
       }
-      
-      // Update transition for smooth slide change (except for scroll)
+
       if (command.command !== 'scroll' && command.command !== 'scroll-sync') {
         setTransitionKey(prev => prev + 1);
       }
     });
   }, [onRemoteCommand, slides.length, setCurrentSlide, setTransitionKey, slideContentRef, presenterMode, presenterScrollRef]);
 
-  // Update remote clients when slide changes
   useEffect(() => {
     if (session && slides.length > 0) {
-      console.log('📡 Presentation - Enviando updateSlide:', { currentSlide, totalSlides: slides.length });
       updateSlide(currentSlide, slides.length);
     }
   }, [session, currentSlide, slides.length, updateSlide]);
 
-  // Share presentation content with remote clients
   useEffect(() => {
     if (session && slides.length > 0) {
-      // Aguardar um momento para garantir que o DOM foi atualizado
       setTimeout(() => {
-        // Tentar múltiplas formas de capturar o conteúdo
         let presentationElement = slideContentRef.current?.parentElement;
-        
+
         if (!presentationElement) {
           presentationElement = document.querySelector('.slide-content') as HTMLElement;
         }
-        
+
         if (!presentationElement) {
           presentationElement = document.querySelector('[data-slide-content]') as HTMLElement;
         }
-        
+
         if (!presentationElement) {
           presentationElement = document.querySelector('main') as HTMLElement;
         }
-        
+
         if (!presentationElement) {
           presentationElement = document.body;
         }
-        
+
         if (presentationElement) {
           const contentHtml = presentationElement.innerHTML;
           const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-          
-          // Extrair também o conteúdo markdown dos slides para o controle remoto
+
           const slidesContent = slides.map(slide => slide.content).join('\n\n---\n\n');
-          
-          console.log('📤 Compartilhando conteúdo da apresentação...', {
-            elementFound: !!presentationElement,
-            elementTag: presentationElement.tagName,
-            contentLength: contentHtml.length,
-            currentSlide,
-            totalSlides: slides.length
-          });
-          
+
           shareContent(JSON.stringify({
             html: contentHtml,
             markdown: slidesContent,
@@ -271,9 +231,9 @@ const Presentation = () => {
             scrollPosition
           }));
         } else {
-          console.warn('❌ Não foi possível encontrar elemento da apresentação para compartilhar');
+          console.warn('Não foi possível encontrar elemento da apresentação para compartilhar');
         }
-      }, 500); // Aumentar delay para 500ms
+      }, 500);
     }
   }, [session, slides, currentSlide, shareContent]);
 
@@ -308,7 +268,7 @@ const Presentation = () => {
         await document.documentElement.requestFullscreen();
       } else {
         await document.exitFullscreen();
-    }
+      }
     } catch {
       /* ignore */
     }
@@ -324,11 +284,10 @@ const Presentation = () => {
     thumbsRailRef,
   });
 
-  // Resetar scroll do modo apresentação quando muda de slide
   useEffect(() => {
     if (presenterMode && presenterScrollRef.current && slides.length > 0) {
       presenterScrollRef.current.scrollTo({ top: 0, behavior: "smooth" });
-        }
+    }
   }, [currentSlide, presenterMode, slides.length, presenterScrollRef]);
 
   usePresentationShortcuts({
@@ -394,14 +353,13 @@ const Presentation = () => {
         <PresentationEmptyState
           highContrast={highContrast}
           onToggleHighContrast={() => setHighContrast((v) => !v)}
-            onFilesChange={handleFileUpload} 
-            onAIGenerate={handleAIGeneration}
+          onFilesChange={handleFileUpload}
+          onAIGenerate={handleAIGeneration}
           onCreateSlide={() => {
-            // Abrir o editor no modo de criação
             setDraftContent("");
             setEditing(true);
           }}
-            loading={loading} 
+          loading={loading}
           error={error}
           warning={warning}
         />
@@ -426,53 +384,52 @@ const Presentation = () => {
               onToggleContrast={() => setHighContrast((v) => !v)}
             />
           ) : presenterMode ? (
-                <PresenterView
-                  currentHtml={slides[currentSlide].html}
-                  currentIndex={currentSlide}
-                  slidesLength={slides.length}
-                  onNext={() =>
-                    setCurrentSlide((s) => Math.min(slides.length - 1, s + 1))
-                  }
-                  onPrev={() => setCurrentSlide((s) => Math.max(0, s - 1))}
-                  onExit={() => setPresenterMode(false)}
+            <PresenterView
+              currentHtml={slides[currentSlide].html}
+              currentIndex={currentSlide}
+              slidesLength={slides.length}
+              onNext={() =>
+                setCurrentSlide((s) => Math.min(slides.length - 1, s + 1))
+              }
+              onPrev={() => setCurrentSlide((s) => Math.max(0, s - 1))}
+              onExit={() => setPresenterMode(false)}
               scrollContainerRef={presenterScrollRef}
-                />
-              ) : (
+            />
+          ) : (
             <SlidesWorkspace
-                      slides={slides}
-                      currentSlide={currentSlide}
+              slides={slides}
+              currentSlide={currentSlide}
               setCurrentSlide={setCurrentSlide}
-                      transitionKey={transitionKey}
-                      setTransitionKey={setTransitionKey}
-                      slideTransition={slideTransition}
-                      setSlideTransition={setSlideTransition}
-                      focusMode={focusMode}
-                      setFocusMode={setFocusMode}
-                      presenterMode={presenterMode}
-                      setPresenterMode={setPresenterMode}
+              transitionKey={transitionKey}
+              setTransitionKey={setTransitionKey}
+              slideTransition={slideTransition}
+              setSlideTransition={setSlideTransition}
+              focusMode={focusMode}
+              setFocusMode={setFocusMode}
+              presenterMode={presenterMode}
+              setPresenterMode={setPresenterMode}
               thumbsRailRef={thumbsRailRef}
               slideContainerRef={slideContainerRef}
               slideContentRef={slideContentRef}
               onRemove={(idx: number) => handleRemoveSlide(idx)}
               onReorder={reorderSlides}
-                      setShowSlideList={setShowSlideList}
-                      setEditing={setEditing}
+              setShowSlideList={setShowSlideList}
+              setEditing={setEditing}
               setDraftContent={setDraftContent}
-                      duplicateSlide={duplicateSlide}
-                      onSaveAllSlides={saveAllSlidesToFile}
-                      onRestart={handleRestart}
-                      highContrast={highContrast}
-                      setHighContrast={setHighContrast}
+              duplicateSlide={duplicateSlide}
+              onSaveAllSlides={saveAllSlidesToFile}
+              onRestart={handleRestart}
+              highContrast={highContrast}
+              setHighContrast={setHighContrast}
               loading={loading}
               onShowRemoteControl={() => {
                 console.log('QR Code clicado - Platform:', platform, 'Supported:', isSupported);
-                
+
                 if (!isSupported) {
-                  // Em plataformas não suportadas, apenas mostrar aviso
                   setShowQRCode(true);
                   return;
                 }
-                
+
                 if (!session) {
                   createPresentation();
                 }
@@ -495,27 +452,25 @@ const Presentation = () => {
         onChange={setDraftContent}
         onCancel={() => {
           setEditing(false);
-          // Resetar para modo edit quando fechar
           setDraftContent("");
         }}
         onSave={() => {
           if (slides.length > 0 && currentSlide < slides.length) {
-          setSlides((prev) => {
-            const copy = prev.slice();
-            const item = copy[currentSlide];
-            if (item) {
-              item.content = draftContent;
-              item.html = parseMarkdownSafe(draftContent);
-            }
-            return copy;
-          });
-          setEditing(false);
-          saveSlideToFile(currentSlide, draftContent);
+            setSlides((prev) => {
+              const copy = prev.slice();
+              const item = copy[currentSlide];
+              if (item) {
+                item.content = draftContent;
+                item.html = parseMarkdownSafe(draftContent);
+              }
+              return copy;
+            });
+            setEditing(false);
+            saveSlideToFile(currentSlide, draftContent);
           }
         }}
         mode={slides.length === 0 ? 'create' : 'edit'}
         onCreateFiles={(files) => {
-          // Processar arquivos .md como slides
           const newSlides = files.map((file) => {
             const { clean, notes } = extractNotes(file.content);
             return {
@@ -621,7 +576,6 @@ const Presentation = () => {
         </div>
       )}
 
-      {/* QR Code / Remote Control Modal */}
       {showQRCode && (
         <>
           {isSupported && session ? (

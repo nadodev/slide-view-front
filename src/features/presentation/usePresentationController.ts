@@ -1,17 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { toast } from "sonner";
-import { Slide } from "../../components/slides/types";
-import { presentationService } from "../../services/presentation/PresentationService";
-import { socketService } from "../../services/socket/SocketService";
 import { useSlidesManager } from "../../hooks/useSlidesManager";
-import { useSocket } from "../../hooks/useSocket"; // We will refactor this later to use the service directly if needed, or keep as adapter
+import { useSocket } from "../../hooks/useSocket";
+import { socketService } from "../../services/socket/SocketService";
 
 export function usePresentationController() {
-    const location = useLocation();
-    const navigate = useNavigate();
 
-    // Use existing hooks for now, but we will gradually replace logic with services
     const slidesManager = useSlidesManager();
     const {
         slides,
@@ -51,15 +45,12 @@ export function usePresentationController() {
     const presenterScrollRef = useRef<HTMLDivElement | null>(null);
     const thumbsRailRef = useRef<HTMLElement | null>(null);
 
-    // Socket integration
     const { session, isSupported, platform, createPresentation, disconnect } = useSocket();
 
-    // Persist high contrast
     useEffect(() => {
         localStorage.setItem("presentation-high-contrast", highContrast ? "1" : "0");
     }, [highContrast]);
 
-    // Handle remote commands (This logic should ideally move to a specialized hook or the service)
     useEffect(() => {
         const handleCommand = (command: any) => {
             console.log('🎮 Command received:', command);
@@ -83,7 +74,6 @@ export function usePresentationController() {
     }, [slides.length, setCurrentSlide]);
 
     return {
-        // State
         slides,
         currentSlide,
         showSlideList,
@@ -101,7 +91,6 @@ export function usePresentationController() {
         isSupported,
         platform,
 
-        // Actions
         setSlides,
         setCurrentSlide,
         setShowSlideList,
@@ -122,7 +111,6 @@ export function usePresentationController() {
         createPresentation,
         disconnect,
 
-        // Refs
         slideContentRef,
         slideContainerRef,
         presenterScrollRef,

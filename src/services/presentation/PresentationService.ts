@@ -21,7 +21,6 @@ const parseMarkdown = (content: string): string => {
     return parseMarkdownSafe(content);
 };
 
-// Service object grouping related functionality
 export const presentationService = {
     loadSlides(): Slide[] {
         try {

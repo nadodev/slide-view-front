@@ -33,7 +33,6 @@ export const RemoteControl: React.FC = () => {
   const [presentationContent, setPresentationContent] = useState<string>('');
   const [scrollPosition, setScrollPosition] = useState(0);
 
-  // Inicializar Mermaid para o conteúdo da apresentação
   useMermaid(presentationContent);
   const [isPresenterMode, setIsPresenterMode] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
@@ -41,66 +40,39 @@ export const RemoteControl: React.FC = () => {
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isScrollingRef = useRef(false);
 
-  // Detectar se estamos na Vercel
   const isVercel = window.location.hostname.includes('vercel.app');
 
-  console.log('RemoteControl state:', {
-    sessionId,
-    isConnected,
-    isConnecting,
-    error,
-    currentSlide,
-    totalSlides,
-    hostname: window.location.hostname
-  });
-
-  // Wrapper de erro para capturar problemas de renderização
   try {
 
     useEffect(() => {
-      console.log('RemoteControl iniciado:', { sessionId, hostname: window.location.hostname });
-
       if (!sessionId) {
-        console.error('SessionId não encontrado');
         setError('ID da sessão não encontrado');
         setIsConnecting(false);
         return;
       }
 
-      // Se for Vercel, mostrar mensagem de que WebSockets não funcionam
       if (isVercel) {
-        console.log('Vercel detectado - WebSockets não funcionam');
         setIsConnecting(false);
         setError('Vercel não suporta WebSockets. Use Railway, Render ou Heroku para controle remoto.');
         return;
       }
 
-      // Detectar URL da API baseado no ambiente
       let apiUrl: string;
       if (window.location.hostname.includes('railway.app')) {
-        // No Railway, usar a mesma URL base
         apiUrl = window.location.origin;
-        console.log('Railway detectado, usando:', apiUrl);
       } else if (window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1')) {
-        // No desenvolvimento local, usar porta específica do servidor
         apiUrl = 'http://localhost:3001';
-        console.log('Desenvolvimento local detectado, usando:', apiUrl);
       } else {
-        // Fallback para outras plataformas
         apiUrl = import.meta.env.VITE_API_URL || window.location.origin;
-        console.log('Usando URL configurada:', apiUrl);
       }
 
-      console.log('Tentando conectar Socket.IO em:', apiUrl);
 
-      // Verificar se é ambiente de desenvolvimento e mostrar aviso
       if (window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1')) {
         toast.info('Modo Desenvolvimento', {
           description: 'Certifique-se que o servidor está rodando na porta 3001'
         });
       }
 
-      // Conectar ao servidor
       const socketConnection = io(apiUrl, {
         transports: ['websocket', 'polling'],
         timeout: 10000,
@@ -110,22 +82,13 @@ export const RemoteControl: React.FC = () => {
       });
 
       socketConnection.on('connect', () => {
-        console.log('Socket.IO conectado com sucesso!');
         setIsConnected(true);
         setIsConnecting(false);
         setError(null);
 
-        // Juntar-se à sessão
         socketConnection.emit('join-remote', sessionId, (response: any) => {
-          console.log('Resposta join-remote:', response);
-          console.log('currentSlide recebido:', response?.currentSlide);
-          console.log('totalSlides recebido:', response?.totalSlides);
 
           if (response?.success) {
-            console.log('🎯 Atualizando estado do controle remoto:', {
-              currentSlide: response.currentSlide,
-              totalSlides: response.totalSlides
-            });
             setCurrentSlide(response.currentSlide || 0);
             setTotalSlides(response.totalSlides || 0);
             setJoinError(null);
@@ -133,9 +96,6 @@ export const RemoteControl: React.FC = () => {
               description: 'Controle remoto ativo'
             });
           } else {
-            console.error('Erro join-remote:', response);
-            // Não usar o `error` global (que mostra tela inteira) para falha de join;
-            // armazenar em `joinError` e permitir retry sem recarregar
             setJoinError(response?.error || 'Sessão não encontrada');
             toast.error('Erro', {
               description: response?.error || 'Falha na conexão'
@@ -145,7 +105,6 @@ export const RemoteControl: React.FC = () => {
       });
 
       socketConnection.on('disconnect', () => {
-        console.log('Socket.IO desconectado');
         setIsConnected(false);
         toast.warning('Desconectado', {
           description: 'Reconectando...'
@@ -153,7 +112,6 @@ export const RemoteControl: React.FC = () => {
       });
 
       socketConnection.on('connect_error', (error) => {
-        console.error('Erro de conexão Socket.IO:', error);
         setIsConnected(false);
         setIsConnecting(false);
         setError(`Não foi possível conectar: ${error.message || 'Servidor indisponível'}`);
@@ -163,35 +121,24 @@ export const RemoteControl: React.FC = () => {
       });
 
       socketConnection.on('sync-slide', ({ currentSlide: newSlide, totalSlides: newTotal }) => {
-        console.log('📍 sync-slide recebido:', { newSlide, newTotal, currentSlideAtual: currentSlide });
         setCurrentSlide(newSlide);
         setTotalSlides(newTotal);
-        console.log('📍 Estado atualizado para:', { currentSlide: newSlide, totalSlides: newTotal });
       });
 
       socketConnection.on('presentation-content', ({ content, scrollPosition: newScrollPos }) => {
-        console.log('Conteúdo da apresentação recebido');
 
         try {
-          // Tentar parsear como JSON primeiro (novo formato)
           const parsedContent = JSON.parse(content);
           if (parsedContent.html) {
             setPresentationContent(parsedContent.html);
             setCurrentSlide(parsedContent.currentSlide || 0);
             setTotalSlides(parsedContent.totalSlides || 0);
             setScrollPosition(parsedContent.scrollPosition || 0);
-            console.log('✅ Conteúdo JSON processado:', {
-              currentSlide: parsedContent.currentSlide,
-              totalSlides: parsedContent.totalSlides,
-              scrollPosition: parsedContent.scrollPosition
-            });
           } else {
-            // Fallback para o formato antigo
             setPresentationContent(content);
             setScrollPosition(newScrollPos || 0);
           }
         } catch (e) {
-          // Se não for JSON, usar como string simples (formato antigo)
           setPresentationContent(content);
           setScrollPosition(newScrollPos || 0);
         }
@@ -214,20 +161,16 @@ export const RemoteControl: React.FC = () => {
       };
     }, [sessionId]);
 
-    // Sincronizar scroll position do espelho (recebido do servidor)
     useEffect(() => {
       if (mirrorRef.current && scrollPosition !== undefined && !isScrollingRef.current) {
         // Só atualizar se não estiver fazendo scroll manualmente
         const currentScroll = mirrorRef.current.scrollTop;
         const diff = Math.abs(currentScroll - scrollPosition);
 
-        // Só atualizar se a diferença for significativa (mais de 5px)
-        // para evitar micro-ajustes que causam loops
         if (diff > 5) {
           isScrollingRef.current = true;
           mirrorRef.current.scrollTop = scrollPosition;
 
-          // Resetar flag após um tempo
           setTimeout(() => {
             isScrollingRef.current = false;
           }, 200);
@@ -238,7 +181,6 @@ export const RemoteControl: React.FC = () => {
     const sendScrollSync = (scrollTop: number) => {
       if (!socket || !isConnected) return;
 
-      // Throttle: enviar apenas a cada 50ms para evitar spam
       if (scrollTimeoutRef.current) {
         clearTimeout(scrollTimeoutRef.current);
       }
@@ -249,15 +191,12 @@ export const RemoteControl: React.FC = () => {
           command: 'scroll-sync',
           scrollPosition: scrollTop,
         });
-        console.log('📱 Scroll sincronizado:', scrollTop);
       }, 50);
     };
 
-    // Handler para scroll (mouse wheel e touch)
     const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
       const target = e.currentTarget;
       if (target && !isScrollingRef.current) {
-        // Pequeno delay para evitar conflito com scroll recebido do servidor
         setTimeout(() => {
           if (!isScrollingRef.current && target) {
             sendScrollSync(target.scrollTop);
@@ -266,7 +205,6 @@ export const RemoteControl: React.FC = () => {
       }
     };
 
-    // Handler para touch events
     const handleTouchStart = () => {
       isScrollingRef.current = false;
     };
@@ -280,7 +218,6 @@ export const RemoteControl: React.FC = () => {
     };
 
     const handleTouchEnd = () => {
-      // Pequeno delay para garantir que o scroll final seja enviado
       setTimeout(() => {
         isScrollingRef.current = false;
         if (mirrorRef.current) {
@@ -299,7 +236,6 @@ export const RemoteControl: React.FC = () => {
       setJoinError(null);
 
       socket.emit('join-remote', sessionId, (response: any) => {
-        console.log('Resposta join-remote (retry):', response);
         setIsConnecting(false);
         if (response?.success) {
           setJoinError(null);
@@ -314,7 +250,6 @@ export const RemoteControl: React.FC = () => {
     };
 
     const sendCommand = (command: 'next' | 'previous' | 'goto' | 'scroll' | 'presenter' | 'focus', slideIndex?: number, scrollDirection?: 'up' | 'down') => {
-      console.log('RemoteControl - Enviando comando:', { command, slideIndex, scrollDirection });
 
       if (!socket || !isConnected) {
         toast.error('Não conectado', {
@@ -323,7 +258,6 @@ export const RemoteControl: React.FC = () => {
         return;
       }
 
-      // Toggle para presenter e focus
       if (command === 'presenter') {
         const newState = !isPresenterMode;
         setIsPresenterMode(newState);
@@ -355,7 +289,6 @@ export const RemoteControl: React.FC = () => {
         scrollDirection,
       });
 
-      // Feedback visual
       const commandMessages = {
         next: 'Próximo slide',
         previous: 'Slide anterior',
@@ -416,14 +349,12 @@ export const RemoteControl: React.FC = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-4">
         <div className="max-w-md mx-auto">
-          {/* Header */}
           <div className="text-center mb-8 pt-8">
             <div className="inline-flex items-center gap-2 mb-2">
               <Smartphone className="text-violet-400" size={24} />
               <h1 className="text-white text-2xl font-bold">Controle Remoto</h1>
             </div>
 
-            {/* Status */}
             <div className="flex items-center justify-center gap-2 mb-4">
               <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400 animate-pulse' : 'bg-red-400'
                 }`} />
@@ -437,7 +368,6 @@ export const RemoteControl: React.FC = () => {
               )}
             </div>
 
-            {/* Join Error (não bloquear toda a UI) */}
             {joinError ? (
               <div className="mb-4 p-3 rounded-lg bg-yellow-900/30 border border-yellow-800">
                 <p className="text-yellow-200 text-sm">{joinError}</p>
@@ -447,14 +377,12 @@ export const RemoteControl: React.FC = () => {
               </div>
             ) : null}
 
-            {/* Slide Counter */}
             {totalSlides > 0 && (
               <div className="bg-slate-800/50 rounded-xl p-3 mb-6">
                 <p className="text-slate-400 text-sm mb-1">Slide atual</p>
                 <p className="text-white text-2xl font-bold">
                   {currentSlide + 1} <span className="text-slate-500">de {totalSlides}</span>
                 </p>
-                {/* Progress Bar */}
                 <div className="mt-2 bg-slate-700 rounded-full h-2">
                   <div
                     className="bg-gradient-to-r from-violet-500 to-fuchsia-500 h-2 rounded-full transition-all duration-300"
@@ -464,7 +392,6 @@ export const RemoteControl: React.FC = () => {
               </div>
             )}
 
-            {/* Espelho da Apresentação */}
             <div className="bg-linear-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm rounded-2xl p-5 mb-6 border border-white/10 shadow-2xl">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
@@ -492,10 +419,8 @@ export const RemoteControl: React.FC = () => {
                 className="relative rounded-2xl shadow-2xl overflow-hidden touch-pan-y border border-white/10 bg-linear-to-br from-slate-900 via-slate-800 to-slate-900"
                 style={{ height: '320px', WebkitOverflowScrolling: 'touch' }}
               >
-                {/* Gradient overlay no topo */}
                 <div className="absolute top-0 left-0 right-0 h-12 bg-linear-to-b from-slate-900 via-slate-900/80 to-transparent z-10 pointer-events-none"></div>
 
-                {/* Gradient overlay na base */}
                 <div className="absolute bottom-0 left-0 right-0 h-12 bg-linear-to-t from-slate-900 via-slate-900/80 to-transparent z-10 pointer-events-none"></div>
                 {presentationContent ? (
                   <div
@@ -720,9 +645,7 @@ export const RemoteControl: React.FC = () => {
 
           </div>
 
-          {/* Controls */}
           <div className="space-y-4">
-            {/* Navigation */}
             <div className="grid grid-cols-2 gap-4">
               <Button
                 onClick={() => sendCommand('previous')}
@@ -745,7 +668,6 @@ export const RemoteControl: React.FC = () => {
               </Button>
             </div>
 
-            {/* Quick Navigation */}
             <div className="grid grid-cols-2 gap-4">
               <Button
                 onClick={() => sendCommand('goto', 0)}
@@ -770,7 +692,6 @@ export const RemoteControl: React.FC = () => {
               </Button>
             </div>
 
-            {/* Scroll Controls */}
             <div className="mt-6">
               <h3 className="text-slate-300 text-sm font-medium mb-3">🖱️ Controles de Rolagem:</h3>
               <div className="grid grid-cols-2 gap-4">
@@ -802,7 +723,6 @@ export const RemoteControl: React.FC = () => {
               </div>
             </div>
 
-            {/* Atalhos Especiais */}
             <div className="mt-6">
               <h3 className="text-slate-300 text-sm font-medium mb-3">⌨️ Atalhos Especiais:</h3>
               <div className="grid grid-cols-2 gap-4">
@@ -814,8 +734,8 @@ export const RemoteControl: React.FC = () => {
                   disabled={!isConnected}
                   size="lg"
                   className={`h-14 flex flex-col items-center gap-1 transition-all ${isPresenterMode
-                      ? 'bg-purple-600 hover:bg-purple-700 border-2 border-purple-400 shadow-lg shadow-purple-500/50'
-                      : 'bg-purple-800 hover:bg-purple-700 border border-purple-600'
+                    ? 'bg-purple-600 hover:bg-purple-700 border-2 border-purple-400 shadow-lg shadow-purple-500/50'
+                    : 'bg-purple-800 hover:bg-purple-700 border border-purple-600'
                     }`}
                 >
                   <Play size={20} className={isPresenterMode ? 'text-white' : 'text-purple-200'} />
@@ -832,8 +752,8 @@ export const RemoteControl: React.FC = () => {
                   disabled={!isConnected}
                   size="lg"
                   className={`h-14 flex flex-col items-center gap-1 transition-all ${isFocusMode
-                      ? 'bg-amber-600 hover:bg-amber-700 border-2 border-amber-400 shadow-lg shadow-amber-500/50'
-                      : 'bg-amber-800 hover:bg-amber-700 border border-amber-600'
+                    ? 'bg-amber-600 hover:bg-amber-700 border-2 border-amber-400 shadow-lg shadow-amber-500/50'
+                    : 'bg-amber-800 hover:bg-amber-700 border border-amber-600'
                     }`}
                 >
                   <QrCode size={20} className={isFocusMode ? 'text-white' : 'text-amber-200'} />
@@ -844,7 +764,6 @@ export const RemoteControl: React.FC = () => {
               </div>
             </div>
 
-            {/* Slide Grid - Quick Jump */}
             {totalSlides > 0 && totalSlides <= 20 && (
               <div className="mt-8">
                 <h3 className="text-slate-300 text-sm font-medium mb-3">Ir para slide:</h3>
@@ -857,8 +776,8 @@ export const RemoteControl: React.FC = () => {
                       size="sm"
                       variant={currentSlide === i ? "default" : "outline"}
                       className={`h-10 text-xs ${currentSlide === i
-                          ? 'bg-violet-600 hover:bg-violet-700 border-violet-500'
-                          : 'border-slate-600 hover:border-violet-400'
+                        ? 'bg-violet-600 hover:bg-violet-700 border-violet-500'
+                        : 'border-slate-600 hover:border-violet-400'
                         }`}
                     >
                       {i + 1}
@@ -869,7 +788,6 @@ export const RemoteControl: React.FC = () => {
             )}
           </div>
 
-          {/* Footer */}
           <div className="mt-12 text-center">
             <p className="text-slate-500 text-xs">
               Sessão: {sessionId}
@@ -880,7 +798,6 @@ export const RemoteControl: React.FC = () => {
     );
 
   } catch (renderError) {
-    console.error('Erro de renderização no RemoteControl:', renderError);
     return (
       <div className="min-h-screen bg-red-900 flex items-center justify-center p-4">
         <div className="bg-white rounded-lg p-6 max-w-md text-center">

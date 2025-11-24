@@ -45,7 +45,6 @@ type NavigationProps = {
   highContrast: boolean;
   setHighContrast: (contrast: boolean) => void;
 
-  // Remote control props
   onShowRemoteControl?: () => void;
   remoteSession?: {
     isConnected: boolean;
@@ -103,7 +102,6 @@ const Navigation = ({
     <nav className="w-full bg-gray-900 border-b border-gray-800 shadow-lg">
       <div className="max-w-7xl mx-auto px-6 py-4">
         <div className="flex items-center justify-between gap-6">
-          {/* Navegação de Slides */}
           <div className="flex items-center gap-3">
             <button
               onClick={onPrev}
@@ -136,7 +134,6 @@ const Navigation = ({
             </button>
           </div>
 
-          {/* Ações */}
           <div className="flex items-center gap-2">
             <button
               onClick={onEdit}
@@ -155,8 +152,8 @@ const Navigation = ({
               }
               title={focusMode ? "Sair do foco" : "Modo foco"}
               className={`cursor-pointer flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 text-sm border ${focusMode
-                  ? "bg-purple-600 hover:bg-purple-500 text-white border-purple-500"
-                  : "bg-gray-800 hover:bg-gray-700 text-gray-200 border-gray-700 hover:border-gray-600"
+                ? "bg-purple-600 hover:bg-purple-500 text-white border-purple-500"
+                : "bg-gray-800 hover:bg-gray-700 text-gray-200 border-gray-700 hover:border-gray-600"
                 }`}
             >
               {focusMode ? <Eye size={16} /> : <EyeOff size={16} />}
@@ -175,7 +172,6 @@ const Navigation = ({
               <span className="hidden md:inline">Duplicar</span>
             </button>
 
-            {/* Botão Controle Remoto */}
             {onShowRemoteControl && (
               <button
                 onClick={() => {
@@ -185,8 +181,8 @@ const Navigation = ({
                 aria-label="Ativar controle remoto"
                 title="Controlar apresentação pelo celular"
                 className={`cursor-pointer flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 text-sm border ${remoteSession?.isConnected
-                    ? "bg-violet-600 hover:bg-violet-500 text-white border-violet-500 shadow-lg shadow-violet-900/30"
-                    : "bg-gray-800 hover:bg-gray-700 text-gray-200 border-gray-700 hover:border-violet-400"
+                  ? "bg-violet-600 hover:bg-violet-500 text-white border-violet-500 shadow-lg shadow-violet-900/30"
+                  : "bg-gray-800 hover:bg-gray-700 text-gray-200 border-gray-700 hover:border-violet-400"
                   }`}
               >
                 {remoteSession?.isConnected ? <Wifi size={16} /> : <QrCode size={16} />}
@@ -201,7 +197,6 @@ const Navigation = ({
               </button>
             )}
 
-            {/* Botão de Salvar Todos */}
             {onSaveAllSlides && (
               <button
                 onClick={onSaveAllSlides}
@@ -214,7 +209,6 @@ const Navigation = ({
               </button>
             )}
 
-            {/* Botão Recomençar */}
             {onRestart && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -257,34 +251,6 @@ const Navigation = ({
                 </AlertDialogContent>
               </AlertDialog>
             )}
-
-            {/* {typeof onExportPdf === "function" && (
-              <button
-                onClick={onExportPdf}
-                aria-label="Exportar slide atual como PDF"
-                title="Exportar PDF"
-                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 transition-all duration-200 text-sm border border-gray-700 hover:border-gray-600"
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M21 8v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8" />
-                  <path d="M7 8V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v3" />
-                  <path d="M12 12v6" />
-                  <path d="M9 15l3-3 3 3" />
-                </svg>
-                <span className="hidden md:inline">PDF</span>
-              </button>
-            )} */}
-
             <div className="h-6 w-px bg-gray-700 mx-1" />
 
             <button

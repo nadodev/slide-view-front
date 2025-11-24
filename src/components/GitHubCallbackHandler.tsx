@@ -1,9 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-/**
- * Componente para lidar com callback do GitHub OAuth
- */
 export default function GitHubCallbackHandler() {
   const navigate = useNavigate();
 
@@ -14,7 +11,6 @@ export default function GitHubCallbackHandler() {
       const state = urlParams.get('state');
       const storedState = localStorage.getItem('github_oauth_state');
 
-      // Verificar se há erro
       const error = urlParams.get('error');
       if (error) {
         console.error('GitHub OAuth Error:', error);
@@ -30,7 +26,6 @@ export default function GitHubCallbackHandler() {
         return;
       }
 
-      // Verificar state para prevenir CSRF
       if (!code || !state || state !== storedState) {
         console.error('Invalid OAuth callback');
         if (window.opener) {
@@ -46,7 +41,6 @@ export default function GitHubCallbackHandler() {
       }
 
       try {
-        // Trocar code por access token
         const tokenResponse = await fetch('/api/auth/github/token', {
           method: 'POST',
           headers: {
@@ -61,7 +55,6 @@ export default function GitHubCallbackHandler() {
 
         const { access_token } = await tokenResponse.json();
 
-        // Buscar informações do usuário
         const userResponse = await fetch('https://api.github.com/user', {
           headers: {
             'Authorization': `token ${access_token}`,
@@ -75,7 +68,6 @@ export default function GitHubCallbackHandler() {
 
         const userData = await userResponse.json();
 
-        // Salvar token e dados do usuário
         const authData = {
           token: access_token,
           user: userData,
@@ -84,27 +76,24 @@ export default function GitHubCallbackHandler() {
         localStorage.setItem('github_auth', JSON.stringify(authData));
         localStorage.removeItem('github_oauth_state');
 
-        // Notificar janela pai sobre sucesso
         if (window.opener) {
           window.opener.postMessage(
             { type: 'github-auth-success', data: authData },
             window.location.origin
           );
-          
-          // Disparar evento customizado
+
           const event = new CustomEvent('github-auth-success', {
             detail: authData,
           });
           window.opener.dispatchEvent(event);
-          
+
           window.close();
         } else {
-          // Se não é popup, redirecionar para home
           navigate('/?success=github_auth');
         }
       } catch (error) {
         console.error('GitHub authentication failed:', error);
-        
+
         if (window.opener) {
           window.opener.postMessage(
             { type: 'github-auth-error', error: error instanceof Error ? error.message : 'Unknown error' },

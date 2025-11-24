@@ -333,8 +333,8 @@ export function useSlidesManager() {
         doc.open();
         doc.write(
           '<!doctype html><html><head><meta charset="utf-8"><title>Slide - ' +
-            (slide.name || index + 1) +
-            "</title>",
+          (slide.name || index + 1) +
+          "</title>",
         );
 
         Array.from(
@@ -389,7 +389,7 @@ export function useSlidesManager() {
   const reorderSlides = useCallback(
     (fromIndex: number, toIndex: number) => {
       if (fromIndex === toIndex) return;
-      
+
       setSlides((prevSlides) => {
         const newSlides = [...prevSlides];
         const [movedSlide] = newSlides.splice(fromIndex, 1);
@@ -397,7 +397,6 @@ export function useSlidesManager() {
         return newSlides;
       });
 
-      // Ajustar o slide atual se necessário
       if (currentSlide === fromIndex) {
         setCurrentSlide(toIndex);
       } else if (currentSlide > fromIndex && currentSlide <= toIndex) {

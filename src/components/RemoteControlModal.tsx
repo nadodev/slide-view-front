@@ -23,12 +23,10 @@ export const RemoteControlModal: React.FC<RemoteControlModalProps> = ({
 }) => {
   const isDevelopment = platform === 'development';
 
-  // Mostrar modal apenas quando não está suportado ou em desenvolvimento
   if (!isSupported || isDevelopment) {
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div className="bg-linear-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-xl rounded-3xl shadow-2xl max-w-md w-full p-8 border border-slate-700/50">
-          {/* Header */}
           <div className="text-center mb-6">
             <div className="inline-flex items-center gap-2 mb-3">
               <Smartphone className="text-blue-400" size={24} />
@@ -39,7 +37,6 @@ export const RemoteControlModal: React.FC<RemoteControlModalProps> = ({
             </p>
           </div>
 
-          {/* User-friendly message */}
           <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 mb-6">
             <div className="text-center">
               <Smartphone className="text-blue-400 mx-auto mb-3" size={48} />
@@ -55,7 +52,6 @@ export const RemoteControlModal: React.FC<RemoteControlModalProps> = ({
             </div>
           </div>
 
-          {/* Development instructions */}
           {isDevelopment && (
             <div className="mb-6">
               <div className="bg-slate-800/50 rounded-lg p-4 text-center">
@@ -67,7 +63,6 @@ export const RemoteControlModal: React.FC<RemoteControlModalProps> = ({
             </div>
           )}
 
-          {/* Close Button */}
           <div className="flex justify-center">
             <Button
               onClick={onClose}
@@ -82,6 +77,5 @@ export const RemoteControlModal: React.FC<RemoteControlModalProps> = ({
     );
   }
 
-  // Se suportado, não renderizar nada (o QRCodeDisplay será renderizado pelo componente pai)
   return null;
 };

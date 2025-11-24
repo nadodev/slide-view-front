@@ -16,7 +16,6 @@ export type SessionData = {
     isConnected: boolean;
 };
 
-// Module-level state (Singleton pattern via module caching)
 let socket: Socket | null = null;
 
 export const socketService = {
@@ -24,7 +23,6 @@ export const socketService = {
         if (socket?.connected) return socket;
 
         const socketUrl = url || import.meta.env.VITE_API_URL || window.location.origin;
-        console.log('🔌 SocketService: Connecting to', socketUrl);
 
         socket = io(socketUrl, {
             transports: ['websocket', 'polling'],
@@ -38,7 +36,6 @@ export const socketService = {
 
     disconnect() {
         if (socket) {
-            console.log('🔌 SocketService: Disconnecting');
             socket.disconnect();
             socket = null;
         }
@@ -91,15 +88,15 @@ export const socketService = {
         if (!socket) return;
 
         socket.on('connect', () => {
-            console.log('✅ SocketService: Connected', socket?.id);
+            console.log('SocketService: Connected', socket?.id);
         });
 
         socket.on('disconnect', () => {
-            console.log('❌ SocketService: Disconnected');
+            console.log('SocketService: Disconnected');
         });
 
         socket.on('connect_error', (err) => {
-            console.error('⚠️ SocketService: Connection error', err);
+            console.error('SocketService: Connection error', err);
         });
     }
 };

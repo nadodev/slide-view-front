@@ -23,7 +23,6 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
   const [copied, setCopied] = useState(false);
   const [urlError, setUrlError] = useState<string | null>(null);
   const [finalUrl, setFinalUrl] = useState<string>(() => {
-    // Inicializar com URL construída usando window.location.origin
     if (sessionId) {
       return `${window.location.origin}/remote/${sessionId}`;
     }
@@ -32,16 +31,12 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
 
   useEffect(() => {
     if (!sessionId) {
-      console.warn('⚠️ SessionId não disponível ainda');
       setIsLoading(true);
       return;
     }
 
     const generateQR = async () => {
-      // Verificar novamente se o canvas está disponível
       if (!canvasRef.current) {
-        console.warn('⚠️ Canvas não disponível, tentando novamente...');
-        // Tentar novamente após um pequeno delay
         setTimeout(() => {
           if (canvasRef.current && sessionId) {
             generateQR();
@@ -50,24 +45,11 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
         return;
       }
 
-      // SEMPRE usar window.location.origin para garantir que funciona
-      // Isso é mais confiável que depender da URL do servidor
       const baseUrl = window.location.origin;
       const urlToUse = `${baseUrl}/remote/${sessionId}`;
 
-      console.log('📱 Gerando QR Code:', {
-        originalUrl: qrUrl,
-        finalUrl: urlToUse,
-        sessionId: sessionId,
-        origin: baseUrl,
-        hasCanvas: !!canvasRef.current,
-        canvasWidth: canvasRef.current?.width,
-        canvasHeight: canvasRef.current?.height
-      });
-
       setFinalUrl(urlToUse);
 
-      // Se a URL original for diferente, mostrar aviso
       if (qrUrl && qrUrl !== urlToUse && qrUrl.startsWith('http')) {
         setUrlError('URL ajustada para o domínio atual');
       } else {
@@ -77,11 +59,9 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
       try {
         setIsLoading(true);
 
-        // Limpar canvas antes de gerar
         const ctx = canvasRef.current.getContext('2d');
         if (ctx) {
           ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-          // Preencher com branco
           ctx.fillStyle = '#ffffff';
           ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
         }
@@ -90,27 +70,19 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
           width: 200,
           margin: 2,
           color: {
-            dark: '#1e293b', // slate-800
+            dark: '#1e293b',
             light: '#ffffff',
           },
           errorCorrectionLevel: 'M',
         });
 
-        console.log('✅ QR Code gerado com sucesso para:', urlToUse);
-        console.log('📐 Canvas dimensions:', {
-          width: canvasRef.current.width,
-          height: canvasRef.current.height,
-          display: window.getComputedStyle(canvasRef.current).display
-        });
         setIsLoading(false);
       } catch (error) {
-        console.error('❌ Erro ao gerar QR Code:', error);
         setIsLoading(false);
         setUrlError(`Erro ao gerar QR Code: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
       }
     };
 
-    // Aguardar um pouco mais para garantir que o canvas está renderizado
     const timer = setTimeout(() => {
       generateQR();
     }, 300);
@@ -135,7 +107,6 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-linear-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-xl rounded-3xl shadow-2xl max-w-md w-full p-8 border border-slate-700/50">
-        {/* Header */}
         <div className="text-center mb-6">
           <div className="inline-flex items-center gap-2 mb-3">
             <QrCode className="text-violet-400" size={24} />
@@ -146,7 +117,6 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
           </p>
         </div>
 
-        {/* Status Connection */}
         <div className="flex items-center justify-center gap-2 mb-4">
           <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400 animate-pulse' : 'bg-red-400'
             }`} />
@@ -162,14 +132,12 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
           )}
         </div>
 
-        {/* URL Error/Warning */}
         {urlError && (
           <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
             <p className="text-yellow-400 text-xs text-center">{urlError}</p>
           </div>
         )}
 
-        {/* QR Code */}
         <div className="bg-white rounded-2xl p-4 mb-6 flex flex-col items-center">
           <div className="relative w-[200px] h-[200px]">
             {isLoading && (
@@ -203,7 +171,6 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
           )}
         </div>
 
-        {/* Remote Clients Counter */}
         <div className="flex items-center justify-center gap-2 mb-4 p-3 bg-slate-800/50 rounded-xl">
           <Users className="text-cyan-400" size={20} />
           <span className="text-white font-semibold">{remoteClients}</span>
@@ -212,7 +179,6 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
           </span>
         </div>
 
-        {/* URL */}
         <div className="bg-slate-800/30 rounded-xl p-3 mb-6">
           <div className="flex items-center gap-2 mb-2">
             <Smartphone className="text-violet-400" size={16} />
@@ -236,17 +202,15 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
           </div>
         </div>
 
-        {/* Instructions */}
         <div className="text-center mb-6">
           <h3 className="text-slate-300 font-semibold mb-2 text-sm">Como usar:</h3>
           <div className="space-y-1 text-xs text-slate-400">
-            <p>📱 Escaneie o QR Code com seu celular</p>
-            <p>🌐 Ou acesse a URL diretamente</p>
-            <p>🎮 Use os botões para navegar nos slides</p>
+            <p>Escaneie o QR Code com seu celular</p>
+            <p>Ou acesse a URL diretamente</p>
+            <p>Use os botões para navegar nos slides</p>
           </div>
         </div>
 
-        {/* Close Button */}
         <div className="flex justify-center">
           <Button
             onClick={onClose}

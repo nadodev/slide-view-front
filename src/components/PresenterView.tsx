@@ -25,24 +25,21 @@ export default function PresenterView({
   useMermaid(currentHtml);
   const [clockNow, setClockNow] = useState(() => new Date());
   const internalScrollRef = useRef<HTMLDivElement>(null);
-  
-  // Usar a ref externa se fornecida, senão usar a interna
+
   const scrollRef = scrollContainerRef || internalScrollRef;
 
-  // Otimizar atualização do relógio - apenas minutos para reduzir re-renders
   useEffect(() => {
     const updateClock = () => {
       const now = new Date();
       setClockNow(prevTime => {
-        // Só atualizar se mudou o minuto (reduz re-renders)
-        if (prevTime.getMinutes() !== now.getMinutes() || 
-            prevTime.getHours() !== now.getHours()) {
+        if (prevTime.getMinutes() !== now.getMinutes() ||
+          prevTime.getHours() !== now.getHours()) {
           return now;
         }
         return prevTime;
       });
     };
-    
+
     const t = setInterval(updateClock, 1000);
     return () => clearInterval(t);
   }, []);
@@ -60,7 +57,6 @@ export default function PresenterView({
 
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-gray-950 via-gray-900 to-black flex flex-col overflow-hidden">
-      {/* Barra de Progresso Elegante */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-white/5 to-transparent">
         <div
           className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 transition-all duration-700 ease-out shadow-lg shadow-purple-500/50"
@@ -68,7 +64,6 @@ export default function PresenterView({
         />
       </div>
 
-      {/* Info Bar Superior */}
       <div className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-10 py-5 bg-gradient-to-b from-black/40 via-black/20 to-transparent backdrop-blur-sm">
         <div className="flex items-center gap-8 text-white/60 text-sm">
           <div className="flex items-center gap-2">
@@ -99,9 +94,8 @@ export default function PresenterView({
         </button>
       </div>
 
-      {/* Conteúdo Principal */}
       <div className="flex-1 px-20 py-24 flex items-start justify-center min-h-0">
-        <div 
+        <div
           ref={scrollRef}
           className="w-full max-w-6xl h-full overflow-y-auto custom-scrollbar py-4"
         >
@@ -112,7 +106,6 @@ export default function PresenterView({
         </div>
       </div>
 
-      {/* Navegação Inferior Elegante */}
       <div className="absolute bottom-0 left-0 right-0 z-50 flex items-center justify-center pb-10 bg-linear-to-t from-black/40 via-black/20 to-transparent backdrop-blur-sm opacity-0 hover:opacity-100 transition-all duration-500">
         <div className="flex items-center gap-3 bg-white/5 backdrop-blur-md rounded-full px-6 py-3 border border-white/10 shadow-2xl">
           <button
