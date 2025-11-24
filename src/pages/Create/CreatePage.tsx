@@ -156,87 +156,133 @@ export default function CreatePage() {
         if (input) {
             const dataTransfer = new DataTransfer();
             files.forEach((file) => dataTransfer.items.add(file));
-            name: file.name.replace('.md', ''),
+            input.files = dataTransfer.files;
+            handleFileUpload({ target: input } as React.ChangeEvent<HTMLInputElement>);
+        }
+    };
+
+    const handleAIGenerate = () => {
+        if (!aiPrompt.trim()) {
+            toast.error("Prompt necessário", {
+                description: "Descreva o tema da sua apresentação para continuar."
+            });
+            return;
+        }
+
+        setLoading(true);
+        toast.success("IA ativada!", {
+            description: `Gerando ${slideCount} slides sobre: ${aiPrompt.slice(0, 50)}...`
+        });
+
+        setTimeout(() => {
+            setLoading(false);
+            toast.info("Funcionalidade de IA em desenvolvimento");
+        }, 2000);
+    };
+
+    const handleCreateSlide = () => {
+        const { useFileStore } = require('../../stores/useFileStore');
+        useFileStore.getState().resetFiles();
+        setEditing(true);
+    };
+
+    const handleCreateFiles = (files: MarkdownFile[]) => {
+        const slides = files.map((file) => {
+            const { clean, notes } = extractNotes(file.content);
+            return {
+                name: file.name.replace('.md', ''),
                 content: clean,
-                    notes,
-                    html: parseMarkdownSafe(clean),
+                notes,
+                html: parseMarkdownSafe(clean),
             };
-    });
+        });
 
-    navigate('/app', { state: { slides } });
-};
+        navigate('/app', { state: { slides } });
+    };
 
-const recentProjects = [
-    { id: 1, name: 'Relatório Q4', slides: 15, updated: 'Há 2 horas', color: 'from-blue-500 to-purple-500' },
-    { id: 2, name: 'Pitch Startup', slides: 22, updated: 'Ontem', color: 'from-emerald-500 to-teal-500' },
-    { id: 3, name: 'Treinamento', slides: 8, updated: 'Há 3 dias', color: 'from-pink-500 to-rose-500' },
-];
+    const recentProjects = [
+        { id: 1, name: 'Relatório Q4', slides: 15, updated: 'Há 2 horas', color: 'from-blue-500 to-purple-500' },
+        { id: 2, name: 'Pitch Startup', slides: 22, updated: 'Ontem', color: 'from-emerald-500 to-teal-500' },
+        { id: 3, name: 'Treinamento', slides: 8, updated: 'Há 3 dias', color: 'from-pink-500 to-rose-500' },
+    ];
 
-return (
-    <>
-        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
-            <header className="border-b border-slate-800/50 backdrop-blur-sm bg-slate-900/50">
-                <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                            <Sparkles size={20} className="text-white" />
+    return (
+        <>
+            <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
+                <header className="border-b border-slate-800/50 backdrop-blur-sm bg-slate-900/50">
+                    <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                                <Sparkles size={20} className="text-white" />
+                            </div>
+                            <h1 className="text-xl font-bold">SlideCraft AI</h1>
                         </div>
-                        <h1 className="text-xl font-bold">SlideCraft AI</h1>
-                    </div>
-                    <div className="flex items-center gap-4">
-                        <button className="text-slate-400 hover:text-white transition-colors text-sm">
-                            Configurações
-                        </button>
-                        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full" />
-                    </div>
-                </div>
-            </header>
-
-            <section className="max-w-7xl mx-auto px-6 py-16 text-center">
-                <h2 className="text-5xl font-bold mb-4">
-                    Crie Apresentações{' '}
-                    <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                        Incríveis
-                    </span>
-                    <br />
-                    com Inteligência Artificial
-                </h2>
-                <p className="text-slate-400 text-lg max-w-3xl mx-auto">
-                    Transforme suas ideias em slides profissionais em segundos. Upload de arquivos Markdown,
-                    geração por IA ou criação visual – tudo em uma plataforma.
-                </p>
-            </section>
-
-            <section className="max-w-7xl mx-auto px-6 pb-16">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* Upload Card */}
-                    <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-8 hover:border-blue-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10">
-                        <div className="w-14 h-14 bg-blue-600/20 rounded-xl flex items-center justify-center mb-6">
-                            <Upload size={28} className="text-blue-400" />
+                        <div className="flex items-center gap-4">
+                            <button className="text-slate-400 hover:text-white transition-colors text-sm">
+                                Configurações
+                            </button>
+                            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full" />
                         </div>
-                        <h3 className="text-2xl font-bold mb-3">📁 Upload</h3>
-                        <p className="text-slate-400 mb-6 text-sm">
-                            Arraste e solte arquivos Markdown (.md). Suporta múltiplos arquivos ou divida-os em um arquivo único.
-                        </p>
+                    </div>
+                </header>
 
-                        <div
-                            className={`border-2 border-dashed rounded-xl p-8 mb-4 transition-all ${isDragging
-                                ? 'border-blue-500 bg-blue-500/10'
-                                : 'border-slate-600 hover:border-blue-500/50'
-                                }`}
-                            onDragOver={handleDragOver}
-                            onDragLeave={handleDragLeave}
-                            onDrop={handleDrop}
-                        >
-                            <label className="cursor-pointer block">
-                                <div className="text-center">
-                                    <Upload size={32} className="mx-auto text-slate-500 mb-2" />
-                                    <p className="text-sm text-slate-500">
-                                        {isDragging ? 'Solte os arquivos aqui' : 'Arraste arquivos .md aqui'}
-                                    </p>
-                                </div>
+                <section className="max-w-7xl mx-auto px-6 py-16 text-center">
+                    <h2 className="text-5xl font-bold mb-4">
+                        Crie Apresentações{' '}
+                        <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                            Incríveis
+                        </span>
+                        <br />
+                        com Inteligência Artificial
+                    </h2>
+                    <p className="text-slate-400 text-lg max-w-3xl mx-auto">
+                        Transforme suas ideias em slides profissionais em segundos. Upload de arquivos Markdown,
+                        geração por IA ou criação visual – tudo em uma plataforma.
+                    </p>
+                </section>
+
+                <section className="max-w-7xl mx-auto px-6 pb-16">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {/* Upload Card */}
+                        <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-8 hover:border-blue-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10">
+                            <div className="w-14 h-14 bg-blue-600/20 rounded-xl flex items-center justify-center mb-6">
+                                <Upload size={28} className="text-blue-400" />
+                            </div>
+                            <h3 className="text-2xl font-bold mb-3">📁 Upload</h3>
+                            <p className="text-slate-400 mb-6 text-sm">
+                                Arraste e solte arquivos Markdown (.md). Suporta múltiplos arquivos ou divida-os em um arquivo único.
+                            </p>
+
+                            <div
+                                className={`border-2 border-dashed rounded-xl p-8 mb-4 transition-all ${isDragging
+                                    ? 'border-blue-500 bg-blue-500/10'
+                                    : 'border-slate-600 hover:border-blue-500/50'
+                                    }`}
+                                onDragOver={handleDragOver}
+                                onDragLeave={handleDragLeave}
+                                onDrop={handleDrop}
+                            >
+                                <label className="cursor-pointer block">
+                                    <div className="text-center">
+                                        <Upload size={32} className="mx-auto text-slate-500 mb-2" />
+                                        <p className="text-sm text-slate-500">
+                                            {isDragging ? 'Solte os arquivos aqui' : 'Arraste arquivos .md aqui'}
+                                        </p>
+                                    </div>
+                                    <input
+                                        ref={inputRef}
+                                        type="file"
+                                        accept=".md"
+                                        multiple
+                                        onChange={handleFileUpload}
+                                        className="hidden"
+                                    />
+                                </label>
+                            </div>
+
+                            <label className="block w-full py-3 bg-slate-700/50 hover:bg-slate-700 rounded-lg transition-colors text-sm font-medium text-center cursor-pointer">
+                                Selecionar Arquivos
                                 <input
-                                    ref={inputRef}
                                     type="file"
                                     accept=".md"
                                     multiple
@@ -244,254 +290,242 @@ return (
                                     className="hidden"
                                 />
                             </label>
-                        </div>
 
-                        <label className="block w-full py-3 bg-slate-700/50 hover:bg-slate-700 rounded-lg transition-colors text-sm font-medium text-center cursor-pointer">
-                            Selecionar Arquivos
-                            <input
-                                type="file"
-                                accept=".md"
-                                multiple
-                                onChange={handleFileUpload}
-                                className="hidden"
-                            />
-                        </label>
-
-                        {uploadProgress > 0 && uploadProgress < 100 && (
-                            <div className="mt-4">
-                                <Progress value={uploadProgress} className="h-2" />
-                                <p className="text-xs text-slate-400 text-center mt-2">
-                                    Processando... {uploadProgress}%
-                                </p>
-                            </div>
-                        )}
-
-                        {/* Opções Avançadas */}
-                        <div className="mt-6 pt-6 border-t border-slate-700/50">
-                            <div className="flex items-center gap-2 mb-3">
-                                <Settings size={16} className="text-slate-400" />
-                                <span className="text-xs font-semibold text-slate-400">Opções</span>
-                            </div>
-                            <label className="flex items-center gap-3 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={splitSingle}
-                                    onChange={(e) => setSplitSingle(e.target.checked)}
-                                    className="w-4 h-4 rounded border-slate-600 text-blue-600 focus:ring-blue-500"
-                                />
-                                <span className="text-xs text-slate-300">Dividir arquivo único</span>
-                            </label>
-                            {splitSingle && (
-                                <input
-                                    type="text"
-                                    value={delimiter}
-                                    onChange={(e) => setDelimiter(e.target.value)}
-                                    placeholder="Delimitador"
-                                    className="mt-3 w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-xs focus:outline-none focus:border-blue-500"
-                                />
+                            {uploadProgress > 0 && uploadProgress < 100 && (
+                                <div className="mt-4">
+                                    <Progress value={uploadProgress} className="h-2" />
+                                    <p className="text-xs text-slate-400 text-center mt-2">
+                                        Processando... {uploadProgress}%
+                                    </p>
+                                </div>
                             )}
-                        </div>
-                    </div>
 
-                    {/* AI Card */}
-                    <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-8 hover:border-purple-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10">
-                        <div className="w-14 h-14 bg-purple-600/20 rounded-xl flex items-center justify-center mb-6">
-                            <Brain size={28} className="text-purple-400" />
-                        </div>
-                        <h3 className="text-2xl font-bold mb-3">✨ IA Generativa</h3>
-                        <p className="text-slate-400 mb-6 text-sm">
-                            Crie apresentações completas apenas descrevendo o tema. Powered by Google Gemini.
-                        </p>
-
-                        <div className="space-y-3 mb-4">
-                            <div className="flex items-center justify-between bg-slate-900/50 rounded-lg p-3">
-                                <span className="text-xs text-slate-300">Slides:</span>
-                                <div className="flex items-center gap-2">
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => setSlideCount(Math.max(3, slideCount - 1))}
-                                        disabled={slideCount <= 3}
-                                        className="h-7 w-7 p-0"
-                                    >
-                                        −
-                                    </Button>
-                                    <span className="text-sm font-bold text-white w-8 text-center">{slideCount}</span>
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => setSlideCount(Math.min(12, slideCount + 1))}
-                                        disabled={slideCount >= 12}
-                                        className="h-7 w-7 p-0"
-                                    >
-                                        +
-                                    </Button>
+                            {/* Opções Avançadas */}
+                            <div className="mt-6 pt-6 border-t border-slate-700/50">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <Settings size={16} className="text-slate-400" />
+                                    <span className="text-xs font-semibold text-slate-400">Opções</span>
                                 </div>
+                                <label className="flex items-center gap-3 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={splitSingle}
+                                        onChange={(e) => setSplitSingle(e.target.checked)}
+                                        className="w-4 h-4 rounded border-slate-600 text-blue-600 focus:ring-blue-500"
+                                    />
+                                    <span className="text-xs text-slate-300">Dividir arquivo único</span>
+                                </label>
+                                {splitSingle && (
+                                    <input
+                                        type="text"
+                                        value={delimiter}
+                                        onChange={(e) => setDelimiter(e.target.value)}
+                                        placeholder="Delimitador"
+                                        className="mt-3 w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-xs focus:outline-none focus:border-blue-500"
+                                    />
+                                )}
+                            </div>
+                        </div>
+
+                        {/* AI Card */}
+                        <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-8 hover:border-purple-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10">
+                            <div className="w-14 h-14 bg-purple-600/20 rounded-xl flex items-center justify-center mb-6">
+                                <Brain size={28} className="text-purple-400" />
+                            </div>
+                            <h3 className="text-2xl font-bold mb-3">✨ IA Generativa</h3>
+                            <p className="text-slate-400 mb-6 text-sm">
+                                Crie apresentações completas apenas descrevendo o tema. Powered by Google Gemini.
+                            </p>
+
+                            <div className="space-y-3 mb-4">
+                                <div className="flex items-center justify-between bg-slate-900/50 rounded-lg p-3">
+                                    <span className="text-xs text-slate-300">Slides:</span>
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => setSlideCount(Math.max(3, slideCount - 1))}
+                                            disabled={slideCount <= 3}
+                                            className="h-7 w-7 p-0"
+                                        >
+                                            −
+                                        </Button>
+                                        <span className="text-sm font-bold text-white w-8 text-center">{slideCount}</span>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => setSlideCount(Math.min(12, slideCount + 1))}
+                                            disabled={slideCount >= 12}
+                                            className="h-7 w-7 p-0"
+                                        >
+                                            +
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                <textarea
+                                    value={aiPrompt}
+                                    onChange={(e) => setAiPrompt(e.target.value)}
+                                    placeholder="Descreva o tema da sua apresentação..."
+                                    className="w-full bg-slate-900/50 border border-slate-700 rounded-lg p-4 text-sm resize-none h-24 focus:outline-none focus:border-purple-500/50 transition-colors"
+                                    disabled={loading}
+                                />
                             </div>
 
-                            <textarea
-                                value={aiPrompt}
-                                onChange={(e) => setAiPrompt(e.target.value)}
-                                placeholder="Descreva o tema da sua apresentação..."
-                                className="w-full bg-slate-900/50 border border-slate-700 rounded-lg p-4 text-sm resize-none h-24 focus:outline-none focus:border-purple-500/50 transition-colors"
-                                disabled={loading}
-                            />
-                        </div>
-
-                        <button
-                            onClick={handleAIGenerate}
-                            disabled={loading || !aiPrompt.trim()}
-                            className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                        >
-                            <Wand2 size={16} className={loading ? 'animate-spin' : ''} />
-                            {loading ? 'Gerando...' : '🪄 Gerar com IA'}
-                        </button>
-                    </div>
-
-                    {/* Create Card */}
-                    <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-8 hover:border-emerald-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/10">
-                        <div className="w-14 h-14 bg-emerald-600/20 rounded-xl flex items-center justify-center mb-6">
-                            <Plus size={28} className="text-emerald-400" />
-                        </div>
-                        <h3 className="text-2xl font-bold mb-3">➕ Criar Slide</h3>
-                        <p className="text-slate-400 mb-6 text-sm">
-                            Editor visual para criar slides do zero com ferramentas profissionais e templates.
-                        </p>
-                        <div className="grid grid-cols-2 gap-3 mb-4">
                             <button
-                                onClick={handleCreateSlide}
-                                className="p-4 bg-slate-900/50 border border-slate-700 rounded-lg hover:border-emerald-500/50 transition-colors"
+                                onClick={handleAIGenerate}
+                                disabled={loading || !aiPrompt.trim()}
+                                className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                             >
-                                <div className="text-center">
-                                    <div className="w-12 h-12 bg-slate-800 rounded-lg mx-auto mb-2 flex items-center justify-center">
-                                        <Plus size={20} className="text-slate-500" />
-                                    </div>
-                                    <p className="text-xs font-medium">Slide Vazio</p>
-                                </div>
-                            </button>
-                            <button
-                                onClick={handleCreateSlide}
-                                className="p-4 bg-slate-900/50 border border-slate-700 rounded-lg hover:border-emerald-500/50 transition-colors"
-                            >
-                                <div className="text-center">
-                                    <div className="w-12 h-12 bg-slate-800 rounded-lg mx-auto mb-2 flex items-center justify-center">
-                                        <FolderOpen size={20} className="text-slate-500" />
-                                    </div>
-                                    <p className="text-xs font-medium">Template</p>
-                                </div>
+                                <Wand2 size={16} className={loading ? 'animate-spin' : ''} />
+                                {loading ? 'Gerando...' : '🪄 Gerar com IA'}
                             </button>
                         </div>
-                        <button
-                            onClick={handleCreateSlide}
-                            className="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-lg transition-all text-sm font-medium"
-                        >
-                            ➕ Novo Projeto
+
+                        {/* Create Card */}
+                        <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-8 hover:border-emerald-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/10">
+                            <div className="w-14 h-14 bg-emerald-600/20 rounded-xl flex items-center justify-center mb-6">
+                                <Plus size={28} className="text-emerald-400" />
+                            </div>
+                            <h3 className="text-2xl font-bold mb-3">➕ Criar Slide</h3>
+                            <p className="text-slate-400 mb-6 text-sm">
+                                Editor visual para criar slides do zero com ferramentas profissionais e templates.
+                            </p>
+                            <div className="grid grid-cols-2 gap-3 mb-4">
+                                <button
+                                    onClick={handleCreateSlide}
+                                    className="p-4 bg-slate-900/50 border border-slate-700 rounded-lg hover:border-emerald-500/50 transition-colors"
+                                >
+                                    <div className="text-center">
+                                        <div className="w-12 h-12 bg-slate-800 rounded-lg mx-auto mb-2 flex items-center justify-center">
+                                            <Plus size={20} className="text-slate-500" />
+                                        </div>
+                                        <p className="text-xs font-medium">Slide Vazio</p>
+                                    </div>
+                                </button>
+                                <button
+                                    onClick={handleCreateSlide}
+                                    className="p-4 bg-slate-900/50 border border-slate-700 rounded-lg hover:border-emerald-500/50 transition-colors"
+                                >
+                                    <div className="text-center">
+                                        <div className="w-12 h-12 bg-slate-800 rounded-lg mx-auto mb-2 flex items-center justify-center">
+                                            <FolderOpen size={20} className="text-slate-500" />
+                                        </div>
+                                        <p className="text-xs font-medium">Template</p>
+                                    </div>
+                                </button>
+                            </div>
+                            <button
+                                onClick={handleCreateSlide}
+                                className="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-lg transition-all text-sm font-medium"
+                            >
+                                ➕ Novo Projeto
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Recent Projects */}
+                <section className="max-w-7xl mx-auto px-6 pb-16">
+                    <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-2xl font-bold">Projetos Recentes</h3>
+                        <button className="text-blue-400 hover:text-blue-300 transition-colors text-sm font-medium">
+                            Ver todos →
                         </button>
                     </div>
-                </div>
-            </section>
-
-            {/* Recent Projects */}
-            <section className="max-w-7xl mx-auto px-6 pb-16">
-                <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-2xl font-bold">Projetos Recentes</h3>
-                    <button className="text-blue-400 hover:text-blue-300 transition-colors text-sm font-medium">
-                        Ver todos →
-                    </button>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    {recentProjects.map((project) => (
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        {recentProjects.map((project) => (
+                            <div
+                                key={project.id}
+                                className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6 hover:border-slate-600/50 transition-all cursor-pointer group"
+                            >
+                                <div className={`w-full h-32 bg-gradient-to-br ${project.color} rounded-lg mb-4 flex items-center justify-center group-hover:scale-105 transition-transform`}>
+                                    <FolderOpen size={40} className="text-white/80" />
+                                </div>
+                                <h4 className="font-semibold mb-2">{project.name}</h4>
+                                <div className="flex items-center justify-between text-xs text-slate-400">
+                                    <span>{project.slides} slides • {project.updated}</span>
+                                    <span className="w-2 h-2 bg-emerald-500 rounded-full" />
+                                </div>
+                            </div>
+                        ))}
                         <div
-                            key={project.id}
-                            className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6 hover:border-slate-600/50 transition-all cursor-pointer group"
+                            onClick={handleCreateSlide}
+                            className="bg-slate-800/30 border-2 border-dashed border-slate-700/50 rounded-xl p-6 hover:border-slate-600/50 transition-all cursor-pointer flex flex-col items-center justify-center min-h-[200px]"
                         >
-                            <div className={`w-full h-32 bg-gradient-to-br ${project.color} rounded-lg mb-4 flex items-center justify-center group-hover:scale-105 transition-transform`}>
-                                <FolderOpen size={40} className="text-white/80" />
+                            <Plus size={40} className="text-slate-600 mb-3" />
+                            <p className="text-slate-500 text-sm font-medium">Novo Projeto</p>
+                            <p className="text-slate-600 text-xs mt-1">Comece uma nova apresentação</p>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Advanced Resources */}
+                <section className="max-w-7xl mx-auto px-6 pb-20">
+                    <h3 className="text-2xl font-bold mb-6 text-center">Recursos Avançados</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="text-center p-8">
+                            <div className="w-16 h-16 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Brain size={32} className="text-blue-400" />
                             </div>
-                            <h4 className="font-semibold mb-2">{project.name}</h4>
-                            <div className="flex items-center justify-between text-xs text-slate-400">
-                                <span>{project.slides} slides • {project.updated}</span>
-                                <span className="w-2 h-2 bg-emerald-500 rounded-full" />
+                            <h4 className="font-semibold mb-2">IA Inteligente</h4>
+                            <p className="text-sm text-slate-400">
+                                Powered by Google Gemini para resultados precisos
+                            </p>
+                        </div>
+                        <div className="text-center p-8">
+                            <div className="w-16 h-16 bg-purple-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Palette size={32} className="text-purple-400" />
                             </div>
+                            <h4 className="font-semibold mb-2">Design Profissional</h4>
+                            <p className="text-sm text-slate-400">
+                                Templates e layouts modernos
+                            </p>
                         </div>
-                    ))}
-                    <div
-                        onClick={handleCreateSlide}
-                        className="bg-slate-800/30 border-2 border-dashed border-slate-700/50 rounded-xl p-6 hover:border-slate-600/50 transition-all cursor-pointer flex flex-col items-center justify-center min-h-[200px]"
-                    >
-                        <Plus size={40} className="text-slate-600 mb-3" />
-                        <p className="text-slate-500 text-sm font-medium">Novo Projeto</p>
-                        <p className="text-slate-600 text-xs mt-1">Comece uma nova apresentação</p>
+                        <div className="text-center p-8">
+                            <div className="w-16 h-16 bg-emerald-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Users size={32} className="text-emerald-400" />
+                            </div>
+                            <h4 className="font-semibold mb-2">Colaboração</h4>
+                            <p className="text-sm text-slate-400">
+                                Compartilhe e edite em tempo real
+                            </p>
+                        </div>
                     </div>
-                </div>
-            </section>
+                </section>
+            </div>
 
-            {/* Advanced Resources */}
-            <section className="max-w-7xl mx-auto px-6 pb-20">
-                <h3 className="text-2xl font-bold mb-6 text-center">Recursos Avançados</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="text-center p-8">
-                        <div className="w-16 h-16 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Brain size={32} className="text-blue-400" />
-                        </div>
-                        <h4 className="font-semibold mb-2">IA Inteligente</h4>
-                        <p className="text-sm text-slate-400">
-                            Powered by Google Gemini para resultados precisos
-                        </p>
-                    </div>
-                    <div className="text-center p-8">
-                        <div className="w-16 h-16 bg-purple-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Palette size={32} className="text-purple-400" />
-                        </div>
-                        <h4 className="font-semibold mb-2">Design Profissional</h4>
-                        <p className="text-sm text-slate-400">
-                            Templates e layouts modernos
-                        </p>
-                    </div>
-                    <div className="text-center p-8">
-                        <div className="w-16 h-16 bg-emerald-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Users size={32} className="text-emerald-400" />
-                        </div>
-                        <h4 className="font-semibold mb-2">Colaboração</h4>
-                        <p className="text-sm text-slate-400">
-                            Compartilhe e edite em tempo real
-                        </p>
-                    </div>
-                </div>
-            </section>
-        </div>
-
-        <EditPanel
-            open={editing}
-            value={draftContent}
-            onChange={setDraftContent}
-            onCancel={() => {
-                setEditing(false);
-                setDraftContent('');
-            }}
-            onSave={() => { }}
-            mode="create"
-            onCreateFiles={handleCreateFiles}
-        />
-
-        {showSplitModal && (
-            <InteractiveSplitModal
-                filename={modalFilename}
-                content={modalContent}
+            <EditPanel
+                open={editing}
+                value={draftContent}
+                onChange={setDraftContent}
                 onCancel={() => {
-                    setShowSplitModal(false);
-                    setModalContent('');
-                    setModalFilename('');
+                    setEditing(false);
+                    setDraftContent('');
                 }}
-                onConfirm={(parts) => {
-                    const files = parts.map((p) => new File([p.content], `${p.name}.md`, { type: 'text/markdown' }));
-                    processFiles(files);
-                    setShowSplitModal(false);
-                    setModalContent('');
-                    setModalFilename('');
-                }}
+                onSave={() => { }}
+                mode="create"
+                onCreateFiles={handleCreateFiles}
             />
-        )}
-    </>
-);
+
+            {showSplitModal && (
+                <InteractiveSplitModal
+                    filename={modalFilename}
+                    content={modalContent}
+                    onCancel={() => {
+                        setShowSplitModal(false);
+                        setModalContent('');
+                        setModalFilename('');
+                    }}
+                    onConfirm={(parts) => {
+                        const files = parts.map((p) => new File([p.content], `${p.name}.md`, { type: 'text/markdown' }));
+                        processFiles(files);
+                        setShowSplitModal(false);
+                        setModalContent('');
+                        setModalFilename('');
+                    }}
+                />
+            )}
+        </>
+    );
 }
