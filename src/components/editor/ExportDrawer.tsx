@@ -35,7 +35,7 @@ export const ExportDrawer: React.FC<ExportDrawerProps> = ({
         <Drawer open={show} onOpenChange={onClose}>
             <DrawerTrigger asChild>
                 <button
-                    className="group px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-200 bg-slate-800/50 hover:bg-slate-700/50 text-slate-300 hover:text-white border border-slate-700/50"
+                    className="cursor-pointer bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-900/30 group px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-200 bg-slate-800/50 hover:bg-slate-700/50 text-slate-300 hover:text-white border border-slate-700/50"
                     title="Exportar"
                 >
                     <Download

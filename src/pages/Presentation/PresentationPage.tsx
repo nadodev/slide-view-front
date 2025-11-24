@@ -1,6 +1,5 @@
 import { usePresentationController } from "../../features/presentation/usePresentationController";
 import { PresentationLayout } from "./components/PresentationLayout";
-import PresentationEmptyState from "../../components/presentation/PresentationEmptyState";
 import SlideList from "../../components/SlideList";
 import PresenterView from "../../components/PresenterView";
 import SlidesWorkspace from "../../components/presentation/SlidesWorkspace";
@@ -9,8 +8,11 @@ import EditPanel from "../../components/EditPanel";
 import { QRCodeDisplay } from "../../components/QRCodeDisplay";
 import { RemoteControlModal } from "../../components/RemoteControlModal";
 import parseMarkdownSafe from "../../utils/markdown";
+import { useLocation } from "react-router-dom";
+import { useEffect } from "react";
 
 export default function PresentationPage() {
+    const location = useLocation();
     const controller = usePresentationController();
     const {
         slides,
@@ -54,6 +56,17 @@ export default function PresentationPage() {
         thumbsRailRef,
     } = controller;
 
+    // Handle slides from navigation state (from CreatePage)
+    useEffect(() => {
+        if (location.state?.slides && Array.isArray(location.state.slides)) {
+            setSlides(location.state.slides);
+            setCurrentSlide(0);
+            setShowSlideList(true);
+            // Clear the state to avoid re-setting on subsequent renders
+            window.history.replaceState({}, document.title);
+        }
+    }, [location.state, setSlides, setCurrentSlide, setShowSlideList]);
+
     // Helper to extract notes (should be in service, but keeping here for now to match EditPanel props)
     const extractNotes = (text: string) => {
         const notes: string[] = [];
@@ -76,52 +89,15 @@ export default function PresentationPage() {
         .filter(Boolean)
         .join(" ");
 
+    // Redirect to /create if no slides
+    useEffect(() => {
+        if (slides.length === 0 && !location.state?.slides) {
+            window.location.href = '/create';
+        }
+    }, [slides.length, location.state]);
+
     if (slides.length === 0) {
-        return (
-            <PresentationLayout className={containerClasses}>
-                <PresentationEmptyState
-                    highContrast={highContrast}
-                    onToggleHighContrast={() => setHighContrast((v) => !v)}
-                    onFilesChange={handleFileUpload}
-                    onAIGenerate={handleAIGeneration}
-                    onCreateSlide={() => {
-                        setDraftContent("");
-                        setEditing(true);
-                    }}
-                    loading={loading}
-                    error={error}
-                    warning={warning}
-                />
-                <EditPanel
-                    open={editing}
-                    value={draftContent}
-                    onChange={setDraftContent}
-                    onCancel={() => {
-                        setEditing(false);
-                        setDraftContent("");
-                    }}
-                    onSave={() => { /* Logic handled in EditPanel for create mode usually */ }}
-                    mode="create"
-                    onCreateFiles={(files) => {
-                        const newSlides = files.map((file) => {
-                            const { clean, notes } = extractNotes(file.content);
-                            return {
-                                name: file.name.replace('.md', ''),
-                                content: clean,
-                                notes,
-                                html: parseMarkdownSafe(clean),
-                            };
-                        });
-                        setSlides(newSlides);
-                        setCurrentSlide(0);
-                        setShowSlideList(true);
-                        setEditing(false);
-                    }}
-                    editorFocus={editorFocus}
-                    onToggleEditorFocus={() => setEditorFocus((v) => !v)}
-                />
-            </PresentationLayout>
-        );
+        return null; // Will redirect
     }
 
     return (

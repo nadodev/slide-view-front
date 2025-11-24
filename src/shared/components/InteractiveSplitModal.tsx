@@ -11,7 +11,6 @@ type Props = {
 
 export default function InteractiveSplitModal({ filename, content, onCancel, onConfirm }: Props) {
   const lines = useMemo(() => content.split(/\r?\n/), [content]);
-  // splits is a set of line indexes AFTER which a split should occur
   const [splits, setSplits] = useState<number[]>(() => []);
   const [selectedPart, setSelectedPart] = useState<number | null>(null);
   const [partsOverride, setPartsOverride] = useState<Record<number, string>>({});
@@ -19,8 +18,8 @@ export default function InteractiveSplitModal({ filename, content, onCancel, onC
   const toggleSplitAfter = useCallback((lineIndex: number) => {
     setSplits(prev => {
       const exists = prev.includes(lineIndex);
-      if (exists) return prev.filter(i => i !== lineIndex).sort((a,b)=>a-b);
-      return [...prev, lineIndex].sort((a,b)=>a-b);
+      if (exists) return prev.filter(i => i !== lineIndex).sort((a, b) => a - b);
+      return [...prev, lineIndex].sort((a, b) => a - b);
     });
   }, []);
 
@@ -46,11 +45,8 @@ export default function InteractiveSplitModal({ filename, content, onCancel, onC
 
   const mergeWithNext = (partIndex: number) => {
     setSplits(prev => {
-      // to merge part i with i+1, we need to remove the split that ends part i (which is the split index equal to end of part i)
-      const idxs = [...prev].sort((a,b)=>a-b);
+      const idxs = [...prev].sort((a, b) => a - b);
       if (idxs.length === 0) return prev;
-      // find the split that corresponds to end of partIndex
-      // rebuild ranges to find which split corresponds
       const ranges: number[] = [];
       let start = 0;
       for (let s = 0; s < idxs.length; s++) {
@@ -58,16 +54,12 @@ export default function InteractiveSplitModal({ filename, content, onCancel, onC
         ranges.push(endIdx);
         start = endIdx + 1;
       }
-      // If partIndex corresponds to last part, nothing to merge
       if (partIndex >= ranges.length) {
-        // there is no split to remove (last part)
         return prev;
       }
-      // remove the split at ranges[partIndex]
       const remove = ranges[partIndex];
-      return prev.filter(i => i !== remove).sort((a,b)=>a-b);
+      return prev.filter(i => i !== remove).sort((a, b) => a - b);
     });
-    // also clear any override for the next part to avoid confusion
     setPartsOverride(prev => {
       const copy = { ...prev };
       delete copy[partIndex + 1];

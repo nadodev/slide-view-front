@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from "react";
+import React, { useEffect, useRef, useMemo } from "react";
 import parseMarkdownSafe from "../utils/markdown";
 import {
   ResizablePanelGroup,
@@ -22,13 +22,6 @@ import { EditorStyles } from "./editor/EditorStyles";
 
 import type { MarkdownFile } from "../services/editor/fileManagementService";
 import {
-  addNewFile,
-  removeFile,
-  updateFileName,
-  updateFileContent,
-  getNewActiveFileId,
-} from "../services/editor/fileManagementService";
-import {
   applyMarkdownFormat,
   insertSlashCommand as insertSlashCommandService,
   insertTemplate as insertTemplateService,
@@ -46,7 +39,9 @@ import { useSlashCommands } from "../hooks/editor/useSlashCommands";
 import { useKeyboardShortcuts } from "../hooks/editor/useKeyboardShortcuts";
 import { useEditorSync, useLineNumbersSync } from "../hooks/editor/useEditorSync";
 
-import { TEMPLATES } from "../constants/editor/editorConstants";
+import { useFileStore } from "../stores/useFileStore";
+import { useUIStore } from "../stores/useUIStore";
+import { useEditorStore } from "../stores/useEditorStore";
 
 type EditPanelProps = {
   open: boolean;
@@ -77,20 +72,31 @@ export default function EditPanel({
   const lineNumbersRef2 = useRef<HTMLDivElement | null>(null);
   const lineNumbersRef3 = useRef<HTMLDivElement | null>(null);
 
-  const [internalFocus, setInternalFocus] = useState(false);
-  const [showPreview, setShowPreview] = useState(true);
-  const focusOn = onToggleEditorFocus ? editorFocus : internalFocus;
-  const [showTemplates, setShowTemplates] = useState(false);
-  const [showHelp, setShowHelp] = useState(false);
-  const [showExport, setShowExport] = useState(false);
-  const [showGitHubModal, setShowGitHubModal] = useState(false);
+  const files = useFileStore((state) => state.files);
+  const activeFileId = useFileStore((state) => state.activeFileId);
+  const getActiveFile = useFileStore((state) => state.getActiveFile);
+  const getFilesWithContent = useFileStore((state) => state.getFilesWithContent);
+  const updateFileContent = useFileStore((state) => state.updateFileContent);
+  const setFiles = useFileStore((state) => state.setFiles);
+  const resetFiles = useFileStore((state) => state.resetFiles);
 
-  const [mdFiles, setMdFiles] = useState<MarkdownFile[]>([
-    { id: '1', name: 'slide-1.md', content: '' }
-  ]);
-  const [activeFileId, setActiveFileId] = useState<string>('1');
+  const showPreview = useUIStore((state) => state.showPreview);
+  const editorFocusState = useUIStore((state) => state.editorFocus);
+  const showGitHub = useUIStore((state) => state.showGitHub);
+  const setShowGitHub = useUIStore((state) => state.setShowGitHub);
+  const setShowHelp = useUIStore((state) => state.setShowHelp);
+  const setShowTemplates = useUIStore((state) => state.setShowTemplates);
+  const toggleShowPreview = useUIStore((state) => state.toggleShowPreview);
+  const toggleEditorFocus = useUIStore((state) => state.toggleEditorFocus);
+  const setEditorFocus = useUIStore((state) => state.setEditorFocus);
+
+  const editorMode = useEditorStore((state) => state.mode);
+  const setMode = useEditorStore((state) => state.setMode);
 
   const slashCommands = useSlashCommands();
+
+  const focusOn = onToggleEditorFocus ? editorFocus : editorFocusState;
+
   const editorSync = useEditorSync({
     enabled: showPreview,
     focusOn,
@@ -98,9 +104,18 @@ export default function EditPanel({
 
   useLineNumbersSync(textareaRef, [lineNumbersRef1, lineNumbersRef2, lineNumbersRef3]);
 
-  const activeFile = mdFiles.find(f => f.id === activeFileId);
-  const activeContent = mode === 'create' && activeFile ? activeFile.content : value;
+  const activeFile = useMemo(() => {
+    return files.find(f => f.id === activeFileId);
+  }, [files, activeFileId]);
 
+  const activeContent = useMemo(() => {
+    if (editorMode === 'create' && activeFile) {
+      return activeFile.content;
+    }
+    return value;
+  }, [editorMode, activeFile, value]);
+
+  // Preview HTML
   const previewHtml = useMemo(() => {
     try {
       return parseMarkdownSafe(activeContent || "");
@@ -110,33 +125,6 @@ export default function EditPanel({
   }, [activeContent]);
 
   useMermaid(previewHtml);
-
-  const handleAddFile = () => {
-    const newFiles = addNewFile(mdFiles);
-    setMdFiles(newFiles);
-    setActiveFileId(newFiles[newFiles.length - 1].id);
-  };
-
-  const handleRemoveFile = (id: string) => {
-    const newActiveId = getNewActiveFileId(mdFiles, id, activeFileId);
-    setMdFiles(removeFile(mdFiles, id));
-    setActiveFileId(newActiveId);
-  };
-
-  const handleUpdateFileName = (id: string, newName: string) => {
-    setMdFiles(updateFileName(mdFiles, id, newName));
-  };
-
-  const handleUpdateFileContent = (id: string, content: string) => {
-    setMdFiles(updateFileContent(mdFiles, id, content));
-  };
-
-  const handleCreateFiles = () => {
-    if (onCreateFiles) {
-      onCreateFiles(mdFiles.filter(f => f.content.trim()));
-      onCancel();
-    }
-  };
 
   const handleApplyFormat = (before: string, after: string = '', placeholder: string = '') => {
     const textarea = textareaRef.current;
@@ -155,8 +143,8 @@ export default function EditPanel({
       placeholder
     );
 
-    if (mode === 'create' && activeFile) {
-      handleUpdateFileContent(activeFileId, newContent);
+    if (editorMode === 'create' && activeFile) {
+      updateFileContent(activeFileId, newContent);
     } else {
       onChange(newContent);
     }
@@ -182,8 +170,8 @@ export default function EditPanel({
       commandContent
     );
 
-    if (mode === 'create' && activeFile) {
-      handleUpdateFileContent(activeFileId, newContent);
+    if (editorMode === 'create' && activeFile) {
+      updateFileContent(activeFileId, newContent);
     } else {
       onChange(newContent);
     }
@@ -213,8 +201,8 @@ export default function EditPanel({
       templateContent
     );
 
-    if (mode === 'create' && activeFile) {
-      handleUpdateFileContent(activeFileId, newContent);
+    if (editorMode === 'create' && activeFile) {
+      updateFileContent(activeFileId, newContent);
     } else {
       onChange(newContent);
     }
@@ -225,17 +213,15 @@ export default function EditPanel({
         textarea.focus();
       }
     }, 0);
-
-    setShowTemplates(false);
   };
 
   const handleExportMarkdown = () => {
-    const filename = mode === 'create' && activeFile ? activeFile.name : 'slide.md';
+    const filename = editorMode === 'create' && activeFile ? activeFile.name : 'slide.md';
     exportAsMarkdown(activeContent, filename);
   };
 
   const handleExportHTML = () => {
-    const filename = mode === 'create' && activeFile
+    const filename = editorMode === 'create' && activeFile
       ? activeFile.name.replace('.md', '.html')
       : 'slide.html';
     exportAsHTML(previewHtml, filename);
@@ -246,23 +232,30 @@ export default function EditPanel({
   };
 
   const handleExportTXT = () => {
-    const filename = mode === 'create' && activeFile
+    const filename = editorMode === 'create' && activeFile
       ? activeFile.name.replace('.md', '.txt')
       : 'slide.txt';
     exportAsTXT(activeContent, filename);
   };
 
   const handleExportXLS = () => {
-    const filename = mode === 'create' && activeFile
+    const filename = editorMode === 'create' && activeFile
       ? activeFile.name.replace('.md', '.csv')
       : 'slide.csv';
     exportAsXLS(activeContent, filename);
   };
 
+  const handleCreateFiles = () => {
+    if (onCreateFiles) {
+      onCreateFiles(getFilesWithContent());
+      onCancel();
+    }
+  };
+
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value;
-    if (mode === 'create' && activeFile) {
-      handleUpdateFileContent(activeFileId, newValue);
+    if (editorMode === 'create' && activeFile) {
+      updateFileContent(activeFileId, newValue);
     } else {
       onChange(newValue);
     }
@@ -303,40 +296,44 @@ export default function EditPanel({
 
   useKeyboardShortcuts(
     {
-      onSave: mode === 'create' ? handleCreateFiles : onSave,
+      onSave: editorMode === 'create' ? handleCreateFiles : onSave,
       onCancel,
-      onTogglePreview: () => setShowPreview(v => !v),
-      onToggleFocus: onToggleEditorFocus
-        ? onToggleEditorFocus
-        : () => setInternalFocus(v => !v),
-      onShowHelp: () => setShowHelp(v => !v),
-      onShowTemplates: () => setShowTemplates(v => !v),
+      onTogglePreview: toggleShowPreview,
+      onToggleFocus: onToggleEditorFocus || toggleEditorFocus,
+      onShowHelp: () => setShowHelp(true),
+      onShowTemplates: () => setShowTemplates(true),
       onApplyFormat: handleApplyFormat,
     },
     {
       enabled: open,
-      showTemplates,
-      showHelp,
+      showTemplates: useUIStore.getState().showTemplates,
+      showHelp: useUIStore.getState().showHelp,
     }
   );
 
-  const handleGitHubFilesLoaded = (files: MarkdownFile[]) => {
-    setMdFiles(files);
-    setActiveFileId(files[0]?.id || '1');
-    toast.success(`${files.length} arquivo(s) carregado(s) do GitHub`);
+  const handleGitHubFilesLoaded = (loadedFiles: MarkdownFile[]) => {
+    setFiles(loadedFiles);
+    toast.success(`${loadedFiles.length} arquivo(s) carregado(s) do GitHub`);
   };
 
-  const getCurrentFiles = () => mdFiles;
+  useEffect(() => {
+    setMode(mode);
+  }, [mode, setMode]);
+
+  useEffect(() => {
+    if (onToggleEditorFocus) {
+      setEditorFocus(editorFocus);
+    }
+  }, [editorFocus, onToggleEditorFocus, setEditorFocus]);
 
   useEffect(() => {
     if (open && textareaRef.current) {
       textareaRef.current.focus();
     }
-    if (open && mode === 'create' && mdFiles.length === 0) {
-      setMdFiles([{ id: '1', name: 'slide-1.md', content: '' }]);
-      setActiveFileId('1');
+    if (open && editorMode === 'create' && files.length === 0) {
+      resetFiles();
     }
-  }, [open, mode]);
+  }, [open, editorMode, files.length, resetFiles]);
 
   useEffect(() => {
     const previewEl = previewScrollRef.current;
@@ -362,37 +359,18 @@ export default function EditPanel({
     >
       <div className="w-full h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white flex flex-col">
         <EditorHeader
-          mode={mode}
-          showPreview={showPreview}
-          focusOn={focusOn}
-          filesCount={mdFiles.filter(f => f.content.trim()).length}
+          onGitHub={() => setShowGitHub(true)}
+          onSave={editorMode === 'create' ? handleCreateFiles : onSave}
+          onCancel={onCancel}
           onExportMarkdown={handleExportMarkdown}
           onExportHTML={handleExportHTML}
           onExportPDF={handleExportPDF}
           onExportTXT={handleExportTXT}
           onExportXLS={handleExportXLS}
-          onGitHub={() => setShowGitHubModal(true)}
-          onHelp={() => setShowHelp(true)}
-          onTemplates={() => setShowTemplates(true)}
-          onPreviewToggle={() => setShowPreview(v => !v)}
-          onFocusToggle={onToggleEditorFocus || (() => setInternalFocus(v => !v))}
-          onCancel={onCancel}
-          onSave={mode === 'create' ? handleCreateFiles : onSave}
-          showExport={showExport}
-          setShowExport={setShowExport}
         />
 
         <div className="flex-1 overflow-hidden flex">
-          {mode === 'create' && (
-            <FileList
-              files={mdFiles}
-              activeFileId={activeFileId}
-              onFileSelect={setActiveFileId}
-              onFileAdd={handleAddFile}
-              onFileRemove={handleRemoveFile}
-              onFileRename={handleUpdateFileName}
-            />
-          )}
+          {editorMode === 'create' && <FileList />}
 
           <div className="flex-1 overflow-hidden">
             {focusOn ? (
@@ -400,7 +378,7 @@ export default function EditPanel({
                 <EditorToolbar onFormat={handleApplyFormat} />
                 <div className="absolute top-16 left-4 z-10">
                   <span className="px-3 py-1 bg-slate-800/90 backdrop-blur-sm border border-slate-700/50 rounded-full text-xs font-medium text-slate-300">
-                    Markdown
+                    📝 Markdown
                   </span>
                 </div>
                 <EditorTextarea
@@ -419,7 +397,7 @@ export default function EditPanel({
                     <EditorToolbar onFormat={handleApplyFormat} />
                     <div className="absolute top-16 left-4 z-10">
                       <span className="px-3 py-1 bg-slate-800/90 backdrop-blur-sm border border-slate-700/50 rounded-full text-xs font-medium text-slate-300">
-                        Markdown {mode === 'create' && activeFile && `- ${activeFile.name}`}
+                        📝 Markdown {editorMode === 'create' && activeFile && `- ${activeFile.name}`}
                       </span>
                     </div>
                     <EditorTextarea
@@ -450,7 +428,7 @@ export default function EditPanel({
                 <EditorToolbar onFormat={handleApplyFormat} />
                 <div className="absolute top-16 left-4 z-10">
                   <span className="px-3 py-1 bg-slate-800/90 backdrop-blur-sm border border-slate-700/50 rounded-full text-xs font-medium text-slate-300">
-                    Markdown {mode === 'create' && activeFile && `- ${activeFile.name}`}
+                    📝 Markdown {editorMode === 'create' && activeFile && `- ${activeFile.name}`}
                   </span>
                 </div>
                 <EditorTextarea
@@ -482,25 +460,15 @@ export default function EditPanel({
         textareaRef={textareaRef}
       />
 
-      <HelpModal
-        show={showHelp}
-        onClose={() => setShowHelp(false)}
-      />
-
-      <TemplatesModal
-        show={showTemplates}
-        onClose={() => setShowTemplates(false)}
-        templates={TEMPLATES}
-        onSelectTemplate={handleInsertTemplate}
-      />
-
+      <HelpModal />
+      <TemplatesModal onSelectTemplate={handleInsertTemplate} />
       <EditorStyles />
 
       <GitHubIntegrationModal
-        isOpen={showGitHubModal}
-        onClose={() => setShowGitHubModal(false)}
+        isOpen={showGitHub}
+        onClose={() => setShowGitHub(false)}
         onFilesLoaded={handleGitHubFilesLoaded}
-        currentFiles={getCurrentFiles()}
+        currentFiles={files}
       />
     </div>
   );

@@ -1,48 +1,45 @@
 import React from 'react';
 import { Maximize2, Minimize2, Eye, EyeOff, X, Save, Plus, HelpCircle, Github } from 'lucide-react';
 import { ExportDrawer } from './ExportDrawer';
+import { useUIStore } from '../../stores/useUIStore';
+import { useFileStore } from '../../stores/useFileStore';
+import { useEditorStore } from '../../stores/useEditorStore';
 
 type EditorHeaderProps = {
-    mode: 'edit' | 'create';
-    showPreview: boolean;
-    focusOn: boolean;
-    filesCount?: number;
+    onGitHub: () => void;
+    onSave: () => void;
+    onCancel: () => void;
     onExportMarkdown: () => void;
     onExportHTML: () => void;
     onExportPDF: () => void;
     onExportTXT: () => void;
     onExportXLS: () => void;
-    onGitHub: () => void;
-    onHelp: () => void;
-    onTemplates: () => void;
-    onPreviewToggle: () => void;
-    onFocusToggle: () => void;
-    onCancel: () => void;
-    onSave: () => void;
-    showExport: boolean;
-    setShowExport: (show: boolean) => void;
 };
 
 export const EditorHeader: React.FC<EditorHeaderProps> = ({
-    mode,
-    showPreview,
-    focusOn,
-    filesCount = 0,
+    onGitHub,
+    onSave,
+    onCancel,
     onExportMarkdown,
     onExportHTML,
     onExportPDF,
     onExportTXT,
     onExportXLS,
-    onGitHub,
-    onHelp,
-    onTemplates,
-    onPreviewToggle,
-    onFocusToggle,
-    onCancel,
-    onSave,
-    showExport,
-    setShowExport,
 }) => {
+    const showPreview = useUIStore((state) => state.showPreview);
+    const editorFocus = useUIStore((state) => state.editorFocus);
+    const showExport = useUIStore((state) => state.showExport);
+    const setShowExport = useUIStore((state) => state.setShowExport);
+    const setShowHelp = useUIStore((state) => state.setShowHelp);
+    const setShowTemplates = useUIStore((state) => state.setShowTemplates);
+    const toggleShowPreview = useUIStore((state) => state.toggleShowPreview);
+    const toggleEditorFocus = useUIStore((state) => state.toggleEditorFocus);
+
+    const mode = useEditorStore((state) => state.mode);
+
+    const getFilesWithContent = useFileStore((state) => state.getFilesWithContent);
+    const filesCount = getFilesWithContent().length;
+
     return (
         <header className="relative flex items-center justify-between px-8 py-5 border-b border-slate-700/50 bg-gradient-to-r from-slate-900/80 via-slate-800/80 to-slate-900/80 backdrop-blur-sm flex-shrink-0">
             <div className="flex items-center gap-4">
@@ -82,7 +79,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
 
                 <button
                     className="group px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-200 bg-slate-800/50 hover:bg-slate-700/50 text-slate-300 hover:text-white border border-slate-700/50"
-                    onClick={onHelp}
+                    onClick={() => setShowHelp(true)}
                     title="Ajuda e Atalhos (Shift+Alt+H)"
                 >
                     <HelpCircle
@@ -94,20 +91,20 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
 
                 <button
                     className="group px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-200 bg-slate-800/50 hover:bg-slate-700/50 text-slate-300 hover:text-white border border-slate-700/50"
-                    onClick={onTemplates}
+                    onClick={() => setShowTemplates(true)}
                     title="Inserir template"
                 >
                     <span className="text-sm font-medium">Templates</span>
                 </button>
 
-                {!focusOn && (
+                {!editorFocus && (
                     <button
                         className={`group px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-200 ${showPreview
-                                ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-900/30"
-                                : "bg-slate-800/50 hover:bg-slate-700/50 text-slate-300 hover:text-white border border-slate-700/50"
+                            ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-900/30"
+                            : "bg-slate-800/50 hover:bg-slate-700/50 text-slate-300 hover:text-white border border-slate-700/50"
                             }`}
                         aria-pressed={showPreview}
-                        onClick={onPreviewToggle}
+                        onClick={toggleShowPreview}
                         title={showPreview ? "Ocultar preview" : "Mostrar preview"}
                     >
                         {showPreview ? (
@@ -129,10 +126,10 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
 
                 <button
                     className="group px-4 py-2 bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50 hover:border-slate-600/50 text-slate-300 hover:text-white rounded-lg flex items-center gap-2 transition-all duration-200"
-                    onClick={onFocusToggle}
-                    title={focusOn ? "Sair do foco do editor" : "Foco no editor"}
+                    onClick={toggleEditorFocus}
+                    title={editorFocus ? "Sair do foco do editor" : "Foco no editor"}
                 >
-                    {focusOn ? (
+                    {editorFocus ? (
                         <Minimize2
                             size={16}
                             className="transition-transform group-hover:scale-110"
@@ -144,7 +141,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                         />
                     )}
                     <span className="text-sm font-medium">
-                        {focusOn ? "Normal" : "Expandir"}
+                        {editorFocus ? "Normal" : "Expandir"}
                     </span>
                 </button>
 

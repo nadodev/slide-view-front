@@ -1,20 +1,19 @@
 import React from 'react';
 import { HelpCircle, X } from 'lucide-react';
+import { useUIStore } from '../../stores/useUIStore';
 
-type HelpModalProps = {
-    show: boolean;
-    onClose: () => void;
-};
+export const HelpModal: React.FC = () => {
+    const showHelp = useUIStore((state) => state.showHelp);
+    const setShowHelp = useUIStore((state) => state.setShowHelp);
 
-export const HelpModal: React.FC<HelpModalProps> = ({ show, onClose }) => {
-    if (!show) return null;
+    if (!showHelp) return null;
 
     return (
         <div
             className="fixed inset-0 z-[10001] flex items-center justify-center p-4"
             onClick={(e) => {
                 if (e.target === e.currentTarget) {
-                    onClose();
+                    setShowHelp(false);
                 }
             }}
         >
@@ -35,7 +34,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ show, onClose }) => {
                         </div>
                     </div>
                     <button
-                        onClick={onClose}
+                        onClick={() => setShowHelp(false)}
                         className="p-2 hover:bg-slate-700/50 rounded-lg transition-colors text-slate-400 hover:text-white"
                         title="Fechar (Esc)"
                     >
@@ -106,7 +105,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ show, onClose }) => {
                         Pressione Esc para fechar
                     </p>
                     <button
-                        onClick={onClose}
+                        onClick={() => setShowHelp(false)}
                         className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white transition-colors"
                     >
                         Fechar

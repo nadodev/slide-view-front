@@ -1,28 +1,24 @@
 import React from 'react';
 import { Sparkles, X } from 'lucide-react';
-import type { Template } from '../../constants/editor/editorConstants';
+import { TEMPLATES } from '../../constants/editor/editorConstants';
+import { useUIStore } from '../../stores/useUIStore';
 
 type TemplatesModalProps = {
-    show: boolean;
-    onClose: () => void;
-    templates: Template[];
     onSelectTemplate: (content: string) => void;
 };
 
-export const TemplatesModal: React.FC<TemplatesModalProps> = ({
-    show,
-    onClose,
-    templates,
-    onSelectTemplate,
-}) => {
-    if (!show) return null;
+export const TemplatesModal: React.FC<TemplatesModalProps> = ({ onSelectTemplate }) => {
+    const showTemplates = useUIStore((state) => state.showTemplates);
+    const setShowTemplates = useUIStore((state) => state.setShowTemplates);
+
+    if (!showTemplates) return null;
 
     return (
         <div
             className="fixed inset-0 z-[10000] flex items-center justify-center p-4"
             onClick={(e) => {
                 if (e.target === e.currentTarget) {
-                    onClose();
+                    setShowTemplates(false);
                 }
             }}
         >
@@ -43,7 +39,7 @@ export const TemplatesModal: React.FC<TemplatesModalProps> = ({
                         </div>
                     </div>
                     <button
-                        onClick={onClose}
+                        onClick={() => setShowTemplates(false)}
                         className="p-2 hover:bg-slate-700/50 rounded-lg transition-colors text-slate-400 hover:text-white"
                         title="Fechar (Esc)"
                     >
@@ -53,7 +49,7 @@ export const TemplatesModal: React.FC<TemplatesModalProps> = ({
 
                 <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {templates.map((template) => {
+                        {TEMPLATES.map((template) => {
                             const Icon = template.icon;
                             return (
                                 <button
@@ -82,10 +78,10 @@ export const TemplatesModal: React.FC<TemplatesModalProps> = ({
 
                 <div className="px-6 py-4 border-t border-slate-700/50 bg-slate-900/50 flex items-center justify-between">
                     <p className="text-xs text-slate-500">
-                        {templates.length} templates disponíveis
+                        {TEMPLATES.length} templates disponíveis
                     </p>
                     <button
-                        onClick={onClose}
+                        onClick={() => setShowTemplates(false)}
                         className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white transition-colors"
                     >
                         Fechar
