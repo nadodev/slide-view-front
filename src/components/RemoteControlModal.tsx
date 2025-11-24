@@ -1,6 +1,6 @@
 import React from 'react';
 import { Smartphone } from 'lucide-react';
-import { Button } from './ui/button';
+import { Button } from '../shared/components/ui/button';
 
 interface RemoteControlModalProps {
   qrUrl?: string;
@@ -22,7 +22,7 @@ export const RemoteControlModal: React.FC<RemoteControlModalProps> = ({
   onClose,
 }) => {
   const isDevelopment = platform === 'development';
-  
+
   // Mostrar modal apenas quando não está suportado ou em desenvolvimento
   if (!isSupported || isDevelopment) {
     return (
@@ -47,7 +47,7 @@ export const RemoteControlModal: React.FC<RemoteControlModalProps> = ({
                 {isDevelopment ? '🔧 Funcionalidade em Desenvolvimento' : '📱 Controle Remoto'}
               </h3>
               <p className="text-blue-300/80 text-sm">
-                {isDevelopment 
+                {isDevelopment
                   ? 'Esta funcionalidade está sendo desenvolvida e estará disponível em breve!'
                   : 'O controle remoto via celular estará disponível em uma próxima atualização.'
                 }

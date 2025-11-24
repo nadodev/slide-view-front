@@ -12,7 +12,7 @@ import {
   Wifi,
   WifiOff
 } from "lucide-react";
-import { Button } from "./ui/button";
+import { Button } from "../shared/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,7 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "./ui/alert-dialog";
+} from "../shared/components/ui/alert-dialog";
 
 type NavigationProps = {
   currentSlide: number;
@@ -44,7 +44,7 @@ type NavigationProps = {
   onRestart?: () => void;
   highContrast: boolean;
   setHighContrast: (contrast: boolean) => void;
-  
+
   // Remote control props
   onShowRemoteControl?: () => void;
   remoteSession?: {
@@ -67,34 +67,34 @@ const Navigation = ({
   onShowRemoteControl,
   remoteSession,
 }: NavigationProps) => {
-  
+
   const onPrev = () => {
     if (currentSlide > 0) {
       setCurrentSlide(currentSlide - 1);
       setTransitionKey(prev => prev + 1);
     }
   };
-  
+
   const onNext = () => {
     if (currentSlide < totalSlides - 1) {
       setCurrentSlide(currentSlide + 1);
       setTransitionKey(prev => prev + 1);
     }
   };
-  
+
   const onReset = () => {
     setCurrentSlide(0);
     setTransitionKey(prev => prev + 1);
   };
-  
+
   const onEdit = () => {
     onStartEditing();
   };
-  
+
   const onToggleFocus = () => {
     setFocusMode(!focusMode);
   };
-  
+
   const onDuplicate = () => {
     duplicateSlide();
   };
@@ -154,11 +154,10 @@ const Navigation = ({
                 focusMode ? "Sair do modo de foco" : "Ativar modo de foco"
               }
               title={focusMode ? "Sair do foco" : "Modo foco"}
-              className={`cursor-pointer flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 text-sm border ${
-                focusMode
+              className={`cursor-pointer flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 text-sm border ${focusMode
                   ? "bg-purple-600 hover:bg-purple-500 text-white border-purple-500"
                   : "bg-gray-800 hover:bg-gray-700 text-gray-200 border-gray-700 hover:border-gray-600"
-              }`}
+                }`}
             >
               {focusMode ? <Eye size={16} /> : <EyeOff size={16} />}
               <span className="hidden sm:inline">
@@ -185,11 +184,10 @@ const Navigation = ({
                 }}
                 aria-label="Ativar controle remoto"
                 title="Controlar apresentação pelo celular"
-                className={`cursor-pointer flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 text-sm border ${
-                  remoteSession?.isConnected
+                className={`cursor-pointer flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 text-sm border ${remoteSession?.isConnected
                     ? "bg-violet-600 hover:bg-violet-500 text-white border-violet-500 shadow-lg shadow-violet-900/30"
                     : "bg-gray-800 hover:bg-gray-700 text-gray-200 border-gray-700 hover:border-violet-400"
-                }`}
+                  }`}
               >
                 {remoteSession?.isConnected ? <Wifi size={16} /> : <QrCode size={16} />}
                 <span className="hidden md:inline">
@@ -249,7 +247,7 @@ const Navigation = ({
                     <AlertDialogCancel className="bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700">
                       Cancelar
                     </AlertDialogCancel>
-                    <AlertDialogAction 
+                    <AlertDialogAction
                       onClick={onRestart}
                       className="bg-orange-600 hover:bg-orange-700 text-white"
                     >

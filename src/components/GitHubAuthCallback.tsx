@@ -1,9 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
-/**
- * Componente para processar o callback da autenticação GitHub OAuth
- */
 export default function GitHubAuthCallback() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -13,7 +10,6 @@ export default function GitHubAuthCallback() {
     const state = searchParams.get('state');
     const error = searchParams.get('error');
 
-    // Se estamos em uma janela popup, enviar mensagem para a janela pai
     if (window.opener && window.opener !== window) {
       if (error) {
         window.opener.postMessage({
@@ -27,18 +23,15 @@ export default function GitHubAuthCallback() {
           state,
         }, window.location.origin);
       }
-      
-      // Fechar a janela popup
+
       window.close();
       return;
     }
 
-    // Se não é popup, redirecionar de volta para a aplicação
     if (error) {
       console.error('Erro na autenticação GitHub:', error);
       navigate('/app?error=github_auth_failed');
     } else {
-      // Sucesso - voltar para a aplicação
       navigate('/app?github_auth=success');
     }
   }, [searchParams, navigate]);

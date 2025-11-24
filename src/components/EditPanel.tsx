@@ -5,8 +5,8 @@ import {
   ResizablePanelGroup,
   ResizablePanel,
   ResizableHandle,
-} from "./ui/resizable";
-import { Button } from "./ui/button";
+} from "../shared/components/ui/resizable";
+import { Button } from "../shared/components/ui/button";
 import { useMermaid } from "../hooks/useMermaid";
 import {
   Drawer,
@@ -17,8 +17,7 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
-} from "./ui/drawer";
-import { fetchFilesFromGitHub, pushFilesToGitHub, validateGitHubToken, type GitHubConfig, type GitHubFile } from "../utils/github";
+} from "../shared/components/ui/drawer";
 import { toast } from "sonner";
 import GitHubIntegrationModal from "./GitHubIntegrationModal";
 
@@ -36,8 +35,8 @@ type EditPanelProps = {
   onSave: () => void;
   editorFocus?: boolean;
   onToggleEditorFocus?: () => void;
-  mode?: 'edit' | 'create'; // 'edit' para editar slide, 'create' para criar arquivos .md
-  onCreateFiles?: (files: MarkdownFile[]) => void; // Callback quando criar arquivos
+  mode?: 'edit' | 'create';
+  onCreateFiles?: (files: MarkdownFile[]) => void;
 };
 
 export default function EditPanel({
@@ -68,14 +67,12 @@ export default function EditPanel({
   const [selectedSlashIndex, setSelectedSlashIndex] = useState(0);
   const slashMenuRef = useRef<HTMLDivElement | null>(null);
   const [showGitHubModal, setShowGitHubModal] = useState(false);
-  
-  // Estado para modo de criação de múltiplos arquivos
+
   const [mdFiles, setMdFiles] = useState<MarkdownFile[]>([
     { id: '1', name: 'slide-1.md', content: '' }
   ]);
   const [activeFileId, setActiveFileId] = useState<string>('1');
 
-  // Comandos para o menu slash (estilo Notion)
   const slashCommands = [
     {
       id: 'title',
@@ -199,19 +196,16 @@ export default function EditPanel({
     }
   ];
 
-  // Filtrar comandos baseado na query
   const filteredSlashCommands = useMemo(() => {
     if (!slashQuery) return slashCommands;
     const query = slashQuery.toLowerCase();
-    return slashCommands.filter(cmd => 
+    return slashCommands.filter(cmd =>
       cmd.name.toLowerCase().includes(query) ||
       cmd.keywords.some(kw => kw.includes(query)) ||
       cmd.description.toLowerCase().includes(query)
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slashQuery]);
 
-  // Templates pré-definidos (para o modal de templates)
   const templates = [
     {
       id: 'title',
@@ -323,7 +317,6 @@ export default function EditPanel({
   const suppressEditorSync = useRef(false);
   const suppressPreviewSync = useRef(false);
 
-  // Funções para gerenciar arquivos .md
   const addNewFile = () => {
     const newId = Date.now().toString();
     const newFile: MarkdownFile = {
@@ -336,7 +329,7 @@ export default function EditPanel({
   };
 
   const removeFile = (id: string) => {
-    if (mdFiles.length === 1) return; // Não permite remover o último arquivo
+    if (mdFiles.length === 1) return;
     const newFiles = mdFiles.filter(f => f.id !== id);
     setMdFiles(newFiles);
     if (activeFileId === id) {
@@ -345,25 +338,24 @@ export default function EditPanel({
   };
 
   const updateFileName = (id: string, newName: string) => {
-    setMdFiles(files => files.map(f => 
+    setMdFiles(files => files.map(f =>
       f.id === id ? { ...f, name: newName.endsWith('.md') ? newName : `${newName}.md` } : f
     ));
   };
 
   const updateFileContent = (id: string, content: string) => {
-    setMdFiles(files => files.map(f => 
+    setMdFiles(files => files.map(f =>
       f.id === id ? { ...f, content } : f
     ));
   };
 
   const handleCreateFiles = () => {
     if (onCreateFiles) {
-      onCreateFiles(mdFiles.filter(f => f.content.trim())); // Apenas arquivos com conteúdo
-      onCancel(); // Fechar o editor após criar
+      onCreateFiles(mdFiles.filter(f => f.content.trim()));
+      onCancel();
     }
   };
 
-  // Função para inserir comando slash
   const insertSlashCommand = (commandContent: string) => {
     const textarea = textareaRef.current;
     if (!textarea) return;
@@ -372,7 +364,6 @@ export default function EditPanel({
     const end = textarea.selectionEnd;
     const currentContent = mode === 'create' && activeFile ? activeFile.content : value;
 
-    // Encontrar a posição do "/" mais próximo antes do cursor
     let slashPos = start - 1;
     while (slashPos >= 0 && currentContent[slashPos] !== '/' && currentContent[slashPos] !== '\n') {
       slashPos--;
@@ -383,7 +374,6 @@ export default function EditPanel({
       return;
     }
 
-    // Remover "/" e a query, inserir o comando
     const beforeSlash = currentContent.substring(0, slashPos);
     const afterCursor = currentContent.substring(end);
     const newContent = beforeSlash + commandContent + afterCursor;
@@ -394,7 +384,6 @@ export default function EditPanel({
       onChange(newContent);
     }
 
-    // Reposicionar cursor após o comando inserido
     setTimeout(() => {
       if (textarea) {
         const newPosition = slashPos + commandContent.length;
@@ -408,7 +397,6 @@ export default function EditPanel({
     setSelectedSlashIndex(0);
   };
 
-  // Função para inserir template na posição do cursor
   const insertTemplate = (templateContent: string) => {
     const textarea = textareaRef.current;
     if (!textarea) return;
@@ -417,9 +405,9 @@ export default function EditPanel({
     const end = textarea.selectionEnd;
     const currentContent = mode === 'create' && activeFile ? activeFile.content : value;
 
-    const newContent = 
-      currentContent.substring(0, start) + 
-      templateContent + 
+    const newContent =
+      currentContent.substring(0, start) +
+      templateContent +
       currentContent.substring(end);
 
     if (mode === 'create' && activeFile) {
@@ -428,7 +416,6 @@ export default function EditPanel({
       onChange(newContent);
     }
 
-    // Reposicionar cursor após o template inserido
     setTimeout(() => {
       if (textarea) {
         const newPosition = start + templateContent.length;
@@ -440,7 +427,6 @@ export default function EditPanel({
     setShowTemplates(false);
   };
 
-  // Função para aplicar formatação markdown
   const applyMarkdownFormat = (before: string, after: string = '', placeholder: string = '') => {
     const textarea = textareaRef.current;
     if (!textarea) return;
@@ -449,23 +435,21 @@ export default function EditPanel({
     const end = textarea.selectionEnd;
     const selectedText = textarea.value.substring(start, end);
     const currentContent = mode === 'create' && activeFile ? activeFile.content : value;
-    
+
     let newContent: string;
     let newCursorPos: number;
 
     if (selectedText) {
-      // Se há texto selecionado, aplicar formatação ao redor
-      newContent = 
-        currentContent.substring(0, start) + 
-        before + selectedText + after + 
+      newContent =
+        currentContent.substring(0, start) +
+        before + selectedText + after +
         currentContent.substring(end);
       newCursorPos = start + before.length + selectedText.length + after.length;
     } else {
-      // Se não há seleção, inserir placeholder
       const placeholderText = placeholder || 'texto';
-      newContent = 
-        currentContent.substring(0, start) + 
-        before + placeholderText + after + 
+      newContent =
+        currentContent.substring(0, start) +
+        before + placeholderText + after +
         currentContent.substring(end);
       newCursorPos = start + before.length + placeholderText.length;
     }
@@ -476,7 +460,6 @@ export default function EditPanel({
       onChange(newContent);
     }
 
-    // Reposicionar cursor
     setTimeout(() => {
       if (textarea) {
         textarea.setSelectionRange(newCursorPos, newCursorPos);
@@ -496,7 +479,6 @@ export default function EditPanel({
     }
   }, [activeContent]);
 
-  // Funções de exportação
   const exportAsMarkdown = () => {
     const blob = new Blob([activeContent], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
@@ -564,7 +546,6 @@ export default function EditPanel({
   };
 
   const exportAsTXT = () => {
-    // Remove markdown formatting
     const textContent = activeContent
       .replace(/#{1,6}\s+/g, '') // Remove headers
       .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold
@@ -584,8 +565,6 @@ export default function EditPanel({
   };
 
   const exportAsPDF = async () => {
-    // Para PDF, vamos usar window.print() ou uma biblioteca
-    // Por enquanto, vamos criar um HTML e usar print
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
       alert('Por favor, permita pop-ups para exportar como PDF');
@@ -638,10 +617,8 @@ export default function EditPanel({
   };
 
   const exportAsXLS = () => {
-    // Para XLS, vamos criar um CSV simples
     const lines = activeContent.split('\n').filter(line => line.trim());
     const csvContent = lines.map(line => {
-      // Remove markdown formatting
       const cleanLine = line
         .replace(/#{1,6}\s+/g, '')
         .replace(/\*\*(.*?)\*\*/g, '$1')
@@ -649,11 +626,11 @@ export default function EditPanel({
         .replace(/`(.*?)`/g, '$1')
         .replace(/\[(.*?)\]\(.*?\)/g, '$1')
         .replace(/!\[(.*?)\]\(.*?\)/g, '$1')
-        .replace(/^[-*+]\s+/, '') // Remove list markers
-        .replace(/^\d+\.\s+/, ''); // Remove numbered list markers
+        .replace(/^[-*+]\s+/, '')
+        .replace(/^\d+\.\s+/, '');
       return `"${cleanLine.replace(/"/g, '""')}"`;
     }).join('\n');
-    
+
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -665,10 +642,8 @@ export default function EditPanel({
     URL.revokeObjectURL(url);
   };
 
-  // Inicializar Mermaid para o preview
   useMermaid(previewHtml);
 
-  // Handlers para o modal de integração GitHub
   const handleGitHubFilesLoaded = (files: MarkdownFile[]) => {
     setMdFiles(files);
     setActiveFileId(files[0]?.id || '1');
@@ -679,20 +654,18 @@ export default function EditPanel({
     return mdFiles;
   };
 
-  // Calcular número de linhas
   const lineCount = useMemo(() => {
     const content = activeContent || '';
     if (!content) return 1;
     return Math.max(1, content.split('\n').length);
   }, [activeContent]);
 
-  // Sincronizar scroll da numeração de linhas com o textarea
   useEffect(() => {
     const textarea = textareaRef.current;
     const lineNumbers1 = lineNumbersRef1.current;
     const lineNumbers2 = lineNumbersRef2.current;
     const lineNumbers3 = lineNumbersRef3.current;
-    
+
     if (!textarea) return;
 
     const syncScroll = () => {
@@ -709,7 +682,6 @@ export default function EditPanel({
     if (open && textareaRef.current) {
       textareaRef.current.focus();
     }
-    // Resetar arquivos quando abrir no modo create
     if (open && mode === 'create' && mdFiles.length === 0) {
       setMdFiles([{ id: '1', name: 'slide-1.md', content: '' }]);
       setActiveFileId('1');
@@ -721,13 +693,12 @@ export default function EditPanel({
       if (!open) return;
       const textarea = textareaRef.current;
       if (!textarea) return;
-      
+
       const key = e.key.toLowerCase();
       const ctrl = e.ctrlKey || e.metaKey;
       const shift = e.shiftKey;
       const alt = e.altKey;
 
-      // Fechar modais com ESC
       if (key === "escape") {
         e.preventDefault();
         if (showTemplates) {
@@ -742,14 +713,12 @@ export default function EditPanel({
         return;
       }
 
-      // Salvar
       if (ctrl && key === "s" && !shift && !alt) {
         e.preventDefault();
         onSave();
         return;
       }
 
-      // Atalhos de formatação
       if (ctrl && !shift && !alt) {
         switch (key) {
           case "1":
@@ -758,7 +727,7 @@ export default function EditPanel({
           case "4":
           case "5":
           case "6":
-        e.preventDefault();
+            e.preventDefault();
             const level = parseInt(key);
             applyMarkdownFormat(`${'#'.repeat(level)} `, '', `Título ${level}`);
             return;
@@ -801,7 +770,6 @@ export default function EditPanel({
         }
       }
 
-      // Atalhos com Shift
       if (ctrl && shift && !alt) {
         switch (key) {
           case "i":
@@ -823,7 +791,6 @@ export default function EditPanel({
         }
       }
 
-      // Atalhos com Alt
       if (shift && alt && !ctrl) {
         switch (key) {
           case "c":
@@ -837,7 +804,6 @@ export default function EditPanel({
         }
       }
 
-      // F9 - Toggle Preview
       if (key === "f9") {
         e.preventDefault();
         setShowPreview(!showPreview);
@@ -914,7 +880,6 @@ export default function EditPanel({
       data-preview={showPreview ? "on" : "off"}
     >
       <div className="w-full h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white flex flex-col">
-        {/* Header Moderno */}
         <header className="relative flex items-center justify-between px-8 py-5 border-b border-slate-700/50 bg-gradient-to-r from-slate-900/80 via-slate-800/80 to-slate-900/80 backdrop-blur-sm flex-shrink-0">
           <div className="flex items-center gap-4">
             <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full" />
@@ -929,7 +894,6 @@ export default function EditPanel({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Botão de Exportação */}
             <Drawer open={showExport} onOpenChange={setShowExport}>
               <DrawerTrigger asChild>
                 <button
@@ -1053,7 +1017,6 @@ export default function EditPanel({
               </DrawerContent>
             </Drawer>
 
-            {/* Botão de GitHub */}
             <button
               className="group px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-200 bg-slate-800/50 hover:bg-slate-700/50 text-slate-300 hover:text-white border border-slate-700/50"
               onClick={() => setShowGitHubModal(true)}
@@ -1066,7 +1029,6 @@ export default function EditPanel({
               <span className="text-sm font-medium">GitHub</span>
             </button>
 
-            {/* Botão de Ajuda */}
             <button
               className="group px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-200 bg-slate-800/50 hover:bg-slate-700/50 text-slate-300 hover:text-white border border-slate-700/50"
               onClick={() => setShowHelp(true)}
@@ -1079,7 +1041,6 @@ export default function EditPanel({
               <span className="text-sm font-medium">Ajuda</span>
             </button>
 
-            {/* Botão de Templates */}
             <button
               className="group px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-200 bg-slate-800/50 hover:bg-slate-700/50 text-slate-300 hover:text-white border border-slate-700/50"
               onClick={() => setShowTemplates(true)}
@@ -1094,11 +1055,10 @@ export default function EditPanel({
 
             {!focusOn && (
               <button
-                className={`group px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-200 ${
-                  showPreview
-                    ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-900/30"
-                    : "bg-slate-800/50 hover:bg-slate-700/50 text-slate-300 hover:text-white border border-slate-700/50"
-                }`}
+                className={`group px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-200 ${showPreview
+                  ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-900/30"
+                  : "bg-slate-800/50 hover:bg-slate-700/50 text-slate-300 hover:text-white border border-slate-700/50"
+                  }`}
                 aria-pressed={showPreview}
                 onClick={() => setShowPreview((v) => !v)}
                 title={showPreview ? "Ocultar preview" : "Mostrar preview"}
@@ -1172,24 +1132,22 @@ export default function EditPanel({
                 <span className="text-sm">Criar Slides ({mdFiles.filter(f => f.content.trim()).length})</span>
               </button>
             ) : (
-            <button
-              className="group px-5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-lg text-white font-medium flex items-center gap-2 shadow-lg shadow-emerald-900/30 transition-all duration-200 hover:scale-105"
-              onClick={onSave}
-              title="Salvar (Ctrl+S ou Cmd+S)"
-            >
-              <Save
-                size={16}
-                className="transition-transform group-hover:scale-110"
-              />
-              <span className="text-sm">Salvar</span>
-            </button>
+              <button
+                className="group px-5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-lg text-white font-medium flex items-center gap-2 shadow-lg shadow-emerald-900/30 transition-all duration-200 hover:scale-105"
+                onClick={onSave}
+                title="Salvar (Ctrl+S ou Cmd+S)"
+              >
+                <Save
+                  size={16}
+                  className="transition-transform group-hover:scale-110"
+                />
+                <span className="text-sm">Salvar</span>
+              </button>
             )}
           </div>
         </header>
 
-        {/* Área de Edição */}
         <div className="flex-1 overflow-hidden flex">
-          {/* Sidebar de Arquivos (apenas no modo create) */}
           {mode === 'create' && (
             <div className="w-64 bg-slate-800/50 border-r border-slate-700/50 flex flex-col">
               <div className="p-4 border-b border-slate-700/50">
@@ -1209,11 +1167,10 @@ export default function EditPanel({
                 {mdFiles.map((file) => (
                   <div
                     key={file.id}
-                    className={`p-3 border-b border-slate-700/30 cursor-pointer transition-colors ${
-                      activeFileId === file.id
-                        ? 'bg-blue-600/20 border-l-2 border-l-blue-500'
-                        : 'hover:bg-slate-700/30'
-                    }`}
+                    className={`p-3 border-b border-slate-700/30 cursor-pointer transition-colors ${activeFileId === file.id
+                      ? 'bg-blue-600/20 border-l-2 border-l-blue-500'
+                      : 'hover:bg-slate-700/30'
+                      }`}
                     onClick={() => setActiveFileId(file.id)}
                   >
                     <div className="flex items-center gap-2 mb-2">
@@ -1247,11 +1204,9 @@ export default function EditPanel({
             </div>
           )}
 
-        <div className="flex-1 overflow-hidden">
-          {focusOn ? (
-            /* Modo Foco - Apenas Editor */
-            <div className="h-full flex flex-col">
-                {/* Toolbar */}
+          <div className="flex-1 overflow-hidden">
+            {focusOn ? (
+              <div className="h-full flex flex-col">
                 <div className="flex items-center gap-1 px-3 py-2 bg-slate-800/80 border-b border-slate-700/50 flex-shrink-0 overflow-x-auto">
                   <button
                     onClick={() => applyMarkdownFormat('# ', '', 'Título')}
@@ -1350,12 +1305,11 @@ export default function EditPanel({
                   </button>
                 </div>
                 <div className="absolute top-16 left-4 z-10">
-                <span className="px-3 py-1 bg-slate-800/90 backdrop-blur-sm border border-slate-700/50 rounded-full text-xs font-medium text-slate-300">
-                  📝 Markdown
-                </span>
-              </div>
+                  <span className="px-3 py-1 bg-slate-800/90 backdrop-blur-sm border border-slate-700/50 rounded-full text-xs font-medium text-slate-300">
+                    📝 Markdown
+                  </span>
+                </div>
                 <div className="flex-1 flex overflow-hidden">
-                  {/* Numeração de Linhas */}
                   <div
                     ref={lineNumbersRef1}
                     className="flex-shrink-0 w-12 bg-slate-900/50 border-r border-slate-700/50 text-right text-xs text-slate-500 font-mono py-20 px-2 overflow-hidden select-none"
@@ -1367,9 +1321,8 @@ export default function EditPanel({
                       </div>
                     ))}
                   </div>
-                  {/* Editor */}
-              <textarea
-                ref={textareaRef}
+                  <textarea
+                    ref={textareaRef}
                     value={mode === 'create' && activeFile ? activeFile.content : value}
                     onChange={(e) => {
                       const newValue = e.target.value;
@@ -1379,11 +1332,10 @@ export default function EditPanel({
                         onChange(newValue);
                       }
 
-                      // Detectar "/" para mostrar menu slash
                       const cursorPos = e.target.selectionStart;
                       const textBeforeCursor = newValue.substring(0, cursorPos);
                       const lastLine = textBeforeCursor.split('\n').pop() || '';
-                      
+
                       if (lastLine === '/' || (lastLine.startsWith('/') && !lastLine.includes(' '))) {
                         setShowSlashMenu(true);
                         setSlashQuery(lastLine.substring(1));
@@ -1403,12 +1355,12 @@ export default function EditPanel({
                       if (showSlashMenu) {
                         if (e.key === 'ArrowDown') {
                           e.preventDefault();
-                          setSelectedSlashIndex((prev) => 
+                          setSelectedSlashIndex((prev) =>
                             prev < filteredSlashCommands.length - 1 ? prev + 1 : 0
                           );
                         } else if (e.key === 'ArrowUp') {
                           e.preventDefault();
-                          setSelectedSlashIndex((prev) => 
+                          setSelectedSlashIndex((prev) =>
                             prev > 0 ? prev - 1 : filteredSlashCommands.length - 1
                           );
                         } else if (e.key === 'Enter' || e.key === 'Tab') {
@@ -1423,9 +1375,9 @@ export default function EditPanel({
                         }
                       }
                     }}
-                onScroll={onEditorScroll}
-                spellCheck={false}
-                placeholder="# Título do Slide
+                    onScroll={onEditorScroll}
+                    spellCheck={false}
+                    placeholder="# Título do Slide
 
 Comece a digitar seu conteúdo em Markdown aqui...
 
@@ -1433,18 +1385,16 @@ Comece a digitar seu conteúdo em Markdown aqui...
 - Outro item
 
 **Texto em negrito** e *itálico*"
-                aria-label="Editor de Markdown do slide"
+                    aria-label="Editor de Markdown do slide"
                     className="flex-1 w-full h-full pt-20 px-6 pb-6 bg-slate-950 text-slate-100 font-mono text-[15px] leading-relaxed resize-none outline-none border-none overflow-auto custom-scrollbar placeholder:text-slate-600"
                     style={{ lineHeight: '1.75rem' }}
-              />
+                  />
                 </div>
-            </div>
-          ) : showPreview ? (
-            /* Modo Split - Editor + Preview com Resizable */
-            <ResizablePanelGroup direction="horizontal" className="h-full">
-              <ResizablePanel defaultSize={50} minSize={30}>
-                <div className="h-full flex flex-col relative">
-                    {/* Toolbar */}
+              </div>
+            ) : showPreview ? (
+              <ResizablePanelGroup direction="horizontal" className="h-full">
+                <ResizablePanel defaultSize={50} minSize={30}>
+                  <div className="h-full flex flex-col relative">
                     <div className="flex items-center gap-1 px-3 py-2 bg-slate-800/80 border-b border-slate-700/50 flex-shrink-0 overflow-x-auto z-10">
                       <button
                         onClick={() => applyMarkdownFormat('# ', '', 'Título')}
@@ -1543,12 +1493,11 @@ Comece a digitar seu conteúdo em Markdown aqui...
                       </button>
                     </div>
                     <div className="absolute top-16 left-4 z-10">
-                    <span className="px-3 py-1 bg-slate-800/90 backdrop-blur-sm border border-slate-700/50 rounded-full text-xs font-medium text-slate-300">
+                      <span className="px-3 py-1 bg-slate-800/90 backdrop-blur-sm border border-slate-700/50 rounded-full text-xs font-medium text-slate-300">
                         📝 Markdown {mode === 'create' && activeFile && `- ${activeFile.name}`}
-                    </span>
-                  </div>
+                      </span>
+                    </div>
                     <div className="flex-1 flex overflow-hidden">
-                      {/* Numeração de Linhas */}
                       <div
                         ref={lineNumbersRef2}
                         className="flex-shrink-0 w-12 bg-slate-900/50 border-r border-slate-700/50 text-right text-xs text-slate-500 font-mono py-20 px-2 overflow-hidden select-none"
@@ -1560,9 +1509,8 @@ Comece a digitar seu conteúdo em Markdown aqui...
                           </div>
                         ))}
                       </div>
-                      {/* Editor */}
-                  <textarea
-                    ref={textareaRef}
+                      <textarea
+                        ref={textareaRef}
                         value={mode === 'create' && activeFile ? activeFile.content : value}
                         onChange={(e) => {
                           const newValue = e.target.value;
@@ -1572,11 +1520,10 @@ Comece a digitar seu conteúdo em Markdown aqui...
                             onChange(newValue);
                           }
 
-                          // Detectar "/" para mostrar menu slash
                           const cursorPos = e.target.selectionStart;
                           const textBeforeCursor = newValue.substring(0, cursorPos);
                           const lastLine = textBeforeCursor.split('\n').pop() || '';
-                          
+
                           if (lastLine === '/' || (lastLine.startsWith('/') && !lastLine.includes(' '))) {
                             setShowSlashMenu(true);
                             setSlashQuery(lastLine.substring(1));
@@ -1596,12 +1543,12 @@ Comece a digitar seu conteúdo em Markdown aqui...
                           if (showSlashMenu) {
                             if (e.key === 'ArrowDown') {
                               e.preventDefault();
-                              setSelectedSlashIndex((prev) => 
+                              setSelectedSlashIndex((prev) =>
                                 prev < filteredSlashCommands.length - 1 ? prev + 1 : 0
                               );
                             } else if (e.key === 'ArrowUp') {
                               e.preventDefault();
-                              setSelectedSlashIndex((prev) => 
+                              setSelectedSlashIndex((prev) =>
                                 prev > 0 ? prev - 1 : filteredSlashCommands.length - 1
                               );
                             } else if (e.key === 'Enter' || e.key === 'Tab') {
@@ -1616,6 +1563,238 @@ Comece a digitar seu conteúdo em Markdown aqui...
                             }
                           }
                         }}
+                        onScroll={onEditorScroll}
+                        spellCheck={false}
+                        placeholder="# Título do Slide
+
+Comece a digitar seu conteúdo em Markdown aqui...
+
+- Lista de itens
+- Outro item
+
+**Texto em negrito** e *itálico*"
+                        aria-label="Editor de Markdown do slide"
+                        className="flex-1 w-full h-full pt-20 px-6 pb-6 bg-slate-950 text-slate-100 font-mono text-[15px] leading-relaxed resize-none outline-none border-none overflow-auto custom-scrollbar placeholder:text-slate-600"
+                        style={{ lineHeight: '1.75rem' }}
+                      />
+                    </div>
+                  </div>
+                </ResizablePanel>
+
+                <ResizableHandle className="w-2 bg-slate-700/30 hover:bg-slate-600/50 transition-all duration-200 relative group border-l border-r border-slate-600/20 hover:border-slate-500/40">
+                  <div className="absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-slate-500/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-8 bg-slate-400/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                </ResizableHandle>
+
+                <ResizablePanel defaultSize={50} minSize={30}>
+                  <div
+                    ref={previewScrollRef}
+                    className="h-full flex flex-col overflow-auto bg-gradient-to-br from-slate-900 to-slate-800 custom-scrollbar"
+                  >
+                    <div className="sticky top-0 z-10 px-6 py-4 bg-slate-900/95 backdrop-blur-sm border-b border-slate-700/50 flex items-center justify-between shadow-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <h3 className="text-sm font-semibold text-white">
+                          Preview ao Vivo
+                        </h3>
+                      </div>
+                      <span className="px-2 py-1 bg-slate-800/50 border border-slate-700/50 rounded text-[10px] font-medium text-slate-400 uppercase tracking-wider">
+                        Sync
+                      </span>
+                    </div>
+                    <div className="p-8">
+                      {previewHtml.trim() ? (
+                        <div
+                          className="markdown-preview"
+                          dangerouslySetInnerHTML={{ __html: previewHtml }}
+                        />
+                      ) : (
+                        <div className="flex flex-col items-center justify-center h-64 text-center">
+                          <div className="w-16 h-16 rounded-full bg-slate-800/50 border-2 border-dashed border-slate-700 flex items-center justify-center mb-4">
+                            <Eye size={24} className="text-slate-600" />
+                          </div>
+                          <p className="text-sm text-slate-500 italic">
+                            Nada para pré-visualizar ainda
+                          </p>
+                          <p className="text-xs text-slate-600 mt-1">
+                            Digite markdown no editor para ver o resultado aqui
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </ResizablePanel>
+              </ResizablePanelGroup>
+            ) : (
+              <div className="h-full flex flex-col">
+                <div className="flex items-center gap-1 px-3 py-2 bg-slate-800/80 border-b border-slate-700/50 flex-shrink-0 overflow-x-auto">
+                  <button
+                    onClick={() => applyMarkdownFormat('# ', '', 'Título')}
+                    className="p-2 hover:bg-slate-700/50 rounded transition-colors text-slate-300 hover:text-white"
+                    title="Título (H1)"
+                  >
+                    <Heading1 size={16} />
+                  </button>
+                  <button
+                    onClick={() => applyMarkdownFormat('## ', '', 'Subtítulo')}
+                    className="p-2 hover:bg-slate-700/50 rounded transition-colors text-slate-300 hover:text-white"
+                    title="Subtítulo (H2)"
+                  >
+                    <Heading2 size={16} />
+                  </button>
+                  <div className="w-px h-6 bg-slate-700/50 mx-1" />
+                  <button
+                    onClick={() => applyMarkdownFormat('**', '**')}
+                    className="p-2 hover:bg-slate-700/50 rounded transition-colors text-slate-300 hover:text-white font-bold"
+                    title="Negrito"
+                  >
+                    <Bold size={16} />
+                  </button>
+                  <button
+                    onClick={() => applyMarkdownFormat('*', '*')}
+                    className="p-2 hover:bg-slate-700/50 rounded transition-colors text-slate-300 hover:text-white italic"
+                    title="Itálico"
+                  >
+                    <Italic size={16} />
+                  </button>
+                  <div className="w-px h-6 bg-slate-700/50 mx-1" />
+                  <button
+                    onClick={() => applyMarkdownFormat('- ', '')}
+                    className="p-2 hover:bg-slate-700/50 rounded transition-colors text-slate-300 hover:text-white"
+                    title="Lista com Bullets"
+                  >
+                    <List size={16} />
+                  </button>
+                  <button
+                    onClick={() => applyMarkdownFormat('1. ', '')}
+                    className="p-2 hover:bg-slate-700/50 rounded transition-colors text-slate-300 hover:text-white"
+                    title="Lista Numerada"
+                  >
+                    <Type size={16} />
+                  </button>
+                  <button
+                    onClick={() => applyMarkdownFormat('> ', '')}
+                    className="p-2 hover:bg-slate-700/50 rounded transition-colors text-slate-300 hover:text-white"
+                    title="Citação"
+                  >
+                    <Quote size={16} />
+                  </button>
+                  <div className="w-px h-6 bg-slate-700/50 mx-1" />
+                  <button
+                    onClick={() => applyMarkdownFormat('`', '`')}
+                    className="p-2 hover:bg-slate-700/50 rounded transition-colors text-slate-300 hover:text-white"
+                    title="Código Inline"
+                  >
+                    <Code size={16} />
+                  </button>
+                  <button
+                    onClick={() => applyMarkdownFormat('```\n', '\n```')}
+                    className="p-2 hover:bg-slate-700/50 rounded transition-colors text-slate-300 hover:text-white"
+                    title="Bloco de Código"
+                  >
+                    <FileText size={16} />
+                  </button>
+                  <button
+                    onClick={() => applyMarkdownFormat('| ', ' |', 'Coluna')}
+                    className="p-2 hover:bg-slate-700/50 rounded transition-colors text-slate-300 hover:text-white"
+                    title="Tabela"
+                  >
+                    <Table size={16} />
+                  </button>
+                  <button
+                    onClick={() => applyMarkdownFormat('[', '](url)', 'Link')}
+                    className="p-2 hover:bg-slate-700/50 rounded transition-colors text-slate-300 hover:text-white"
+                    title="Link"
+                  >
+                    <Link2 size={16} />
+                  </button>
+                  <button
+                    onClick={() => applyMarkdownFormat('![', '](url)', 'Imagem')}
+                    className="p-2 hover:bg-slate-700/50 rounded transition-colors text-slate-300 hover:text-white"
+                    title="Imagem"
+                  >
+                    <Image size={16} />
+                  </button>
+                  <div className="w-px h-6 bg-slate-700/50 mx-1" />
+                  <button
+                    onClick={() => applyMarkdownFormat('---\n', '')}
+                    className="p-2 hover:bg-slate-700/50 rounded transition-colors text-slate-300 hover:text-white"
+                    title="Divisor"
+                  >
+                    <Minimize2 size={16} />
+                  </button>
+                </div>
+                <div className="absolute top-16 left-4 z-10">
+                  <span className="px-3 py-1 bg-slate-800/90 backdrop-blur-sm border border-slate-700/50 rounded-full text-xs font-medium text-slate-300">
+                    📝 Markdown {mode === 'create' && activeFile && `- ${activeFile.name}`}
+                  </span>
+                </div>
+                <div className="flex-1 flex overflow-hidden">
+                  <div
+                    ref={lineNumbersRef3}
+                    className="flex-shrink-0 w-12 bg-slate-900/50 border-r border-slate-700/50 text-right text-xs text-slate-500 font-mono py-20 px-2 overflow-hidden select-none"
+                    style={{ lineHeight: '1.75rem' }}
+                  >
+                    {Array.from({ length: lineCount }, (_, i) => (
+                      <div key={i + 1} className="leading-relaxed">
+                        {i + 1}
+                      </div>
+                    ))}
+                  </div>
+                  <textarea
+                    ref={textareaRef}
+                    value={mode === 'create' && activeFile ? activeFile.content : value}
+                    onChange={(e) => {
+                      const newValue = e.target.value;
+                      if (mode === 'create' && activeFile) {
+                        updateFileContent(activeFileId, newValue);
+                      } else {
+                        onChange(newValue);
+                      }
+
+                      const cursorPos = e.target.selectionStart;
+                      const textBeforeCursor = newValue.substring(0, cursorPos);
+                      const lastLine = textBeforeCursor.split('\n').pop() || '';
+
+                      if (lastLine === '/' || (lastLine.startsWith('/') && !lastLine.includes(' '))) {
+                        setShowSlashMenu(true);
+                        setSlashQuery(lastLine.substring(1));
+                        setSelectedSlashIndex(0);
+                      } else if (lastLine.startsWith('/') && lastLine.includes(' ')) {
+                        setShowSlashMenu(false);
+                        setSlashQuery('');
+                      } else if (!lastLine.startsWith('/')) {
+                        setShowSlashMenu(false);
+                        setSlashQuery('');
+                      } else {
+                        const query = lastLine.substring(1);
+                        setSlashQuery(query);
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (showSlashMenu) {
+                        if (e.key === 'ArrowDown') {
+                          e.preventDefault();
+                          setSelectedSlashIndex((prev) =>
+                            prev < filteredSlashCommands.length - 1 ? prev + 1 : 0
+                          );
+                        } else if (e.key === 'ArrowUp') {
+                          e.preventDefault();
+                          setSelectedSlashIndex((prev) =>
+                            prev > 0 ? prev - 1 : filteredSlashCommands.length - 1
+                          );
+                        } else if (e.key === 'Enter' || e.key === 'Tab') {
+                          e.preventDefault();
+                          if (filteredSlashCommands[selectedSlashIndex]) {
+                            insertSlashCommand(filteredSlashCommands[selectedSlashIndex].content);
+                          }
+                        } else if (e.key === 'Escape') {
+                          e.preventDefault();
+                          setShowSlashMenu(false);
+                          setSlashQuery('');
+                        }
+                      }
+                    }}
                     onScroll={onEditorScroll}
                     spellCheck={false}
                     placeholder="# Título do Slide
@@ -1627,253 +1806,15 @@ Comece a digitar seu conteúdo em Markdown aqui...
 
 **Texto em negrito** e *itálico*"
                     aria-label="Editor de Markdown do slide"
-                        className="flex-1 w-full h-full pt-20 px-6 pb-6 bg-slate-950 text-slate-100 font-mono text-[15px] leading-relaxed resize-none outline-none border-none overflow-auto custom-scrollbar placeholder:text-slate-600"
-                        style={{ lineHeight: '1.75rem' }}
+                    className="flex-1 w-full h-full pt-20 px-6 pb-6 bg-slate-950 text-slate-100 font-mono text-[15px] leading-relaxed resize-none outline-none border-none overflow-auto custom-scrollbar placeholder:text-slate-600"
+                    style={{ lineHeight: '1.75rem' }}
                   />
-                    </div>
                 </div>
-              </ResizablePanel>
-              
-              <ResizableHandle className="w-2 bg-slate-700/30 hover:bg-slate-600/50 transition-all duration-200 relative group border-l border-r border-slate-600/20 hover:border-slate-500/40">
-                <div className="absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-slate-500/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-8 bg-slate-400/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-              </ResizableHandle>
-              
-              <ResizablePanel defaultSize={50} minSize={30}>
-                <div
-                  ref={previewScrollRef}
-                  className="h-full flex flex-col overflow-auto bg-gradient-to-br from-slate-900 to-slate-800 custom-scrollbar"
-                >
-                  <div className="sticky top-0 z-10 px-6 py-4 bg-slate-900/95 backdrop-blur-sm border-b border-slate-700/50 flex items-center justify-between shadow-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                      <h3 className="text-sm font-semibold text-white">
-                        Preview ao Vivo
-                      </h3>
-                    </div>
-                    <span className="px-2 py-1 bg-slate-800/50 border border-slate-700/50 rounded text-[10px] font-medium text-slate-400 uppercase tracking-wider">
-                      Sync
-                    </span>
-                  </div>
-                  <div className="p-8">
-                    {previewHtml.trim() ? (
-                      <div
-                        className="markdown-preview"
-                        dangerouslySetInnerHTML={{ __html: previewHtml }}
-                      />
-                    ) : (
-                      <div className="flex flex-col items-center justify-center h-64 text-center">
-                        <div className="w-16 h-16 rounded-full bg-slate-800/50 border-2 border-dashed border-slate-700 flex items-center justify-center mb-4">
-                          <Eye size={24} className="text-slate-600" />
-                        </div>
-                        <p className="text-sm text-slate-500 italic">
-                          Nada para pré-visualizar ainda
-                        </p>
-                        <p className="text-xs text-slate-600 mt-1">
-                          Digite markdown no editor para ver o resultado aqui
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </ResizablePanel>
-            </ResizablePanelGroup>
-          ) : (
-            /* Modo Apenas Editor */
-            <div className="h-full flex flex-col">
-              {/* Toolbar */}
-              <div className="flex items-center gap-1 px-3 py-2 bg-slate-800/80 border-b border-slate-700/50 flex-shrink-0 overflow-x-auto">
-                <button
-                  onClick={() => applyMarkdownFormat('# ', '', 'Título')}
-                  className="p-2 hover:bg-slate-700/50 rounded transition-colors text-slate-300 hover:text-white"
-                  title="Título (H1)"
-                >
-                  <Heading1 size={16} />
-                </button>
-                <button
-                  onClick={() => applyMarkdownFormat('## ', '', 'Subtítulo')}
-                  className="p-2 hover:bg-slate-700/50 rounded transition-colors text-slate-300 hover:text-white"
-                  title="Subtítulo (H2)"
-                >
-                  <Heading2 size={16} />
-                </button>
-                <div className="w-px h-6 bg-slate-700/50 mx-1" />
-                <button
-                  onClick={() => applyMarkdownFormat('**', '**')}
-                  className="p-2 hover:bg-slate-700/50 rounded transition-colors text-slate-300 hover:text-white font-bold"
-                  title="Negrito"
-                >
-                  <Bold size={16} />
-                </button>
-                <button
-                  onClick={() => applyMarkdownFormat('*', '*')}
-                  className="p-2 hover:bg-slate-700/50 rounded transition-colors text-slate-300 hover:text-white italic"
-                  title="Itálico"
-                >
-                  <Italic size={16} />
-                </button>
-                <div className="w-px h-6 bg-slate-700/50 mx-1" />
-                <button
-                  onClick={() => applyMarkdownFormat('- ', '')}
-                  className="p-2 hover:bg-slate-700/50 rounded transition-colors text-slate-300 hover:text-white"
-                  title="Lista com Bullets"
-                >
-                  <List size={16} />
-                </button>
-                <button
-                  onClick={() => applyMarkdownFormat('1. ', '')}
-                  className="p-2 hover:bg-slate-700/50 rounded transition-colors text-slate-300 hover:text-white"
-                  title="Lista Numerada"
-                >
-                  <Type size={16} />
-                </button>
-                <button
-                  onClick={() => applyMarkdownFormat('> ', '')}
-                  className="p-2 hover:bg-slate-700/50 rounded transition-colors text-slate-300 hover:text-white"
-                  title="Citação"
-                >
-                  <Quote size={16} />
-                </button>
-                <div className="w-px h-6 bg-slate-700/50 mx-1" />
-                <button
-                  onClick={() => applyMarkdownFormat('`', '`')}
-                  className="p-2 hover:bg-slate-700/50 rounded transition-colors text-slate-300 hover:text-white"
-                  title="Código Inline"
-                >
-                  <Code size={16} />
-                </button>
-                <button
-                  onClick={() => applyMarkdownFormat('```\n', '\n```')}
-                  className="p-2 hover:bg-slate-700/50 rounded transition-colors text-slate-300 hover:text-white"
-                  title="Bloco de Código"
-                >
-                  <FileText size={16} />
-                </button>
-                <button
-                  onClick={() => applyMarkdownFormat('| ', ' |', 'Coluna')}
-                  className="p-2 hover:bg-slate-700/50 rounded transition-colors text-slate-300 hover:text-white"
-                  title="Tabela"
-                >
-                  <Table size={16} />
-                </button>
-                <button
-                  onClick={() => applyMarkdownFormat('[', '](url)', 'Link')}
-                  className="p-2 hover:bg-slate-700/50 rounded transition-colors text-slate-300 hover:text-white"
-                  title="Link"
-                >
-                  <Link2 size={16} />
-                </button>
-                <button
-                  onClick={() => applyMarkdownFormat('![', '](url)', 'Imagem')}
-                  className="p-2 hover:bg-slate-700/50 rounded transition-colors text-slate-300 hover:text-white"
-                  title="Imagem"
-                >
-                  <Image size={16} />
-                </button>
-                <div className="w-px h-6 bg-slate-700/50 mx-1" />
-                <button
-                  onClick={() => applyMarkdownFormat('---\n', '')}
-                  className="p-2 hover:bg-slate-700/50 rounded transition-colors text-slate-300 hover:text-white"
-                  title="Divisor"
-                >
-                  <Minimize2 size={16} />
-                </button>
               </div>
-              <div className="absolute top-16 left-4 z-10">
-                <span className="px-3 py-1 bg-slate-800/90 backdrop-blur-sm border border-slate-700/50 rounded-full text-xs font-medium text-slate-300">
-                  📝 Markdown {mode === 'create' && activeFile && `- ${activeFile.name}`}
-                </span>
-              </div>
-              <div className="flex-1 flex overflow-hidden">
-                {/* Numeração de Linhas */}
-                <div
-                  ref={lineNumbersRef3}
-                  className="flex-shrink-0 w-12 bg-slate-900/50 border-r border-slate-700/50 text-right text-xs text-slate-500 font-mono py-20 px-2 overflow-hidden select-none"
-                  style={{ lineHeight: '1.75rem' }}
-                >
-                  {Array.from({ length: lineCount }, (_, i) => (
-                    <div key={i + 1} className="leading-relaxed">
-                      {i + 1}
-                    </div>
-                  ))}
-                </div>
-                {/* Editor */}
-              <textarea
-                ref={textareaRef}
-                  value={mode === 'create' && activeFile ? activeFile.content : value}
-                  onChange={(e) => {
-                    const newValue = e.target.value;
-                    if (mode === 'create' && activeFile) {
-                      updateFileContent(activeFileId, newValue);
-                    } else {
-                      onChange(newValue);
-                    }
-
-                    // Detectar "/" para mostrar menu slash
-                    const cursorPos = e.target.selectionStart;
-                    const textBeforeCursor = newValue.substring(0, cursorPos);
-                    const lastLine = textBeforeCursor.split('\n').pop() || '';
-                    
-                    if (lastLine === '/' || (lastLine.startsWith('/') && !lastLine.includes(' '))) {
-                      setShowSlashMenu(true);
-                      setSlashQuery(lastLine.substring(1));
-                      setSelectedSlashIndex(0);
-                    } else if (lastLine.startsWith('/') && lastLine.includes(' ')) {
-                      setShowSlashMenu(false);
-                      setSlashQuery('');
-                    } else if (!lastLine.startsWith('/')) {
-                      setShowSlashMenu(false);
-                      setSlashQuery('');
-                    } else {
-                      const query = lastLine.substring(1);
-                      setSlashQuery(query);
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    if (showSlashMenu) {
-                      if (e.key === 'ArrowDown') {
-                        e.preventDefault();
-                        setSelectedSlashIndex((prev) => 
-                          prev < filteredSlashCommands.length - 1 ? prev + 1 : 0
-                        );
-                      } else if (e.key === 'ArrowUp') {
-                        e.preventDefault();
-                        setSelectedSlashIndex((prev) => 
-                          prev > 0 ? prev - 1 : filteredSlashCommands.length - 1
-                        );
-                      } else if (e.key === 'Enter' || e.key === 'Tab') {
-                        e.preventDefault();
-                        if (filteredSlashCommands[selectedSlashIndex]) {
-                          insertSlashCommand(filteredSlashCommands[selectedSlashIndex].content);
-                        }
-                      } else if (e.key === 'Escape') {
-                        e.preventDefault();
-                        setShowSlashMenu(false);
-                        setSlashQuery('');
-                      }
-                    }
-                  }}
-                onScroll={onEditorScroll}
-                spellCheck={false}
-                placeholder="# Título do Slide
-
-Comece a digitar seu conteúdo em Markdown aqui...
-
-- Lista de itens
-- Outro item
-
-**Texto em negrito** e *itálico*"
-                aria-label="Editor de Markdown do slide"
-                  className="flex-1 w-full h-full pt-20 px-6 pb-6 bg-slate-950 text-slate-100 font-mono text-[15px] leading-relaxed resize-none outline-none border-none overflow-auto custom-scrollbar placeholder:text-slate-600"
-                  style={{ lineHeight: '1.75rem' }}
-              />
-              </div>
-            </div>
-          )}
+            )}
           </div>
         </div>
 
-        {/* Footer */}
         <footer className="px-8 py-4 border-t border-slate-700/50 bg-gradient-to-r from-slate-900/80 via-slate-800/80 to-slate-900/80 backdrop-blur-sm flex-shrink-0">
           <div className="flex items-center justify-between text-xs">
             <div className="flex items-center gap-4 text-slate-400">
@@ -1908,7 +1849,6 @@ Comece a digitar seu conteúdo em Markdown aqui...
         </footer>
       </div>
 
-      {/* Menu Slash (estilo Notion) */}
       {showSlashMenu && filteredSlashCommands.length > 0 && textareaRef.current && (
         <div
           ref={slashMenuRef}
@@ -1919,7 +1859,7 @@ Comece a digitar seu conteúdo em Markdown aqui...
               if (!textarea) return 0;
               const rect = textarea.getBoundingClientRect();
               const scrollTop = textarea.scrollTop;
-              const lineHeight = 28; // line-height aproximado
+              const lineHeight = 28;
               const lines = textarea.value.substring(0, textarea.selectionStart).split('\n').length;
               return rect.top + (lines * lineHeight) - scrollTop + 40;
             })(),
@@ -1927,7 +1867,7 @@ Comece a digitar seu conteúdo em Markdown aqui...
               const textarea = textareaRef.current;
               if (!textarea) return 0;
               const rect = textarea.getBoundingClientRect();
-              return rect.left + 48; // offset para numeração de linhas
+              return rect.left + 48;
             })(),
             width: '320px',
             maxHeight: '400px',
@@ -1943,24 +1883,21 @@ Comece a digitar seu conteúdo em Markdown aqui...
                 <button
                   key={cmd.id}
                   onClick={() => insertSlashCommand(cmd.content)}
-                  className={`w-full p-3 flex items-center gap-3 text-left transition-colors ${
-                    index === selectedSlashIndex
-                      ? 'bg-blue-600/20 border-l-2 border-blue-500'
-                      : 'hover:bg-slate-700/50'
-                  }`}
+                  className={`w-full p-3 flex items-center gap-3 text-left transition-colors ${index === selectedSlashIndex
+                    ? 'bg-blue-600/20 border-l-2 border-blue-500'
+                    : 'hover:bg-slate-700/50'
+                    }`}
                   onMouseEnter={() => setSelectedSlashIndex(index)}
                 >
-                  <div className={`p-2 rounded-lg ${
-                    index === selectedSlashIndex
-                      ? 'bg-blue-600/30'
-                      : 'bg-slate-700/50'
-                  }`}>
+                  <div className={`p-2 rounded-lg ${index === selectedSlashIndex
+                    ? 'bg-blue-600/30'
+                    : 'bg-slate-700/50'
+                    }`}>
                     <Icon size={18} className={index === selectedSlashIndex ? 'text-blue-400' : 'text-slate-400'} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className={`text-sm font-medium ${
-                      index === selectedSlashIndex ? 'text-white' : 'text-slate-200'
-                    }`}>
+                    <div className={`text-sm font-medium ${index === selectedSlashIndex ? 'text-white' : 'text-slate-200'
+                      }`}>
                       {cmd.name}
                     </div>
                     <div className="text-xs text-slate-400 truncate">
@@ -1974,9 +1911,8 @@ Comece a digitar seu conteúdo em Markdown aqui...
         </div>
       )}
 
-      {/* Modal de Ajuda */}
       {showHelp && (
-        <div 
+        <div
           className="fixed inset-0 z-[10001] flex items-center justify-center p-4"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
@@ -1984,15 +1920,12 @@ Comece a digitar seu conteúdo em Markdown aqui...
             }
           }}
         >
-          {/* Overlay */}
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
-          
-          {/* Modal Content */}
-          <div 
+
+          <div
             className="relative w-full max-w-4xl max-h-[90vh] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-2xl border border-slate-700/50 overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
             <div className="px-6 py-5 border-b border-slate-700/50 bg-gradient-to-r from-slate-900/80 via-slate-800/80 to-slate-900/80 backdrop-blur-sm flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-600/20 rounded-lg">
@@ -2012,10 +1945,8 @@ Comece a digitar seu conteúdo em Markdown aqui...
               </button>
             </div>
 
-            {/* Content */}
             <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
               <div className="space-y-6">
-                {/* Atalhos do Teclado */}
                 <div>
                   <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                     <span className="w-1 h-6 bg-blue-500 rounded-full"></span>
@@ -2111,7 +2042,6 @@ Comece a digitar seu conteúdo em Markdown aqui...
                   </div>
                 </div>
 
-                {/* Referências */}
                 <div>
                   <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                     <span className="w-1 h-6 bg-purple-500 rounded-full"></span>
@@ -2131,7 +2061,6 @@ Comece a digitar seu conteúdo em Markdown aqui...
               </div>
             </div>
 
-            {/* Footer */}
             <div className="px-6 py-4 border-t border-slate-700/50 bg-slate-900/50 flex items-center justify-between">
               <p className="text-xs text-slate-500">
                 Pressione Esc para fechar
@@ -2147,9 +2076,8 @@ Comece a digitar seu conteúdo em Markdown aqui...
         </div>
       )}
 
-      {/* Modal de Templates */}
       {showTemplates && (
-        <div 
+        <div
           className="fixed inset-0 z-[10000] flex items-center justify-center p-4"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
@@ -2157,15 +2085,12 @@ Comece a digitar seu conteúdo em Markdown aqui...
             }
           }}
         >
-          {/* Overlay */}
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
-          
-          {/* Modal Content */}
-          <div 
+
+          <div
             className="relative w-full max-w-4xl max-h-[85vh] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-2xl border border-slate-700/50 overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
             <div className="px-6 py-5 border-b border-slate-700/50 bg-gradient-to-r from-slate-900/80 via-slate-800/80 to-slate-900/80 backdrop-blur-sm flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-600/20 rounded-lg">
@@ -2185,7 +2110,6 @@ Comece a digitar seu conteúdo em Markdown aqui...
               </button>
             </div>
 
-            {/* Templates Grid */}
             <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {templates.map((template) => {
@@ -2215,7 +2139,6 @@ Comece a digitar seu conteúdo em Markdown aqui...
               </div>
             </div>
 
-            {/* Footer */}
             <div className="px-6 py-4 border-t border-slate-700/50 bg-slate-900/50 flex items-center justify-between">
               <p className="text-xs text-slate-500">
                 {templates.length} templates disponíveis
@@ -2510,7 +2433,6 @@ Comece a digitar seu conteúdo em Markdown aqui...
         }
       `}</style>
 
-      {/* GitHub Integration Modal */}
       <GitHubIntegrationModal
         isOpen={showGitHubModal}
         onClose={() => setShowGitHubModal(false)}

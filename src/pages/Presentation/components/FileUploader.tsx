@@ -1,9 +1,9 @@
-import { useRef, useState } from "react";
+import { DragEvent, useRef, useState } from "react";
 import { Upload, FileText } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "../../../components/ui/button";
-import { Progress } from "../../../components/ui/progress";
-import InteractiveSplitModal from "../../../components/InteractiveSplitModal";
+import { Button } from "../../../shared/components/ui/button";
+import { Progress } from "../../../shared/components/ui/progress";
+import InteractiveSplitModal from "../../../shared/components/InteractiveSplitModal";
 
 type FileUploaderProps = {
     onFilesChange: (e: React.ChangeEvent<HTMLInputElement> | null, options?: any) => void;
@@ -30,18 +30,6 @@ export function FileUploader({ onFilesChange, loading }: FileUploaderProps) {
         const rect = e.currentTarget.getBoundingClientRect();
         if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) {
             setIsDragging(false);
-        }
-    };
-
-    const handleDrop = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragging(false);
-        const files = Array.from(e.dataTransfer.files);
-        if (inputRef.current) {
-            const dataTransfer = new DataTransfer();
-            files.forEach((file) => dataTransfer.items.add(file));
-            inputRef.current.files = dataTransfer.files;
-            handleChange({ target: inputRef.current } as React.ChangeEvent<HTMLInputElement>);
         }
     };
 
@@ -79,6 +67,10 @@ export function FileUploader({ onFilesChange, loading }: FileUploaderProps) {
 
         onFilesChange(e, { splitSingle, delimiter });
     };
+
+    function handleDrop(event: DragEvent<HTMLDivElement>): void {
+        throw new Error("Function not implemented.");
+    }
 
     return (
         <>

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
 import { Smartphone, Users, Wifi, QrCode } from 'lucide-react';
-import { Button } from './ui/button';
+import { Button } from '../shared/components/ui/button';
 
 interface QRCodeDisplayProps {
   qrUrl: string;
@@ -54,7 +54,7 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
       // Isso é mais confiável que depender da URL do servidor
       const baseUrl = window.location.origin;
       const urlToUse = `${baseUrl}/remote/${sessionId}`;
-      
+
       console.log('📱 Gerando QR Code:', {
         originalUrl: qrUrl,
         finalUrl: urlToUse,
@@ -64,9 +64,9 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
         canvasWidth: canvasRef.current?.width,
         canvasHeight: canvasRef.current?.height
       });
-      
+
       setFinalUrl(urlToUse);
-      
+
       // Se a URL original for diferente, mostrar aviso
       if (qrUrl && qrUrl !== urlToUse && qrUrl.startsWith('http')) {
         setUrlError('URL ajustada para o domínio atual');
@@ -76,7 +76,7 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
 
       try {
         setIsLoading(true);
-        
+
         // Limpar canvas antes de gerar
         const ctx = canvasRef.current.getContext('2d');
         if (ctx) {
@@ -85,7 +85,7 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
           ctx.fillStyle = '#ffffff';
           ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
         }
-        
+
         await QRCode.toCanvas(canvasRef.current, urlToUse, {
           width: 200,
           margin: 2,
@@ -95,7 +95,7 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
           },
           errorCorrectionLevel: 'M',
         });
-        
+
         console.log('✅ QR Code gerado com sucesso para:', urlToUse);
         console.log('📐 Canvas dimensions:', {
           width: canvasRef.current.width,
@@ -112,7 +112,7 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
 
     // Aguardar um pouco mais para garantir que o canvas está renderizado
     const timer = setTimeout(() => {
-    generateQR();
+      generateQR();
     }, 300);
 
     return () => clearTimeout(timer);
@@ -148,12 +148,10 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
 
         {/* Status Connection */}
         <div className="flex items-center justify-center gap-2 mb-4">
-          <div className={`w-2 h-2 rounded-full ${
-            isConnected ? 'bg-green-400 animate-pulse' : 'bg-red-400'
-          }`} />
-          <span className={`text-sm font-medium ${
-            isConnected ? 'text-green-400' : 'text-red-400'
-          }`}>
+          <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400 animate-pulse' : 'bg-red-400'
+            }`} />
+          <span className={`text-sm font-medium ${isConnected ? 'text-green-400' : 'text-red-400'
+            }`}>
             {isConnected ? 'Conectado' : 'Desconectado'}
           </span>
           {isConnected && (
@@ -176,17 +174,17 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
           <div className="relative w-[200px] h-[200px]">
             {isLoading && (
               <div className="absolute inset-0 bg-slate-100 animate-pulse rounded-lg flex items-center justify-center z-10">
-              <QrCode className="text-slate-400" size={48} />
-            </div>
+                <QrCode className="text-slate-400" size={48} />
+              </div>
             )}
             <canvas
               ref={canvasRef}
               width={200}
               height={200}
               className="rounded-lg shadow-sm"
-              style={{ 
-                display: 'block', 
-                maxWidth: '100%', 
+              style={{
+                display: 'block',
+                maxWidth: '100%',
                 height: 'auto',
                 opacity: isLoading ? 0 : 1,
                 transition: 'opacity 0.3s'
@@ -228,11 +226,10 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
               size="sm"
               variant="outline"
               onClick={copyToClipboard}
-              className={`transition-all duration-200 ${
-                copied 
-                  ? 'bg-green-600 border-green-500 text-white' 
-                  : 'border-slate-600 hover:border-violet-400'
-              }`}
+              className={`transition-all duration-200 ${copied
+                ? 'bg-green-600 border-green-500 text-white'
+                : 'border-slate-600 hover:border-violet-400'
+                }`}
             >
               {copied ? '✓' : '📋'}
             </Button>

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Bot, Wand2 } from "lucide-react";
-import { Button } from "../../components/ui/button";
 import { toast } from "sonner";
+import { Button } from "../../../shared/components/ui/button";
 
 type AIGeneratorProps = {
     onGenerate: (prompt: string, slideCount: number, baseText?: string) => void;

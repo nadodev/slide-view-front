@@ -28,12 +28,10 @@ export default function SlideThumbList({
     <div className="custom-scrollbar flex-1 overflow-y-auto px-4 py-4">
       <ul className="space-y-3">
         {loading ? (
-          // Renderizar skeletons quando carregando
           Array.from({ length: 3 }).map((_, index) => (
             <SlideThumbSkeleton key={`skeleton-${index}`} />
           ))
         ) : (
-          // Renderizar slides normalmente
           slides.map((slide, index) => (
             <SlideThumbItem
               key={`${slide.name ?? "slide"}-${index}`}

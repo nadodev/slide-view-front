@@ -1,6 +1,6 @@
 import { Trash2, Trash2Icon, GripVertical } from "lucide-react";
 import type { Slide } from "./types";
-import { Button } from "../ui/button";
+import { Button } from "../../shared/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,7 +11,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "../ui/alert-dialog";
+} from "../../shared/components/ui/alert-dialog";
 import { useState } from "react";
 
 type SlideThumbItemProps = {
@@ -53,7 +53,6 @@ export default function SlideThumbItem({
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
-    // Só remove o highlight se realmente saiu do elemento
     if (!e.currentTarget.contains(e.relatedTarget as Node)) {
       setDraggedOver(false);
     }
@@ -62,7 +61,7 @@ export default function SlideThumbItem({
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDraggedOver(false);
-    
+
     const fromIndex = parseInt(e.dataTransfer.getData("text/plain"));
     if (fromIndex !== index && onReorder) {
       onReorder(fromIndex, index);
@@ -70,7 +69,7 @@ export default function SlideThumbItem({
   };
 
   return (
-    <li 
+    <li
       className={`relative transition-all duration-200 ${isDragging ? 'opacity-50 scale-95' : ''} ${draggedOver ? 'transform -translate-y-1' : ''}`}
       draggable
       onDragStart={handleDragStart}
@@ -79,7 +78,6 @@ export default function SlideThumbItem({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      {/* Indicador visual de drop zone */}
       {draggedOver && (
         <div className="absolute -top-1 left-0 right-0 h-0.5 bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full z-10" />
       )}
@@ -88,28 +86,26 @@ export default function SlideThumbItem({
         type="button"
         onClick={() => onSelect(index)}
         className={`cursor-pointer group w-full overflow-hidden rounded-xl border text-left transition ${isActive
-            ? "border-white/20 bg-gradient-to-br from-indigo-600/80 to-purple-600/80 shadow-lg shadow-indigo-900/30"
-            : "border-white/5 bg-white/5 hover:border-white/20 hover:bg-white/10"
+          ? "border-white/20 bg-gradient-to-br from-indigo-600/80 to-purple-600/80 shadow-lg shadow-indigo-900/30"
+          : "border-white/5 bg-white/5 hover:border-white/20 hover:bg-white/10"
           }`}
       >
 
         <div className="p-4">
 
           <div className="flex items-start gap-3">
-            {/* Drag handle */}
             <div className="flex flex-col items-center gap-1 pt-1">
-              <GripVertical 
-                size={16} 
-                className={`cursor-grab active:cursor-grabbing transition-colors ${
-                  isActive ? "text-white/40" : "text-white/20 group-hover:text-white/40"
-                }`}
+              <GripVertical
+                size={16}
+                className={`cursor-grab active:cursor-grabbing transition-colors ${isActive ? "text-white/40" : "text-white/20 group-hover:text-white/40"
+                  }`}
               />
             </div>
 
             <div
               className={`flex h-10 w-10 items-center justify-center rounded-lg text-sm font-semibold ${isActive
-                  ? "bg-white/20 text-white"
-                  : "bg-white/10 text-white/60 group-hover:bg-white/15"
+                ? "bg-white/20 text-white"
+                : "bg-white/10 text-white/60 group-hover:bg-white/15"
                 }`}
             >
               {index + 1}
@@ -184,7 +180,7 @@ export default function SlideThumbItem({
               <AlertDialogCancel className="bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700">
                 Cancelar
               </AlertDialogCancel>
-              <AlertDialogAction 
+              <AlertDialogAction
                 onClick={() => onRemove(index)}
                 className="bg-red-600 hover:bg-red-700 text-white"
               >

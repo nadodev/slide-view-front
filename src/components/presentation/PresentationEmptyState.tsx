@@ -1,7 +1,7 @@
 import type { ChangeEvent } from "react";
-import UploadArea from "../UploadArea";
-import { Sparkles, AlertCircle } from "lucide-react";
-import { Carregando } from "../ui/Carregando";
+import { StartScreen } from "../../pages/Presentation/components/StartScreen";
+import { AlertCircle } from "lucide-react";
+import { Carregando } from "../../shared/components/ui/Carregando";
 
 type PresentationEmptyStateProps = {
   highContrast: boolean;
@@ -40,19 +40,19 @@ export default function PresentationEmptyState({
         </button>
       </div>
 
-      <UploadArea
-        onFilesChange={onFilesChange}
-        onAIGenerate={onAIGenerate}
-        onCreateSlide={onCreateSlide}
+      <StartScreen
+        onFilesChange={onFilesChange || (() => { })}
+        onAIGenerate={onAIGenerate || (() => { })}
+        onCreateSlide={onCreateSlide || (() => { })}
         loading={loading}
       />
 
       {loading && (
         <>
-         <Carregando 
-          message={"Processando arquivos..."} 
-          showProgress={true}
-        />
+          <Carregando
+            message={"Processando arquivos..."}
+            showProgress={true}
+          />
         </>
       )}
 
@@ -78,4 +78,3 @@ export default function PresentationEmptyState({
     </div>
   );
 }
-

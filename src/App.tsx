@@ -1,18 +1,18 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import LandingPage from './components/LandingPage';
-import Presentation from './components/Presentation';
+import PresentationPage from './pages/Presentation/PresentationPage';
 import { RemoteControl } from './components/RemoteControl';
 import GitHubAuthCallback from './components/GitHubAuthCallback';
-import { Toaster } from './components/ui/sonner';
+import { Toaster } from './shared/components/ui/sonner';
 import { JSX } from 'react';
 
 export default function App(): JSX.Element {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Presentation />} />
+        <Route path="/" element={<PresentationPage />} />
         <Route path="/landing" element={<LandingPage />} />
-        <Route path="/app" element={<Presentation />} />
+        <Route path="/app" element={<PresentationPage />} />
         <Route path="/remote/:sessionId" element={<RemoteControl />} />
         <Route path="/auth/github/callback" element={<GitHubAuthCallback />} />
       </Routes>
