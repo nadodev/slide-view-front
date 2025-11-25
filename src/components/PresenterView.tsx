@@ -53,6 +53,13 @@ export default function PresenterView({
     return () => clearTimeout(timer);
   }, [currentHtml]);
 
+  // Reset scroll on slide change
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = 0;
+    }
+  }, [currentIndex, scrollRef]);
+
   const progress = ((currentIndex + 1) / slidesLength) * 100;
 
   return (
