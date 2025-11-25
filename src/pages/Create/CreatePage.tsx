@@ -1,9 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { Upload, Sparkles, Plus, FolderOpen, Brain, Palette, Users, Settings, Wand2, Bot } from 'lucide-react';
+import { Upload, Sparkles, Plus, FolderOpen, Brain, Palette, Users, Settings, Wand2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import EditPanel from '../../components/EditPanel';
-import parseMarkdownSafe from '../../utils/markdown';
 import type { MarkdownFile } from '../../services/editor/fileManagementService';
 import { Button } from '../../shared/components/ui/button';
 import { Progress } from '../../shared/components/ui/progress';
@@ -14,8 +12,6 @@ export default function CreatePage() {
     const inputRef = useRef<HTMLInputElement | null>(null);
 
     // Estados do upload
-    const [editing, setEditing] = useState(false);
-    const [draftContent, setDraftContent] = useState('');
     const [isDragging, setIsDragging] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [splitSingle, setSplitSingle] = useState(false);
@@ -25,26 +21,11 @@ export default function CreatePage() {
     // Estados da IA
     const [aiPrompt, setAiPrompt] = useState('');
     const [slideCount, setSlideCount] = useState(6);
-    const [preserveText, setPreserveText] = useState(false);
-    const [baseText, setBaseText] = useState('');
 
     // Estados do modal de split
     const [showSplitModal, setShowSplitModal] = useState(false);
     const [modalContent, setModalContent] = useState('');
     const [modalFilename, setModalFilename] = useState('');
-
-    const extractNotes = (text: string) => {
-        const notes: string[] = [];
-        if (!text) return { clean: "", notes };
-        const cleaned = text.replace(
-            /<!--\s*note:\s*([\s\S]*?)-->/gi,
-            (_match, note) => {
-                if (note && note.trim()) notes.push(note.trim());
-                return "";
-            },
-        );
-        return { clean: cleaned.trim(), notes };
-    };
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from((e.target.files || []) as File[]);
@@ -125,11 +106,10 @@ export default function CreatePage() {
             }
         }
 
-        // Abrir EditPanel com os arquivos
-        setEditing(true);
-        // Passar arquivos para o store
+        // Passar arquivos para o store e navegar para editor
         const { useFileStore } = await import('../../stores/useFileStore');
         useFileStore.getState().setFiles(mdFiles);
+        navigate('/editor');
     };
 
     const handleDragOver = (e: React.DragEvent) => {
@@ -174,30 +154,18 @@ export default function CreatePage() {
             description: `Gerando ${slideCount} slides sobre: ${aiPrompt.slice(0, 50)}...`
         });
 
+        // TODO: Implementar chamada real da IA
         setTimeout(() => {
             setLoading(false);
             toast.info("Funcionalidade de IA em desenvolvimento");
         }, 2000);
     };
 
-    const handleCreateSlide = () => {
-        const { useFileStore } = require('../../stores/useFileStore');
+    const handleCreateSlide = async () => {
+        // Reset files in store and navigate to editor
+        const { useFileStore } = await import('../../stores/useFileStore');
         useFileStore.getState().resetFiles();
-        setEditing(true);
-    };
-
-    const handleCreateFiles = (files: MarkdownFile[]) => {
-        const slides = files.map((file) => {
-            const { clean, notes } = extractNotes(file.content);
-            return {
-                name: file.name.replace('.md', ''),
-                content: clean,
-                notes,
-                html: parseMarkdownSafe(clean),
-            };
-        });
-
-        navigate('/app', { state: { slides } });
+        navigate('/editor');
     };
 
     const recentProjects = [
@@ -255,8 +223,8 @@ export default function CreatePage() {
 
                             <div
                                 className={`border-2 border-dashed rounded-xl p-8 mb-4 transition-all ${isDragging
-                                    ? 'border-blue-500 bg-blue-500/10'
-                                    : 'border-slate-600 hover:border-blue-500/50'
+                                        ? 'border-blue-500 bg-blue-500/10'
+                                        : 'border-slate-600 hover:border-blue-500/50'
                                     }`}
                                 onDragOver={handleDragOver}
                                 onDragLeave={handleDragLeave}
@@ -494,19 +462,6 @@ export default function CreatePage() {
                     </div>
                 </section>
             </div>
-
-            <EditPanel
-                open={editing}
-                value={draftContent}
-                onChange={setDraftContent}
-                onCancel={() => {
-                    setEditing(false);
-                    setDraftContent('');
-                }}
-                onSave={() => { }}
-                mode="create"
-                onCreateFiles={handleCreateFiles}
-            />
 
             {showSplitModal && (
                 <InteractiveSplitModal
