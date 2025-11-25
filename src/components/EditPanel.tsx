@@ -48,7 +48,7 @@ type EditPanelProps = {
   value: string;
   onChange: (v: string) => void;
   onCancel: () => void;
-  onSave: () => void;
+  onSave?: () => void;  // Made optional
   editorFocus?: boolean;
   onToggleEditorFocus?: () => void;
   mode?: 'edit' | 'create';
@@ -248,7 +248,7 @@ export default function EditPanel({
   const handleCreateFiles = () => {
     if (onCreateFiles) {
       onCreateFiles(getFilesWithContent());
-      onCancel();
+      // onCancel(); // Removed to prevent overriding navigation
     }
   };
 
@@ -296,7 +296,7 @@ export default function EditPanel({
 
   useKeyboardShortcuts(
     {
-      onSave: editorMode === 'create' ? handleCreateFiles : onSave,
+      onSave: editorMode === 'create' ? handleCreateFiles : (onSave || (() => { })),
       onCancel,
       onTogglePreview: toggleShowPreview,
       onToggleFocus: onToggleEditorFocus || toggleEditorFocus,
@@ -360,7 +360,7 @@ export default function EditPanel({
       <div className="w-full h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white flex flex-col">
         <EditorHeader
           onGitHub={() => setShowGitHub(true)}
-          onSave={editorMode === 'create' ? handleCreateFiles : onSave}
+          onSave={editorMode === 'create' ? handleCreateFiles : (onSave || (() => { }))}
           onCancel={onCancel}
           onExportMarkdown={handleExportMarkdown}
           onExportHTML={handleExportHTML}

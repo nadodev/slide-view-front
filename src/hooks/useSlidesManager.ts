@@ -20,6 +20,7 @@ type UploadOptions = {
 const DELIMITER_FALLBACK = "----'----";
 
 export function useSlidesManager() {
+  console.log('🎯 useSlidesManager initialized');
   const [slides, setSlides] = useState<Slide[]>([]);
   const [currentSlide, setCurrentSlide] = useState<number>(0);
   const [showSlideList, setShowSlideList] = useState(false);

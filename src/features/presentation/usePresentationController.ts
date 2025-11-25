@@ -5,7 +5,7 @@ import { useSocket } from "../../hooks/useSocket";
 import { socketService } from "../../services/socket/SocketService";
 
 export function usePresentationController() {
-
+    console.log('🎯 usePresentationController initialized');
     const slidesManager = useSlidesManager();
     const {
         slides,

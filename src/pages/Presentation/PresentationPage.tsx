@@ -8,19 +8,19 @@ import EditPanel from "../../components/EditPanel";
 import { QRCodeDisplay } from "../../components/QRCodeDisplay";
 import { RemoteControlModal } from "../../components/RemoteControlModal";
 import parseMarkdownSafe from "../../utils/markdown";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 
 export default function PresentationPage() {
+    console.log('🎯 PresentationPage: Component mounting...');
     const location = useLocation();
+    const navigate = useNavigate();
     const controller = usePresentationController();
     const {
         slides,
         currentSlide,
         showSlideList,
         loading,
-        error,
-        warning,
         presenterMode,
         focusMode,
         showQRCode,
@@ -41,33 +41,34 @@ export default function PresentationPage() {
         setDraftContent,
         setEditorFocus,
         setHighContrast,
-        handleFileUpload,
-        handleAIGeneration,
         duplicateSlide,
         saveSlideToFile,
         saveAllSlidesToFile,
         resetSlidesState,
         reorderSlides,
         createPresentation,
-        disconnect,
         slideContentRef,
         slideContainerRef,
         presenterScrollRef,
         thumbsRailRef,
     } = controller;
 
-    // Handle slides from navigation state (from CreatePage)
     useEffect(() => {
+        console.log('🎯 PresentationPage: useEffect triggered');
+        console.log('🎯 PresentationPage: location:', location);
+        console.log('🎯 PresentationPage: location.state:', location.state);
+
         if (location.state?.slides && Array.isArray(location.state.slides)) {
+            console.log('🎯 PresentationPage: ✅ Setting slides from state:', location.state.slides);
             setSlides(location.state.slides);
             setCurrentSlide(0);
             setShowSlideList(true);
-            // Clear the state to avoid re-setting on subsequent renders
             window.history.replaceState({}, document.title);
+        } else {
+            console.log('🎯 PresentationPage: ❌ No slides in location.state');
         }
     }, [location.state, setSlides, setCurrentSlide, setShowSlideList]);
 
-    // Helper to extract notes (should be in service, but keeping here for now to match EditPanel props)
     const extractNotes = (text: string) => {
         const notes: string[] = [];
         if (!text) return { clean: "", notes };
@@ -89,15 +90,17 @@ export default function PresentationPage() {
         .filter(Boolean)
         .join(" ");
 
-    // Redirect to /create if no slides
-    useEffect(() => {
-        if (slides.length === 0 && !location.state?.slides) {
-            window.location.href = '/create';
-        }
-    }, [slides.length, location.state]);
-
+    // If no slides yet, render loading
     if (slides.length === 0) {
-        return null; // Will redirect
+        return (
+            <div className="flex items-center justify-center h-screen bg-slate-900 text-white">
+                <div className="text-center">
+                    <button
+                        className="bg-blue-900 hover:bg-blue-600 text-white py-2 px-4 rounded bg-blue-500"
+                        onClick={() => navigate('/create')}>Create Presentation</button>
+                </div>
+            </div>
+        );
     }
 
     return (
@@ -177,9 +180,11 @@ export default function PresentationPage() {
                 />
             )}
 
-            {!showSlideList && slides.length > 0 && (
-                <ScrollTopButton slideContainerRef={slideContainerRef} />
-            )}
+            {
+                !showSlideList && slides.length > 0 && (
+                    <ScrollTopButton slideContainerRef={slideContainerRef} />
+                )
+            }
 
             <EditPanel
                 open={editing}
@@ -208,29 +213,31 @@ export default function PresentationPage() {
                 onToggleEditorFocus={() => setEditorFocus((v) => !v)}
             />
 
-            {showQRCode && (
-                <>
-                    {isSupported && session ? (
-                        <QRCodeDisplay
-                            qrUrl={session.qrUrl}
-                            sessionId={session.sessionId}
-                            remoteClients={session.remoteClients}
-                            isConnected={session.isConnected}
-                            onClose={() => setShowQRCode(false)}
-                        />
-                    ) : (
-                        <RemoteControlModal
-                            qrUrl={session?.qrUrl}
-                            sessionId={session?.sessionId}
-                            remoteClients={session?.remoteClients}
-                            isConnected={session?.isConnected}
-                            isSupported={isSupported}
-                            platform={platform}
-                            onClose={() => setShowQRCode(false)}
-                        />
-                    )}
-                </>
-            )}
-        </PresentationLayout>
+            {
+                showQRCode && (
+                    <>
+                        {isSupported && session ? (
+                            <QRCodeDisplay
+                                qrUrl={session.qrUrl}
+                                sessionId={session.sessionId}
+                                remoteClients={session.remoteClients}
+                                isConnected={session.isConnected}
+                                onClose={() => setShowQRCode(false)}
+                            />
+                        ) : (
+                            <RemoteControlModal
+                                qrUrl={session?.qrUrl}
+                                sessionId={session?.sessionId}
+                                remoteClients={session?.remoteClients}
+                                isConnected={session?.isConnected}
+                                isSupported={isSupported}
+                                platform={platform}
+                                onClose={() => setShowQRCode(false)}
+                            />
+                        )}
+                    </>
+                )
+            }
+        </PresentationLayout >
     );
 }

@@ -24,6 +24,8 @@ export default function EditorPage() {
     };
 
     const handleCreateFiles = (files: MarkdownFile[]) => {
+        console.log('🎯 EditorPage: handleCreateFiles called with files:', files);
+
         const slides = files.map((file) => {
             const { clean, notes } = extractNotes(file.content);
             return {
@@ -34,12 +36,13 @@ export default function EditorPage() {
             };
         });
 
-        // Navegar para a página de apresentação com os slides criados
+        console.log('🎯 EditorPage: Generated slides:', slides);
+        console.log('🎯 EditorPage: Navigating to /app with state');
         navigate('/app', { state: { slides } });
     };
 
     const handleCancel = () => {
-        // Resetar files e voltar para create
+        console.log('🎯 EditorPage: Navigating to /create');
         useFileStore.getState().resetFiles();
         navigate('/create');
     };
@@ -50,7 +53,6 @@ export default function EditorPage() {
             value={draftContent}
             onChange={setDraftContent}
             onCancel={handleCancel}
-            onSave={() => { }}
             mode="create"
             onCreateFiles={handleCreateFiles}
         />

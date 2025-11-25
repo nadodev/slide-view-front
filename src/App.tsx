@@ -8,6 +8,11 @@ import GitHubAuthCallback from './components/GitHubAuthCallback';
 import { Toaster } from './shared/components/ui/sonner';
 import { JSX } from 'react';
 
+const RouteLogger = ({ children }: { children: JSX.Element }) => {
+  console.log('🎯 RouteLogger: Rendering route for /app');
+  return children;
+};
+
 export default function App(): JSX.Element {
   return (
     <BrowserRouter>
@@ -15,7 +20,7 @@ export default function App(): JSX.Element {
         <Route path="/" element={<LandingPage />} />
         <Route path="/create" element={<CreatePage />} />
         <Route path="/editor" element={<EditorPage />} />
-        <Route path="/app" element={<PresentationPage />} />
+        <Route path="/app" element={<RouteLogger><PresentationPage /></RouteLogger>} />
         <Route path="/remote/:sessionId" element={<RemoteControl />} />
         <Route path="/auth/github/callback" element={<GitHubAuthCallback />} />
       </Routes>
