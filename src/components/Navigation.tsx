@@ -229,12 +229,12 @@ const Navigation = ({
                     </AlertDialogTitle>
                     <AlertDialogDescription className="text-slate-300">
                       Tem certeza que deseja recomençar? Todos os slides atuais serão perdidos e você retornará à tela inicial.
-                      <div className="mt-3 p-3 bg-orange-900/20 border border-orange-800/50 rounded-lg">
-                        <div className="flex items-center gap-2 text-orange-300">
+                      <span className="mt-3 p-3 bg-orange-900/20 border border-orange-800/50 rounded-lg block">
+                        <span className="flex items-center gap-2 text-orange-300">
                           <span className="text-orange-400">⚠️</span>
                           <span className="text-sm font-medium">Esta ação não pode ser desfeita</span>
-                        </div>
-                      </div>
+                        </span>
+                      </span>
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>

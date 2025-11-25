@@ -40,6 +40,10 @@ export function usePresentationController() {
         }
     });
 
+    // New states for shortcuts
+    const [transitionKey, setTransitionKey] = useState<number>(0);
+    const [showHelp, setShowHelp] = useState<boolean>(false);
+
     const slideContentRef = useRef<HTMLElement | null>(null);
     const slideContainerRef = useRef<HTMLElement | null>(null);
     const presenterScrollRef = useRef<HTMLDivElement | null>(null);
@@ -73,6 +77,18 @@ export function usePresentationController() {
         };
     }, [slides.length, setCurrentSlide]);
 
+    const toggleFullscreen = () => {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch((e) => {
+                console.warn("Fullscreen failed:", e);
+            });
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
+    };
+
     return {
         slides,
         currentSlide,
@@ -90,6 +106,8 @@ export function usePresentationController() {
         session,
         isSupported,
         platform,
+        transitionKey,
+        showHelp,
 
         setSlides,
         setCurrentSlide,
@@ -101,6 +119,10 @@ export function usePresentationController() {
         setDraftContent,
         setEditorFocus,
         setHighContrast,
+        setTransitionKey,
+        setShowHelp,
+        toggleFullscreen,
+
         handleFileUpload,
         handleAIGeneration,
         duplicateSlide,

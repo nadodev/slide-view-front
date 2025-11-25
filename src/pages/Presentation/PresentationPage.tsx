@@ -8,6 +8,7 @@ import EditPanel from "../../components/EditPanel";
 import { QRCodeDisplay } from "../../components/QRCodeDisplay";
 import { RemoteControlModal } from "../../components/RemoteControlModal";
 import parseMarkdownSafe from "../../utils/markdown";
+import { usePresentationShortcuts } from "../../hooks/usePresentationShortcuts";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 
@@ -31,6 +32,8 @@ export default function PresentationPage() {
         session,
         isSupported,
         platform,
+        transitionKey,
+        showHelp,
         setSlides,
         setCurrentSlide,
         setShowSlideList,
@@ -41,6 +44,9 @@ export default function PresentationPage() {
         setDraftContent,
         setEditorFocus,
         setHighContrast,
+        setTransitionKey,
+        setShowHelp,
+        toggleFullscreen,
         duplicateSlide,
         saveSlideToFile,
         saveAllSlidesToFile,
@@ -52,6 +58,22 @@ export default function PresentationPage() {
         presenterScrollRef,
         thumbsRailRef,
     } = controller;
+
+    usePresentationShortcuts({
+        editing,
+        presenterMode,
+        slides,
+        currentSlide,
+        setCurrentSlide,
+        setTransitionKey,
+        setFocusMode,
+        setShowHelp,
+        setDraftContent,
+        setEditing,
+        duplicateSlide,
+        toggleFullscreen,
+        setPresenterMode,
+    });
 
     useEffect(() => {
         console.log('🎯 PresentationPage: useEffect triggered');
@@ -137,8 +159,8 @@ export default function PresentationPage() {
                     slides={slides}
                     currentSlide={currentSlide}
                     setCurrentSlide={setCurrentSlide}
-                    transitionKey={currentSlide} // Simplified for now
-                    setTransitionKey={() => { }}
+                    transitionKey={transitionKey}
+                    setTransitionKey={setTransitionKey}
                     slideTransition="fade"
                     setSlideTransition={() => { }}
                     focusMode={focusMode}

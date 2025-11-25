@@ -26,7 +26,7 @@ export default function SlideViewer({
         dangerouslySetInnerHTML={{ __html: html }}
       />
 
-      <style jsx global>{`
+      <style>{`
         /* Scrollbar customizada para o conteúdo */
         .custom-scroll::-webkit-scrollbar {
           width: 10px;
