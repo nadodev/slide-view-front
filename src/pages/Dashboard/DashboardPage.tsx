@@ -214,12 +214,19 @@ export default function DashboardPage() {
                         </div>
                       </div>
                       <div className="p-2">
+                        <Link
+                          to="/subscription"
+                          className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg ${isDark ? 'hover:bg-slate-700' : 'hover:bg-slate-100'} transition-colors text-sm ${colors.text}`}
+                        >
+                          <Crown size={16} />
+                          Minha Assinatura
+                        </Link>
                         {!isPremium && (
                           <Link
                             to="/pricing"
                             className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg ${isDark ? 'hover:bg-slate-700' : 'hover:bg-slate-100'} transition-colors text-sm text-amber-500`}
                           >
-                            <Crown size={16} />
+                            <Sparkles size={16} />
                             Fazer Upgrade
                           </Link>
                         )}

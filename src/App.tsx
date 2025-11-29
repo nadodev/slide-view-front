@@ -9,6 +9,7 @@ import PublicViewPage from './pages/PublicView/PublicViewPage';
 import EmbedPage from './pages/Embed/EmbedPage';
 import { LoginPage, RegisterPage, OAuthCallbackPage } from './pages/Auth';
 import { DashboardPage } from './pages/Dashboard';
+import { SubscriptionPage } from './pages/Subscription';
 import { RemoteControl } from './components/RemoteControl';
 import { ProtectedRoute } from './components/auth';
 import { Toaster } from './shared/components/ui/sonner';
@@ -75,6 +76,16 @@ export default function App(): JSX.Element {
           element={
             <ProtectedRoute>
               <TemplatesPage />
+            </ProtectedRoute>
+          } 
+        />
+        
+        {/* Assinatura - protegido */}
+        <Route 
+          path="/subscription" 
+          element={
+            <ProtectedRoute>
+              <SubscriptionPage />
             </ProtectedRoute>
           } 
         />
