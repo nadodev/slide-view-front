@@ -3,12 +3,13 @@
  * Design moderno com suporte a temas e integração com API
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, ArrowRight, Github, Chrome } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, ArrowRight, Github, Chrome, Loader2 } from 'lucide-react';
 import { useTheme } from '../../stores/useThemeStore';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { authService } from '../../services/auth';
+import { socialAuthService } from '../../services/auth/socialAuth';
 import { ThemeToggle } from '../../components/ThemeToggle';
 
 export default function LoginPage() {
@@ -21,7 +22,25 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [providers, setProviders] = useState({ google: false, github: false });
+
+  // Verificar providers disponíveis
+  useEffect(() => {
+    const checkProviders = async () => {
+      try {
+        const status = await socialAuthService.getProviders();
+        setProviders({
+          google: status.providers.google.enabled,
+          github: status.providers.github.enabled,
+        });
+      } catch {
+        // Silently fail - providers não configurados
+      }
+    };
+    checkProviders();
+  }, []);
 
   // Se já está autenticado, redireciona
   if (isAuthenticated) {
@@ -64,9 +83,20 @@ export default function LoginPage() {
     }
   };
 
-  const handleSocialLogin = (provider: string) => {
-    console.log(`Login com ${provider}`);
-    // TODO: Implementar OAuth
+  const handleSocialLogin = async (provider: 'google' | 'github') => {
+    setError('');
+    setSocialLoading(provider);
+
+    try {
+      if (provider === 'google') {
+        await socialAuthService.loginWithGoogle();
+      } else {
+        await socialAuthService.loginWithGitHub();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : `Erro ao iniciar login com ${provider}`);
+      setSocialLoading(null);
+    }
   };
 
   return (
@@ -104,36 +134,54 @@ export default function LoginPage() {
             </div>
 
             {/* Social Login */}
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              <button
-                type="button"
-                onClick={() => handleSocialLogin('google')}
-                className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border ${colors.buttonSecondary} transition-all duration-200 hover:scale-[1.02]`}
-              >
-                <Chrome size={18} />
-                <span className="text-sm font-medium">Google</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSocialLogin('github')}
-                className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border ${colors.buttonSecondary} transition-all duration-200 hover:scale-[1.02]`}
-              >
-                <Github size={18} />
-                <span className="text-sm font-medium">GitHub</span>
-              </button>
-            </div>
+            {(providers.google || providers.github) && (
+              <>
+                <div className="grid grid-cols-2 gap-3 mb-6">
+                  {providers.google && (
+                    <button
+                      type="button"
+                      onClick={() => handleSocialLogin('google')}
+                      disabled={socialLoading !== null}
+                      className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border ${colors.buttonSecondary} transition-all duration-200 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      {socialLoading === 'google' ? (
+                        <Loader2 size={18} className="animate-spin" />
+                      ) : (
+                        <Chrome size={18} />
+                      )}
+                      <span className="text-sm font-medium">Google</span>
+                    </button>
+                  )}
+                  {providers.github && (
+                    <button
+                      type="button"
+                      onClick={() => handleSocialLogin('github')}
+                      disabled={socialLoading !== null}
+                      className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border ${colors.buttonSecondary} transition-all duration-200 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      {socialLoading === 'github' ? (
+                        <Loader2 size={18} className="animate-spin" />
+                      ) : (
+                        <Github size={18} />
+                      )}
+                      <span className="text-sm font-medium">GitHub</span>
+                    </button>
+                  )}
+                </div>
 
-            {/* Divider */}
-            <div className="relative mb-6">
-              <div className={`absolute inset-0 flex items-center`}>
-                <div className={`w-full border-t ${colors.inputBorder}`} />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className={`px-4 ${isDark ? 'bg-slate-900/50' : 'bg-white/80'} ${colors.textSubtle}`}>
-                  ou continue com email
-                </span>
-              </div>
-            </div>
+                {/* Divider */}
+                <div className="relative mb-6">
+                  <div className={`absolute inset-0 flex items-center`}>
+                    <div className={`w-full border-t ${colors.inputBorder}`} />
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className={`px-4 ${isDark ? 'bg-slate-900/50' : 'bg-white/80'} ${colors.textSubtle}`}>
+                      ou continue com email
+                    </span>
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-5">

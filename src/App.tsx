@@ -7,10 +7,9 @@ import PricingPage from './pages/Pricing/PricingPage';
 import TemplatesPage from './pages/Templates/TemplatesPage';
 import PublicViewPage from './pages/PublicView/PublicViewPage';
 import EmbedPage from './pages/Embed/EmbedPage';
-import { LoginPage, RegisterPage } from './pages/Auth';
+import { LoginPage, RegisterPage, OAuthCallbackPage } from './pages/Auth';
 import { DashboardPage } from './pages/Dashboard';
 import { RemoteControl } from './components/RemoteControl';
-import GitHubAuthCallback from './components/GitHubAuthCallback';
 import { ProtectedRoute } from './components/auth';
 import { Toaster } from './shared/components/ui/sonner';
 import { JSX } from 'react';
@@ -29,7 +28,10 @@ export default function App(): JSX.Element {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/registrar" element={<RegisterPage />} />
         <Route path="/pricing" element={<PricingPage />} />
-        <Route path="/auth/github/callback" element={<GitHubAuthCallback />} />
+        
+        {/* OAuth Callbacks */}
+        <Route path="/auth/google/callback" element={<OAuthCallbackPage />} />
+        <Route path="/auth/github/callback" element={<OAuthCallbackPage />} />
         
         {/* Rotas protegidas - requer autenticação (qualquer plano) */}
         <Route 
