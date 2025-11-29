@@ -18,7 +18,10 @@ import {
   ChevronDown,
   Share2,
   Sparkles,
-  Globe
+  Globe,
+  FileDown,
+  FileUp,
+  Crown
 } from 'lucide-react';
 import { useTheme } from '../../stores/useThemeStore';
 import { useAuth, useAuthStore } from '../../stores/useAuthStore';
@@ -26,7 +29,13 @@ import { usePresentationsStore } from '../../stores/usePresentationsStore';
 import { authService } from '../../services/auth';
 import { ThemeToggle } from '../../components/ThemeToggle';
 import { ShareModal } from '../../components/ShareModal';
-import type { Presentation as PresentationType } from '../../services/presentation';
+import { ExportModal } from '../../components/ExportModal';
+import { ImportPDFModal } from '../../components/ImportPDFModal';
+import { LimitAlert } from '../../components/LimitAlert';
+import { presentationService, type Presentation as PresentationType } from '../../services/presentation';
+import type { ImportedSlide } from '../../services/export';
+import { planService, type PlanUsage } from '../../services/plans/planService';
+import { toast } from 'sonner';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -46,10 +55,28 @@ export default function DashboardPage() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [shareModal, setShareModal] = useState<{ id: number; title: string } | null>(null);
+  const [exportModal, setExportModal] = useState<{ id: number; title: string; slides: any[] } | null>(null);
+  const [importModal, setImportModal] = useState(false);
+  const [planUsage, setPlanUsage] = useState<PlanUsage | null>(null);
+  const [showLimitAlert, setShowLimitAlert] = useState(true);
+
+  // Verificar se usuário é premium
+  const isPremium = user?.plan?.slug === 'premium' || user?.plan?.slug === 'enterprise';
 
   useEffect(() => {
     fetchPresentations();
+    loadPlanUsage();
   }, [fetchPresentations]);
+
+  const loadPlanUsage = async () => {
+    if (!token) return;
+    try {
+      const usage = await planService.getUsage(token);
+      setPlanUsage(usage);
+    } catch (error) {
+      console.error('Erro ao carregar uso do plano:', error);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -75,6 +102,43 @@ export default function DashboardPage() {
   const handleDuplicate = async (id: number) => {
     await duplicatePresentation(id);
     setMenuOpen(null);
+  };
+
+  const handleImportSlides = (slides: ImportedSlide[]) => {
+    // Navegar para o editor com os slides importados
+    const slidesData = slides.map(s => ({
+      title: s.title,
+      content: s.content,
+    }));
+    navigate('/editor', { 
+      state: { 
+        importedSlides: slidesData,
+        fromImport: true
+      } 
+    });
+  };
+
+  const handleOpenExport = async (presentation: PresentationType) => {
+    setMenuOpen(null);
+    
+    try {
+      // Carregar apresentação completa com slides
+      const { presentation: fullPresentation } = await presentationService.get(presentation.id);
+      
+      if (!fullPresentation.slides || fullPresentation.slides.length === 0) {
+        toast.error('Esta apresentação não tem slides para exportar.');
+        return;
+      }
+
+      setExportModal({
+        id: fullPresentation.id,
+        title: fullPresentation.title,
+        slides: fullPresentation.slides,
+      });
+    } catch (error) {
+      console.error('Erro ao carregar apresentação:', error);
+      toast.error('Erro ao carregar apresentação para exportar.');
+    }
   };
 
   const formatDate = (dateString?: string) => {
@@ -150,6 +214,15 @@ export default function DashboardPage() {
                         </div>
                       </div>
                       <div className="p-2">
+                        {!isPremium && (
+                          <Link
+                            to="/pricing"
+                            className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg ${isDark ? 'hover:bg-slate-700' : 'hover:bg-slate-100'} transition-colors text-sm text-amber-500`}
+                          >
+                            <Crown size={16} />
+                            Fazer Upgrade
+                          </Link>
+                        )}
                         <button
                           onClick={handleLogout}
                           className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-red-500 hover:bg-red-500/10 transition-colors text-sm`}
@@ -169,16 +242,48 @@ export default function DashboardPage() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-8">
+        {/* Limit Alert */}
+        {planUsage && showLimitAlert && planUsage.usage.presentations.used >= planUsage.usage.presentations.max && !planUsage.usage.presentations.unlimited && (
+          <LimitAlert
+            type="presentations"
+            used={planUsage.usage.presentations.used}
+            max={planUsage.usage.presentations.max}
+            onClose={() => setShowLimitAlert(false)}
+          />
+        )}
+
         {/* Page Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className={`text-2xl font-bold ${colors.text}`}>Minhas Apresentações</h1>
             <p className={colors.textMuted}>
               {presentations.length} {presentations.length === 1 ? 'apresentação' : 'apresentações'}
+              {planUsage && !planUsage.usage.presentations.unlimited && (
+                <span className="ml-2">
+                  ({planUsage.usage.presentations.used} / {planUsage.usage.presentations.max})
+                </span>
+              )}
             </p>
           </div>
           
           <div className="flex items-center gap-3">
+            {/* Importar PDF - Premium */}
+            <button
+              onClick={() => setImportModal(true)}
+              className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium border transition-all duration-200 ${
+                isPremium
+                  ? `${colors.cardBorder} ${colors.text} ${isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-100'}`
+                  : `${colors.cardBorder} ${colors.textMuted} cursor-pointer`
+              }`}
+              title={isPremium ? 'Importar PDF' : 'Funcionalidade Premium - Faça upgrade'}
+            >
+              <FileUp size={18} className={isPremium ? 'text-pink-500' : ''} />
+              <span className="hidden sm:inline">Importar PDF</span>
+              {!isPremium && (
+                <Crown size={12} className="absolute -top-1 -right-1 text-amber-500" />
+              )}
+            </button>
+
             <Link
               to="/templates"
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium border ${colors.cardBorder} ${colors.text} ${isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-100'} transition-all duration-200`}
@@ -188,7 +293,23 @@ export default function DashboardPage() {
             </Link>
             <Link
               to="/create"
-              className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-xl font-medium shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-200 hover:scale-[1.02]"
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium shadow-lg transition-all duration-200 hover:scale-[1.02] ${
+                planUsage && planUsage.usage.presentations.used >= planUsage.usage.presentations.max && !planUsage.usage.presentations.unlimited
+                  ? 'bg-slate-400 text-white cursor-not-allowed opacity-60'
+                  : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white shadow-blue-500/25 hover:shadow-blue-500/40'
+              }`}
+              onClick={(e) => {
+                if (planUsage && planUsage.usage.presentations.used >= planUsage.usage.presentations.max && !planUsage.usage.presentations.unlimited) {
+                  e.preventDefault();
+                  toast.error('Limite atingido', {
+                    description: 'Você atingiu o limite de apresentações. Faça upgrade para criar mais.',
+                    action: {
+                      label: 'Ver Planos',
+                      onClick: () => navigate('/pricing'),
+                    },
+                  });
+                }
+              }}
             >
               <Plus size={20} />
               <span>Nova Apresentação</span>
@@ -244,6 +365,7 @@ export default function DashboardPage() {
                 presentation={presentation}
                 colors={colors}
                 isDark={isDark}
+                isPremium={isPremium}
                 menuOpen={menuOpen === presentation.id}
                 onMenuToggle={() => setMenuOpen(menuOpen === presentation.id ? null : presentation.id)}
                 onEdit={() => navigate(`/editor?id=${presentation.id}`)}
@@ -255,6 +377,7 @@ export default function DashboardPage() {
                   setShareModal({ id: presentation.id, title: presentation.title });
                   setMenuOpen(null);
                 }}
+                onExport={() => handleOpenExport(presentation)}
                 onDelete={() => setDeleteConfirm(presentation.id)}
                 formatDate={formatDate}
               />
@@ -300,6 +423,28 @@ export default function DashboardPage() {
           onClose={() => setShareModal(null)}
         />
       )}
+
+      {/* Export Modal */}
+      {exportModal && (
+        <ExportModal
+          isOpen={!!exportModal}
+          onClose={() => setExportModal(null)}
+          presentationTitle={exportModal.title}
+          slides={exportModal.slides.map((s: any) => ({
+            id: s.id,
+            title: s.title,
+            content: s.content,
+            notes: s.notes,
+          }))}
+        />
+      )}
+
+      {/* Import PDF Modal */}
+      <ImportPDFModal
+        isOpen={importModal}
+        onClose={() => setImportModal(false)}
+        onImport={handleImportSlides}
+      />
     </div>
   );
 }
@@ -309,12 +454,14 @@ interface PresentationCardProps {
   presentation: PresentationType;
   colors: Record<string, string>;
   isDark: boolean;
+  isPremium: boolean;
   menuOpen: boolean;
   onMenuToggle: () => void;
   onEdit: () => void;
   onPresent: () => void;
   onDuplicate: () => void;
   onShare: () => void;
+  onExport: () => void;
   onDelete: () => void;
   formatDate: (date?: string) => string;
 }
@@ -323,12 +470,14 @@ function PresentationCard({
   presentation,
   colors,
   isDark,
+  isPremium,
   menuOpen,
   onMenuToggle,
   onEdit,
   onPresent,
   onDuplicate,
   onShare,
+  onExport,
   onDelete,
   formatDate,
 }: PresentationCardProps) {
@@ -410,6 +559,16 @@ function PresentationCard({
                     >
                       <Share2 size={16} />
                       Compartilhar
+                    </button>
+                    <button
+                      onClick={onExport}
+                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg ${isDark ? 'hover:bg-slate-700' : 'hover:bg-slate-100'} transition-colors text-sm ${colors.text} relative`}
+                    >
+                      <FileDown size={16} />
+                      Exportar
+                      {!isPremium && (
+                        <Crown size={12} className="ml-auto text-amber-500" />
+                      )}
                     </button>
                     <hr className={`my-1 ${isDark ? 'border-slate-700' : 'border-slate-200'}`} />
                     <button

@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { MarkdownFile, extractNotes, parseMarkdown } from '../../core';
 import EditPanel from '../../components/EditPanel';
 import { VersionHistory } from '../../components/VersionHistory';
@@ -19,9 +19,14 @@ import { toast } from 'sonner';
 
 export default function EditorPage() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [searchParams] = useSearchParams();
     const presentationId = searchParams.get('id');
     const { token } = useAuth();
+    
+    // Verificar se há slides importados
+    const importedSlides = (location.state as any)?.importedSlides;
+    const fromImport = (location.state as any)?.fromImport;
     const { setStatus, setSaved, setError } = useAutoSaveStore();
     const { showDrafts, showVersionHistory, setShowDrafts, setShowVersionHistory } = useUIStore();
     
@@ -40,8 +45,24 @@ export default function EditorPage() {
     const setFiles = useFileStore((state) => state.setFiles);
     const activeFileId = useFileStore((state) => state.activeFileId);
 
-    // Carregar apresentação se houver ID
+    // Carregar slides importados ou apresentação existente
     useEffect(() => {
+        // Se veio de importação de PDF
+        if (fromImport && importedSlides && importedSlides.length > 0) {
+            const mdFiles: MarkdownFile[] = importedSlides.map((slide: any, idx: number) => ({
+                id: String(idx + 1),
+                name: slide.title || `Slide ${idx + 1}`,
+                content: slide.content,
+            }));
+            setFiles(mdFiles);
+            toast.success(`${importedSlides.length} slides importados com sucesso!`);
+            
+            // Limpar o state para evitar recarregamento
+            window.history.replaceState({}, document.title);
+            return;
+        }
+
+        // Carregar apresentação se houver ID
         const loadPresentation = async () => {
             if (presentationId) {
                 const presentation = await fetchPresentation(parseInt(presentationId));
@@ -57,7 +78,7 @@ export default function EditorPage() {
         };
         
         loadPresentation();
-    }, [presentationId, fetchPresentation, setFiles]);
+    }, [presentationId, fetchPresentation, setFiles, fromImport, importedSlides]);
 
     // Auto-save no backend
     const autoSave = useCallback(async (filesToSave: MarkdownFile[]) => {

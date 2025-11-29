@@ -20,6 +20,9 @@ import {
 } from 'lucide-react';
 import { templateService, type Template, type TemplateCategory } from '../../services/templates/templateService';
 import { useTheme } from '../../stores/useThemeStore';
+import { useAuthStore } from '../../stores/useAuthStore';
+import { LimitAlert } from '../../components/LimitAlert';
+import { planService, type PlanUsage } from '../../services/plans/planService';
 import { Button } from '../../shared/components/ui/button';
 import { toast } from 'sonner';
 
@@ -34,15 +37,31 @@ const categoryIcons: Record<string, React.ReactNode> = {
 export default function TemplatesPage() {
     const navigate = useNavigate();
     const { isDark } = useTheme();
+    const { token } = useAuthStore();
     const [templates, setTemplates] = useState<Template[]>([]);
     const [categories, setCategories] = useState<TemplateCategory[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [using, setUsing] = useState<number | null>(null);
+    const [planUsage, setPlanUsage] = useState<PlanUsage | null>(null);
+    const [showLimitAlert, setShowLimitAlert] = useState(true);
 
     useEffect(() => {
         loadData();
+        loadPlanUsage();
     }, []);
+
+    const loadPlanUsage = async () => {
+        if (!token) return;
+        try {
+            const usage = await planService.getUsage(token);
+            setPlanUsage(usage);
+        } catch (error) {
+            console.error('Erro ao carregar uso do plano:', error);
+        }
+    };
+
+    const isAtLimit = planUsage && planUsage.usage.presentations.used >= planUsage.usage.presentations.max && !planUsage.usage.presentations.unlimited;
 
     const loadData = async () => {
         try {
@@ -66,13 +85,35 @@ export default function TemplatesPage() {
             return;
         }
 
+        if (isAtLimit) {
+            toast.error('Limite atingido', {
+                description: 'Você atingiu o limite de apresentações. Faça upgrade para criar mais.',
+                action: {
+                    label: 'Ver Planos',
+                    onClick: () => navigate('/pricing'),
+                },
+            });
+            return;
+        }
+
         try {
             setUsing(template.id);
             const result = await templateService.useTemplate(template.id);
             toast.success('Apresentação criada!');
             navigate(`/editor?id=${result.presentation.id}`);
         } catch (error: any) {
-            toast.error(error.message || 'Erro ao usar template');
+            const errorMessage = error.message || 'Erro ao usar template';
+            if (errorMessage.includes('limite')) {
+                toast.error('Limite atingido', {
+                    description: errorMessage,
+                    action: {
+                        label: 'Ver Planos',
+                        onClick: () => navigate('/pricing'),
+                    },
+                });
+            } else {
+                toast.error(errorMessage);
+            }
         } finally {
             setUsing(null);
         }
@@ -122,6 +163,18 @@ export default function TemplatesPage() {
             </header>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+                {/* Limit Alert */}
+                {planUsage && showLimitAlert && isAtLimit && (
+                    <div className="mb-8">
+                        <LimitAlert
+                            type="presentations"
+                            used={planUsage.usage.presentations.used}
+                            max={planUsage.usage.presentations.max}
+                            onClose={() => setShowLimitAlert(false)}
+                        />
+                    </div>
+                )}
+
                 {/* Hero */}
                 <div className="text-center mb-12">
                     <h2 className={`text-3xl sm:text-4xl font-bold ${colors.text} mb-4`}>
@@ -225,7 +278,7 @@ export default function TemplatesPage() {
                                         <Button
                                             size="sm"
                                             onClick={() => handleUseTemplate(template)}
-                                            disabled={using === template.id || template.locked}
+                                            disabled={using === template.id || template.locked || isAtLimit}
                                             className="gap-1"
                                         >
                                             {using === template.id ? (

@@ -6,13 +6,17 @@ import type { MarkdownFile } from '../../services/editor/fileManagementService';
 import { Button } from '../../shared/components/ui/button';
 import { Progress } from '../../shared/components/ui/progress';
 import InteractiveSplitModal from '../../shared/components/InteractiveSplitModal';
+import { LimitAlert } from '../../components/LimitAlert';
 import { usePresentationsStore } from '../../stores/usePresentationsStore';
+import { useAuthStore } from '../../stores/useAuthStore';
+import { planService, type PlanUsage } from '../../services/plans/planService';
 import type { Presentation } from '../../services/presentation';
 
 export default function CreatePage() {
     const navigate = useNavigate();
     const inputRef = useRef<HTMLInputElement | null>(null);
     const { presentations, fetchPresentations, createPresentation, isLoading } = usePresentationsStore();
+    const { token } = useAuthStore();
 
     // Estados do upload
     const [isDragging, setIsDragging] = useState(false);
@@ -30,10 +34,27 @@ export default function CreatePage() {
     const [modalContent, setModalContent] = useState('');
     const [modalFilename, setModalFilename] = useState('');
 
-    // Carregar apresentações recentes
+    // Estado do plano
+    const [planUsage, setPlanUsage] = useState<PlanUsage | null>(null);
+    const [showLimitAlert, setShowLimitAlert] = useState(true);
+
+    // Carregar apresentações recentes e uso do plano
     useEffect(() => {
         fetchPresentations();
+        loadPlanUsage();
     }, [fetchPresentations]);
+
+    const loadPlanUsage = async () => {
+        if (!token) return;
+        try {
+            const usage = await planService.getUsage(token);
+            setPlanUsage(usage);
+        } catch (error) {
+            console.error('Erro ao carregar uso do plano:', error);
+        }
+    };
+
+    const isAtLimit = planUsage && planUsage.usage.presentations.used >= planUsage.usage.presentations.max && !planUsage.usage.presentations.unlimited;
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from((e.target.files || []) as File[]);
@@ -87,6 +108,17 @@ export default function CreatePage() {
     };
 
     const processFiles = async (files: File[]) => {
+        if (isAtLimit) {
+            toast.error('Limite atingido', {
+                description: 'Você atingiu o limite de apresentações. Faça upgrade para criar mais.',
+                action: {
+                    label: 'Ver Planos',
+                    onClick: () => navigate('/pricing'),
+                },
+            });
+            return;
+        }
+
         const mdFiles: MarkdownFile[] = [];
 
         for (let i = 0; i < files.length; i++) {
@@ -196,6 +228,17 @@ export default function CreatePage() {
     };
 
     const handleCreateSlide = async () => {
+        if (isAtLimit) {
+            toast.error('Limite atingido', {
+                description: 'Você atingiu o limite de apresentações. Faça upgrade para criar mais.',
+                action: {
+                    label: 'Ver Planos',
+                    onClick: () => navigate('/pricing'),
+                },
+            });
+            return;
+        }
+
         // Criar nova apresentação vazia no backend
         const presentation = await createPresentation({
             title: `Nova Apresentação - ${new Date().toLocaleDateString('pt-BR')}`,
@@ -295,6 +338,18 @@ export default function CreatePage() {
                         Transforme suas ideias em slides profissionais em segundos. Upload de arquivos Markdown,
                         geração por IA ou criação visual – tudo em uma plataforma.
                     </p>
+                    
+                    {/* Limit Alert */}
+                    {planUsage && showLimitAlert && isAtLimit && (
+                        <div className="max-w-2xl mx-auto mt-8">
+                            <LimitAlert
+                                type="presentations"
+                                used={planUsage.usage.presentations.used}
+                                max={planUsage.usage.presentations.max}
+                                onClose={() => setShowLimitAlert(false)}
+                            />
+                        </div>
+                    )}
                 </section>
 
                 <section className="max-w-7xl mx-auto px-6 pb-16">
@@ -448,34 +503,34 @@ export default function CreatePage() {
                                 Editor visual para criar slides do zero com ferramentas profissionais e templates.
                             </p>
                             <div className="grid grid-cols-2 gap-3 mb-4">
-                                <button
-                                    onClick={handleCreateSlide}
-                                    disabled={isLoading}
-                                    className="p-4 bg-slate-900/50 border border-slate-700 rounded-lg hover:border-emerald-500/50 transition-colors disabled:opacity-50"
-                                >
-                                    <div className="text-center">
-                                        <div className="w-12 h-12 bg-slate-800 rounded-lg mx-auto mb-2 flex items-center justify-center">
-                                            <Plus size={20} className="text-slate-500" />
-                                        </div>
-                                        <p className="text-xs font-medium">Slide Vazio</p>
+                            <button
+                                onClick={handleCreateSlide}
+                                disabled={isLoading || isAtLimit}
+                                className="p-4 bg-slate-900/50 border border-slate-700 rounded-lg hover:border-emerald-500/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <div className="text-center">
+                                    <div className="w-12 h-12 bg-slate-800 rounded-lg mx-auto mb-2 flex items-center justify-center">
+                                        <Plus size={20} className="text-slate-500" />
                                     </div>
-                                </button>
-                                <button
-                                    onClick={handleCreateSlide}
-                                    disabled={isLoading}
-                                    className="p-4 bg-slate-900/50 border border-slate-700 rounded-lg hover:border-emerald-500/50 transition-colors disabled:opacity-50"
-                                >
-                                    <div className="text-center">
-                                        <div className="w-12 h-12 bg-slate-800 rounded-lg mx-auto mb-2 flex items-center justify-center">
-                                            <FolderOpen size={20} className="text-slate-500" />
-                                        </div>
-                                        <p className="text-xs font-medium">Template</p>
+                                    <p className="text-xs font-medium">Slide Vazio</p>
+                                </div>
+                            </button>
+                            <button
+                                onClick={handleCreateSlide}
+                                disabled={isLoading || isAtLimit}
+                                className="p-4 bg-slate-900/50 border border-slate-700 rounded-lg hover:border-emerald-500/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <div className="text-center">
+                                    <div className="w-12 h-12 bg-slate-800 rounded-lg mx-auto mb-2 flex items-center justify-center">
+                                        <FolderOpen size={20} className="text-slate-500" />
                                     </div>
-                                </button>
+                                    <p className="text-xs font-medium">Template</p>
+                                </div>
+                            </button>
                             </div>
                             <button
                                 onClick={handleCreateSlide}
-                                disabled={isLoading}
+                                disabled={isLoading || isAtLimit}
                                 className="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-lg transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isLoading ? 'Criando...' : '➕ Novo Projeto'}
@@ -513,8 +568,10 @@ export default function CreatePage() {
                             </div>
                         ))}
                         <div
-                            onClick={handleCreateSlide}
-                            className="bg-slate-800/30 border-2 border-dashed border-slate-700/50 rounded-xl p-6 hover:border-slate-600/50 transition-all cursor-pointer flex flex-col items-center justify-center min-h-[200px]"
+                            onClick={isAtLimit ? undefined : handleCreateSlide}
+                            className={`bg-slate-800/30 border-2 border-dashed border-slate-700/50 rounded-xl p-6 transition-all flex flex-col items-center justify-center min-h-[200px] ${
+                                isAtLimit ? 'opacity-50 cursor-not-allowed' : 'hover:border-slate-600/50 cursor-pointer'
+                            }`}
                         >
                             <Plus size={40} className="text-slate-600 mb-3" />
                             <p className="text-slate-500 text-sm font-medium">Novo Projeto</p>
