@@ -3,6 +3,10 @@ import LandingPage from './components/LandingPage';
 import PresentationPage from './pages/Presentation/PresentationPage';
 import CreatePage from './pages/Create/CreatePage';
 import EditorPage from './pages/Editor/EditorPage';
+import PricingPage from './pages/Pricing/PricingPage';
+import TemplatesPage from './pages/Templates/TemplatesPage';
+import PublicViewPage from './pages/PublicView/PublicViewPage';
+import EmbedPage from './pages/Embed/EmbedPage';
 import { LoginPage, RegisterPage } from './pages/Auth';
 import { DashboardPage } from './pages/Dashboard';
 import { RemoteControl } from './components/RemoteControl';
@@ -24,6 +28,7 @@ export default function App(): JSX.Element {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/registrar" element={<RegisterPage />} />
+        <Route path="/pricing" element={<PricingPage />} />
         <Route path="/auth/github/callback" element={<GitHubAuthCallback />} />
         
         {/* Rotas protegidas - requer autenticação (qualquer plano) */}
@@ -62,8 +67,22 @@ export default function App(): JSX.Element {
           } 
         />
         
+        {/* Templates - protegido */}
+        <Route 
+          path="/templates" 
+          element={
+            <ProtectedRoute>
+              <TemplatesPage />
+            </ProtectedRoute>
+          } 
+        />
+        
         {/* Rota pública para controle remoto */}
         <Route path="/remote/:sessionId" element={<RemoteControl />} />
+        
+        {/* Rotas públicas para visualização */}
+        <Route path="/view/:token" element={<PublicViewPage />} />
+        <Route path="/embed/:token" element={<EmbedPage />} />
       </Routes>
       <Toaster />
     </BrowserRouter>

@@ -1,10 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Maximize2, Minimize2, Eye, EyeOff, X, Save, Plus, HelpCircle, Github, LayoutDashboard } from 'lucide-react';
+import { Maximize2, Minimize2, Eye, EyeOff, X, Save, Plus, HelpCircle, Github, LayoutDashboard, Check, Loader2, AlertCircle, Cloud, History, FileText } from 'lucide-react';
 import { ExportDrawer } from './ExportDrawer';
 import { useUIStore } from '../../stores/useUIStore';
 import { useFileStore } from '../../stores/useFileStore';
 import { useEditorStore } from '../../stores/useEditorStore';
+import { useAutoSaveStore } from '../../stores/useAutoSaveStore';
 
 type EditorHeaderProps = {
     onGitHub: () => void;
@@ -33,6 +34,8 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
     const setShowExport = useUIStore((state) => state.setShowExport);
     const setShowHelp = useUIStore((state) => state.setShowHelp);
     const setShowTemplates = useUIStore((state) => state.setShowTemplates);
+    const setShowDrafts = useUIStore((state) => state.setShowDrafts);
+    const setShowVersionHistory = useUIStore((state) => state.setShowVersionHistory);
     const toggleShowPreview = useUIStore((state) => state.toggleShowPreview);
     const toggleEditorFocus = useUIStore((state) => state.toggleEditorFocus);
 
@@ -40,6 +43,51 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
 
     const getFilesWithContent = useFileStore((state) => state.getFilesWithContent);
     const filesCount = getFilesWithContent().length;
+
+    // Auto-save status
+    const { status: saveStatus, lastSaved } = useAutoSaveStore();
+    
+    const formatTime = (date: Date) => {
+        return new Intl.DateTimeFormat('pt-BR', {
+            hour: '2-digit',
+            minute: '2-digit',
+        }).format(date);
+    };
+
+    const renderSaveStatus = () => {
+        switch (saveStatus) {
+            case 'saving':
+                return (
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/20 border border-blue-500/30 rounded-lg">
+                        <Loader2 size={14} className="animate-spin text-blue-400" />
+                        <span className="text-xs text-blue-300">Salvando...</span>
+                    </div>
+                );
+            case 'saved':
+                return (
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500/20 border border-green-500/30 rounded-lg">
+                        <Check size={14} className="text-green-400" />
+                        <span className="text-xs text-green-300">
+                            {lastSaved ? `Salvo às ${formatTime(lastSaved)}` : 'Salvo'}
+                        </span>
+                    </div>
+                );
+            case 'error':
+                return (
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/20 border border-red-500/30 rounded-lg">
+                        <AlertCircle size={14} className="text-red-400" />
+                        <span className="text-xs text-red-300">Erro ao salvar</span>
+                    </div>
+                );
+            default:
+                return (
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-700/50 border border-slate-600/50 rounded-lg">
+                        <Cloud size={14} className="text-slate-400" />
+                        <span className="text-xs text-slate-400">Auto-save</span>
+                    </div>
+                );
+        }
+    };
 
     return (
         <header className="relative flex items-center justify-between px-6 py-4 border-b border-slate-700/50 bg-gradient-to-r from-slate-900/80 via-slate-800/80 to-slate-900/80 backdrop-blur-sm flex-shrink-0">
@@ -70,6 +118,31 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                         Editor
                     </h2>
                 </div>
+
+                <div className="w-px h-6 bg-slate-700" />
+
+                {/* Indicador de Auto-Save */}
+                {renderSaveStatus()}
+
+                {/* Botão de Rascunhos */}
+                <button
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-700/50 hover:bg-slate-600/50 rounded-lg text-slate-300 hover:text-white transition-colors text-sm"
+                    onClick={() => setShowDrafts(true)}
+                    title="Ver rascunhos salvos"
+                >
+                    <FileText size={14} />
+                    <span className="hidden lg:inline">Rascunhos</span>
+                </button>
+
+                {/* Botão de Histórico */}
+                <button
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-700/50 hover:bg-slate-600/50 rounded-lg text-slate-300 hover:text-white transition-colors text-sm"
+                    onClick={() => setShowVersionHistory(true)}
+                    title="Ver histórico de versões"
+                >
+                    <History size={14} />
+                    <span className="hidden lg:inline">Histórico</span>
+                </button>
             </div>
 
             <div className="flex items-center gap-2">

@@ -15,6 +15,8 @@ interface UIStoreState {
   showTemplates: boolean;
   showExport: boolean;
   showGitHub: boolean;
+  showDrafts: boolean;
+  showVersionHistory: boolean;
   
   // Editor UI
   showPreview: boolean;
@@ -25,6 +27,8 @@ interface UIStoreState {
   setShowTemplates: (show: boolean) => void;
   setShowExport: (show: boolean) => void;
   setShowGitHub: (show: boolean) => void;
+  setShowDrafts: (show: boolean) => void;
+  setShowVersionHistory: (show: boolean) => void;
   
   // Editor Actions
   setShowPreview: (show: boolean) => void;
@@ -50,6 +54,8 @@ const initialState = {
   showTemplates: false,
   showExport: false,
   showGitHub: false,
+  showDrafts: false,
+  showVersionHistory: false,
   showPreview: true,
   editorFocus: false,
 };
@@ -62,6 +68,8 @@ export const useUIStore = create<UIStoreState>((set) => ({
   setShowTemplates: (showTemplates) => set({ showTemplates }),
   setShowExport: (showExport) => set({ showExport }),
   setShowGitHub: (showGitHub) => set({ showGitHub }),
+  setShowDrafts: (showDrafts) => set({ showDrafts }),
+  setShowVersionHistory: (showVersionHistory) => set({ showVersionHistory }),
   
   // Editor Setters
   setShowPreview: (showPreview) => set({ showPreview }),
@@ -79,6 +87,8 @@ export const useUIStore = create<UIStoreState>((set) => ({
     showTemplates: false,
     showExport: false,
     showGitHub: false,
+    showDrafts: false,
+    showVersionHistory: false,
   }),
   
   resetUI: () => set(initialState),
