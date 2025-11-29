@@ -31,6 +31,7 @@ export default function App(): JSX.Element {
         <Route path="/pricing" element={<PricingPage />} />
         
         {/* OAuth Callbacks */}
+        <Route path="/auth/callback" element={<OAuthCallbackPage />} />
         <Route path="/auth/google/callback" element={<OAuthCallbackPage />} />
         <Route path="/auth/github/callback" element={<OAuthCallbackPage />} />
         
