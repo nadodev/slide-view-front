@@ -1,50 +1,85 @@
+/**
+ * @fileoverview Store para estado da UI
+ * Gerencia modais, painéis e estados visuais
+ */
+
 import { create } from 'zustand';
 
-type UIStoreState = {
-    showHelp: boolean;
-    showTemplates: boolean;
-    showExport: boolean;
-    showGitHub: boolean;
+// ============================================
+// TYPES
+// ============================================
 
-    showPreview: boolean;
-    editorFocus: boolean;
+interface UIStoreState {
+  // Modals
+  showHelp: boolean;
+  showTemplates: boolean;
+  showExport: boolean;
+  showGitHub: boolean;
+  
+  // Editor UI
+  showPreview: boolean;
+  editorFocus: boolean;
+  
+  // Modal Actions
+  setShowHelp: (show: boolean) => void;
+  setShowTemplates: (show: boolean) => void;
+  setShowExport: (show: boolean) => void;
+  setShowGitHub: (show: boolean) => void;
+  
+  // Editor Actions
+  setShowPreview: (show: boolean) => void;
+  setEditorFocus: (focus: boolean) => void;
+  
+  // Toggles
+  toggleShowPreview: () => void;
+  toggleEditorFocus: () => void;
+  toggleShowHelp: () => void;
+  toggleShowTemplates: () => void;
+  
+  // Utils
+  closeAllModals: () => void;
+  resetUI: () => void;
+}
 
-    setShowHelp: (show: boolean) => void;
-    setShowTemplates: (show: boolean) => void;
-    setShowExport: (show: boolean) => void;
-    setShowGitHub: (show: boolean) => void;
-    setShowPreview: (show: boolean) => void;
-    setEditorFocus: (focus: boolean) => void;
-    toggleShowPreview: () => void;
-    toggleEditorFocus: () => void;
-    toggleShowHelp: () => void;
-    toggleShowTemplates: () => void;
-    resetUI: () => void;
-};
+// ============================================
+// STORE
+// ============================================
 
 const initialState = {
+  showHelp: false,
+  showTemplates: false,
+  showExport: false,
+  showGitHub: false,
+  showPreview: true,
+  editorFocus: false,
+};
+
+export const useUIStore = create<UIStoreState>((set) => ({
+  ...initialState,
+
+  // Modal Setters
+  setShowHelp: (showHelp) => set({ showHelp }),
+  setShowTemplates: (showTemplates) => set({ showTemplates }),
+  setShowExport: (showExport) => set({ showExport }),
+  setShowGitHub: (showGitHub) => set({ showGitHub }),
+  
+  // Editor Setters
+  setShowPreview: (showPreview) => set({ showPreview }),
+  setEditorFocus: (editorFocus) => set({ editorFocus }),
+
+  // Toggles
+  toggleShowPreview: () => set((s) => ({ showPreview: !s.showPreview })),
+  toggleEditorFocus: () => set((s) => ({ editorFocus: !s.editorFocus })),
+  toggleShowHelp: () => set((s) => ({ showHelp: !s.showHelp })),
+  toggleShowTemplates: () => set((s) => ({ showTemplates: !s.showTemplates })),
+
+  // Utils
+  closeAllModals: () => set({
     showHelp: false,
     showTemplates: false,
     showExport: false,
     showGitHub: false,
-    showPreview: true,
-    editorFocus: false,
-};
-
-export const useUIStore = create<UIStoreState>((set) => ({
-    ...initialState,
-
-    setShowHelp: (show: boolean) => set({ showHelp: show }),
-    setShowTemplates: (show: boolean) => set({ showTemplates: show }),
-    setShowExport: (show: boolean) => set({ showExport: show }),
-    setShowGitHub: (show: boolean) => set({ showGitHub: show }),
-    setShowPreview: (show: boolean) => set({ showPreview: show }),
-    setEditorFocus: (focus: boolean) => set({ editorFocus: focus }),
-
-    toggleShowPreview: () => set((state) => ({ showPreview: !state.showPreview })),
-    toggleEditorFocus: () => set((state) => ({ editorFocus: !state.editorFocus })),
-    toggleShowHelp: () => set((state) => ({ showHelp: !state.showHelp })),
-    toggleShowTemplates: () => set((state) => ({ showTemplates: !state.showTemplates })),
-
-    resetUI: () => set(initialState),
+  }),
+  
+  resetUI: () => set(initialState),
 }));

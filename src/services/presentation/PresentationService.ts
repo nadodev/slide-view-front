@@ -1,62 +1,50 @@
-import { Slide } from '../../components/slides/types';
-import parseMarkdownSafe from '../../utils/markdown';
+/**
+ * @fileoverview Presentation Service
+ * @deprecated Este service está sendo substituído pelo core/api/repositories
+ * Mantido para compatibilidade retroativa, use presentationRepository de core
+ */
 
-const STORAGE_KEY = 'presentation-slides';
-
-// Pure functions for logic
-const extractNotes = (text: string): { clean: string; notes: string[] } => {
-    const notes: string[] = [];
-    if (!text) return { clean: "", notes };
-    const cleaned = text.replace(
-        /<!--\s*note:\s*([\s\S]*?)-->/gi,
-        (_match, note) => {
-            if (note && note.trim()) notes.push(note.trim());
-            return "";
-        },
-    );
-    return { clean: cleaned.trim(), notes };
-};
-
-const parseMarkdown = (content: string): string => {
-    return parseMarkdownSafe(content);
-};
+import { 
+  Slide, 
+  extractNotes, 
+  parseMarkdown, 
+  saveSlides as coreSaveSlides, 
+  loadSlides as coreLoadSlides,
+  createSlidesFromFiles as coreCreateSlidesFromFiles,
+} from '../../core';
 
 export const presentationService = {
-    loadSlides(): Slide[] {
-        try {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) {
-                return JSON.parse(saved);
-            }
-        } catch (e) {
-            console.error('Error loading slides:', e);
-        }
-        return [];
-    },
+  /**
+   * @deprecated Use `loadSlides` de @core/utils/storage.utils
+   */
+  loadSlides(): Slide[] {
+    return coreLoadSlides();
+  },
 
-    saveSlides(slides: Slide[]): void {
-        try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(slides));
-        } catch (e) {
-            console.error('Error saving slides:', e);
-        }
-    },
+  /**
+   * @deprecated Use `saveSlides` de @core/utils/storage.utils
+   */
+  saveSlides(slides: Slide[]): void {
+    coreSaveSlides(slides);
+  },
 
-    parseMarkdown,
-    extractNotes,
+  /**
+   * @deprecated Use `parseMarkdown` de @core/utils/markdown.utils
+   */
+  parseMarkdown(content: string): string {
+    const { html } = parseMarkdown(content);
+    return html;
+  },
 
-    async createSlidesFromFiles(files: File[]): Promise<Slide[]> {
-        return Promise.all(
-            files.map(async (file) => {
-                const text = await file.text();
-                const { clean, notes } = extractNotes(text);
-                return {
-                    name: file.name.replace('.md', ''),
-                    content: clean,
-                    notes,
-                    html: parseMarkdown(clean),
-                };
-            })
-        );
-    }
+  /**
+   * @deprecated Use `extractNotes` de @core/utils/markdown.utils
+   */
+  extractNotes,
+
+  /**
+   * @deprecated Use `createSlidesFromFiles` de @core/utils/markdown.utils
+   */
+  async createSlidesFromFiles(files: File[]): Promise<Slide[]> {
+    return coreCreateSlidesFromFiles(files);
+  }
 };

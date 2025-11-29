@@ -1,5 +1,9 @@
+import { useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { parseMarkdown } from "../../core";
 import { usePresentationController } from "../../features/presentation/usePresentationController";
 import { PresentationLayout } from "./components/PresentationLayout";
+import { EmptyState } from "./components/EmptyState";
 import SlideList from "../../components/SlideList";
 import PresenterView from "../../components/PresenterView";
 import SlidesWorkspace from "../../components/presentation/SlidesWorkspace";
@@ -7,10 +11,7 @@ import ScrollTopButton from "../../components/ScrollTopButton";
 import EditPanel from "../../components/EditPanel";
 import { QRCodeDisplay } from "../../components/QRCodeDisplay";
 import { RemoteControlModal } from "../../components/RemoteControlModal";
-import parseMarkdownSafe from "../../utils/markdown";
 import { usePresentationShortcuts } from "../../hooks/usePresentationShortcuts";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
 
 export default function PresentationPage() {
     console.log('🎯 PresentationPage: Component mounting...');
@@ -91,19 +92,6 @@ export default function PresentationPage() {
         }
     }, [location.state, setSlides, setCurrentSlide, setShowSlideList]);
 
-    const extractNotes = (text: string) => {
-        const notes: string[] = [];
-        if (!text) return { clean: "", notes };
-        const cleaned = text.replace(
-            /<!--\s*note:\s*([\s\S]*?)-->/gi,
-            (_match, note) => {
-                if (note && note.trim()) notes.push(note.trim());
-                return "";
-            },
-        );
-        return { clean: cleaned.trim(), notes };
-    };
-
     const containerClasses = [
         highContrast ? "high-contrast" : "",
         presenterMode ? "presenter-full" : "",
@@ -112,17 +100,9 @@ export default function PresentationPage() {
         .filter(Boolean)
         .join(" ");
 
-    // If no slides yet, render loading
+    // If no slides yet, render empty state
     if (slides.length === 0) {
-        return (
-            <div className="flex items-center justify-center h-screen bg-slate-900 text-white">
-                <div className="text-center">
-                    <button
-                        className="bg-blue-900 hover:bg-blue-600 text-white py-2 px-4 rounded bg-blue-500"
-                        onClick={() => navigate('/create')}>Create Presentation</button>
-                </div>
-            </div>
-        );
+        return <EmptyState />;
     }
 
     return (
@@ -219,10 +199,11 @@ export default function PresentationPage() {
                 onSave={() => {
                     if (slides.length > 0 && currentSlide < slides.length) {
                         const newSlides = [...slides];
+                        const { html } = parseMarkdown(draftContent);
                         newSlides[currentSlide] = {
                             ...newSlides[currentSlide],
                             content: draftContent,
-                            html: parseMarkdownSafe(draftContent)
+                            html,
                         };
                         setSlides(newSlides);
                         setEditing(false);

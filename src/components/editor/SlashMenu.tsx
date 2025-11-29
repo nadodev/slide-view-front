@@ -7,7 +7,7 @@ type SlashMenuProps = {
     selectedIndex: number;
     onSelect: (content: string) => void;
     onHover: (index: number) => void;
-    textareaRef: React.RefObject<HTMLTextAreaElement>;
+    textareaRef: React.RefObject<HTMLTextAreaElement | null>;
 };
 
 export const SlashMenu: React.FC<SlashMenuProps> = ({

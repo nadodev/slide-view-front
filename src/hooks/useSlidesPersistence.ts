@@ -1,48 +1,53 @@
+/**
+ * @fileoverview Hook para persistência de slides
+ * Refatorado para usar core
+ */
+
 import { useEffect } from "react";
-import parseMarkdownSafe from "../utils/markdown";
-import { Slide } from "../components/slides/types";
+import { Slide, parseMarkdown, saveSlides, loadSlides } from "../core";
 
 export function useSlidesPersistence(
   slides: Slide[],
   setSlides: (slides: Slide[]) => void,
   setShowSlideList: (value: boolean) => void,
 ) {
+  // Salva slides quando mudam
   useEffect(() => {
     try {
       if (slides.length > 0) {
+        // Salva apenas os dados essenciais (sem HTML)
         const payload = slides.map((slide) => ({
           name: slide.name,
           content: slide.content,
           notes: slide.notes || [],
         }));
-        localStorage.setItem("presentation-slides", JSON.stringify(payload));
-      } else {
-        localStorage.removeItem("presentation-slides");
+        saveSlides(payload as Slide[]);
       }
     } catch {
       /* ignore persistence errors */
     }
   }, [slides]);
 
+  // Carrega slides ao iniciar
   useEffect(() => {
     try {
-      const raw = localStorage.getItem("presentation-slides");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const loaded = parsed.map((item: Slide) => ({
+      const stored = loadSlides();
+      if (stored.length > 0) {
+        // Regenera o HTML ao carregar
+        const loaded = stored.map((item) => {
+          const { html } = parseMarkdown(item.content || "");
+          return {
             name: item.name,
             content: item.content,
             notes: item.notes || [],
-            html: parseMarkdownSafe(item.content || ""),
-          }));
-          setSlides(loaded);
-          setShowSlideList(true);
-        }
+            html,
+          };
+        });
+        setSlides(loaded);
+        setShowSlideList(true);
       }
     } catch {
       /* ignore */
     }
   }, [setSlides, setShowSlideList]);
 }
-

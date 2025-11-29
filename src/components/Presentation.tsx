@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { Slide, extractNotes, parseMarkdown, loadHighContrast, saveHighContrast } from "../core";
 import SlideList from "./SlideList";
 import PresenterView from "./PresenterView";
 import EditPanel from "./EditPanel";
 import useAnchorNavigation from "../hooks/useAnchorNavigation";
 import ScrollTopButton from "./ScrollTopButton";
-import parseMarkdownSafe from "../utils/markdown";
-import { Slide } from "./slides/types";
 import { useSlidesManager } from "../hooks/useSlidesManager";
 import { usePresentationShortcuts } from "../hooks/usePresentationShortcuts";
 import { useSlidesPersistence } from "../hooks/useSlidesPersistence";
@@ -17,19 +16,6 @@ import { useSocket } from "../hooks/useSocket";
 import { QRCodeDisplay } from "./QRCodeDisplay";
 import { RemoteControlModal } from "./RemoteControlModal";
 import { toast } from "sonner";
-
-function extractNotes(text: string) {
-  const notes: string[] = [];
-  if (!text) return { clean: "", notes };
-  const cleaned = text.replace(
-    /<!--\s*note:\s*([\s\S]*?)-->/gi,
-    (_match, note) => {
-      if (note && note.trim()) notes.push(note.trim());
-      return "";
-    },
-  );
-  return { clean: cleaned.trim(), notes };
-}
 
 const Presentation = () => {
   const location = useLocation();
@@ -57,21 +43,10 @@ const Presentation = () => {
   const slideContentRef = useRef<HTMLElement | null>(null);
   const slideContainerRef = useRef<HTMLElement | null>(null);
   const presenterScrollRef = useRef<HTMLDivElement | null>(null);
-  const [highContrast, setHighContrast] = useState(() => {
-    try {
-      return localStorage.getItem("presentation-high-contrast") === "1";
-    } catch {
-      return false;
-    }
-  });
+  const [highContrast, setHighContrast] = useState(() => loadHighContrast());
 
   useEffect(() => {
-    try {
-      localStorage.setItem(
-        "presentation-high-contrast",
-        highContrast ? "1" : "0",
-      );
-    } catch { }
+    saveHighContrast(highContrast);
   }, [highContrast]);
 
   const [presenterMode, setPresenterMode] = useState<boolean>(false);
@@ -461,7 +436,8 @@ const Presentation = () => {
               const item = copy[currentSlide];
               if (item) {
                 item.content = draftContent;
-                item.html = parseMarkdownSafe(draftContent);
+                const { html } = parseMarkdown(draftContent);
+                item.html = html;
               }
               return copy;
             });
@@ -473,11 +449,12 @@ const Presentation = () => {
         onCreateFiles={(files) => {
           const newSlides = files.map((file) => {
             const { clean, notes } = extractNotes(file.content);
+            const { html } = parseMarkdown(clean);
             return {
               name: file.name.replace('.md', ''),
               content: clean,
               notes,
-              html: parseMarkdownSafe(clean),
+              html,
             };
           });
           setSlides(newSlides);

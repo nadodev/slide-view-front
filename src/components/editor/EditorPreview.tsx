@@ -3,7 +3,7 @@ import { Eye } from 'lucide-react';
 
 type EditorPreviewProps = {
     html: string;
-    previewScrollRef: React.RefObject<HTMLDivElement>;
+    previewScrollRef: React.RefObject<HTMLDivElement | null>;
     onScroll?: () => void;
 };
 

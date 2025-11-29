@@ -1,10 +1,25 @@
+/**
+ * @fileoverview Hook para gerenciamento de slides
+ * Refatorado para usar core
+ */
+
 import { useState, useCallback, type ChangeEvent } from "react";
-import { Slide } from "../components/slides/types";
-import parseMarkdownSafe from "../utils/markdown";
+import { 
+  Slide, 
+  extractNotes, 
+  parseMarkdown,
+  splitMarkdownByDelimiter,
+  EDITOR_CONFIG,
+  ERROR_MESSAGES,
+} from "../core";
 import {
   createSlideFromMarkdown,
   generateSlidesWithGemini,
 } from "../utils/gemini";
+
+// ============================================
+// TYPES
+// ============================================
 
 type FileChange =
   | ChangeEvent<HTMLInputElement>
@@ -17,10 +32,11 @@ type UploadOptions = {
   error?: string;
 };
 
-const DELIMITER_FALLBACK = "----'----";
+// ============================================
+// HOOK
+// ============================================
 
 export function useSlidesManager() {
-  console.log('🎯 useSlidesManager initialized');
   const [slides, setSlides] = useState<Slide[]>([]);
   const [currentSlide, setCurrentSlide] = useState<number>(0);
   const [showSlideList, setShowSlideList] = useState(false);
@@ -28,18 +44,9 @@ export function useSlidesManager() {
   const [error, setError] = useState("");
   const [warning, setWarning] = useState("");
 
-  const extractNotes = useCallback((text: string) => {
-    const notes: string[] = [];
-    if (!text) return { clean: "", notes };
-    const cleaned = text.replace(
-      /<!--\s*note:\s*([\s\S]*?)-->/gi,
-      (_match, note) => {
-        if (note && note.trim()) notes.push(note.trim());
-        return "";
-      },
-    );
-    return { clean: cleaned.trim(), notes };
-  }, []);
+  // ============================================
+  // ACTIONS
+  // ============================================
 
   const resetSlidesState = useCallback(() => {
     setSlides([]);
@@ -65,32 +72,16 @@ export function useSlidesManager() {
       setError("");
 
       try {
+        // Handle single file with split option
         if (files.length === 1 && options.splitSingle) {
           const file = files[0];
           const raw = await file.text();
-          const marker = (options.delimiter || DELIMITER_FALLBACK).trim();
-          const esc = (value: string) =>
-            value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-          const lineRegex = new RegExp("^\\s*" + esc(marker) + "\\s*$", "gm");
-          let slidesParts = raw
-            .split(lineRegex)
-            .map((part) => part.trim())
-            .filter(Boolean);
+          const delimiter = options.delimiter || EDITOR_CONFIG.DEFAULT_DELIMITER;
+          
+          const slidesParts = splitMarkdownByDelimiter(raw, delimiter);
 
           if (slidesParts.length <= 1) {
-            const altRegex = new RegExp(
-              "\\r?\\n\\s*" + esc(marker) + "\\s*\\r?\\n",
-            );
-            slidesParts = raw
-              .split(altRegex)
-              .map((part) => part.trim())
-              .filter(Boolean);
-          }
-
-          if (slidesParts.length <= 1) {
-            setError(
-              "Marcador não encontrado — nenhum slide foi carregado. Verifique o marcador ou desmarque a opção de dividir.",
-            );
+            setError(ERROR_MESSAGES.DELIMITER_NOT_FOUND);
             setLoading(false);
             return;
           }
@@ -98,11 +89,12 @@ export function useSlidesManager() {
           setWarning("");
           const loadedSlides = slidesParts.map((content, index) => {
             const { clean, notes } = extractNotes(content);
+            const { html } = parseMarkdown(clean);
             return {
               name: `${file.name.replace(".md", "")}-${index + 1}`,
               content: clean,
               notes,
-              html: parseMarkdownSafe(clean),
+              html,
             } as Slide;
           });
 
@@ -112,6 +104,7 @@ export function useSlidesManager() {
           return;
         }
 
+        // Handle multiple files
         const sortedFiles = files.sort((a, b) =>
           a.name.localeCompare(b.name),
         );
@@ -120,11 +113,12 @@ export function useSlidesManager() {
           sortedFiles.map(async (file) => {
             const raw = await file.text();
             const { clean, notes } = extractNotes(raw);
+            const { html } = parseMarkdown(clean);
             return {
               name: file.name.replace(".md", ""),
               content: clean,
               notes,
-              html: parseMarkdownSafe(clean),
+              html,
             } as Slide;
           }),
         );
@@ -140,7 +134,7 @@ export function useSlidesManager() {
         setLoading(false);
       }
     },
-    [extractNotes],
+    [],
   );
 
   const handleAIGeneration = useCallback(
@@ -160,10 +154,10 @@ export function useSlidesManager() {
           createSlideFromMarkdown(markdown, index),
         );
 
-        const processedSlides = newSlides.map((slide) => ({
-          ...slide,
-          html: parseMarkdownSafe(slide.content || ""),
-        }));
+        const processedSlides = newSlides.map((slide) => {
+          const { html } = parseMarkdown(slide.content || "");
+          return { ...slide, html };
+        });
 
         setSlides(processedSlides);
         setCurrentSlide(0);
@@ -186,7 +180,7 @@ export function useSlidesManager() {
       if (prev.length === 0) return prev;
       const current = prev[currentSlide];
       if (!current) return prev;
-      const duplicate = {
+      const duplicate: Slide = {
         name: `${current.name}-copia`,
         content: current.content,
         notes: current.notes ? [...current.notes] : [],
@@ -206,12 +200,12 @@ export function useSlidesManager() {
         if (!slide) return;
         const supportsFS =
           typeof window !== "undefined" &&
-          "showSaveFilePicker" in (window as typeof window & { showSaveFilePicker: () => Promise<any> });
+          "showSaveFilePicker" in (window as typeof window & { showSaveFilePicker: () => Promise<unknown> });
 
         if (supportsFS) {
           let handle = slide._fileHandle;
           if (!handle) {
-            handle = await (window as any).showSaveFilePicker({
+            handle = await (window as unknown as { showSaveFilePicker: (options: unknown) => Promise<FileSystemFileHandle> }).showSaveFilePicker({
               suggestedName: slide.name?.endsWith(".md")
                 ? slide.name
                 : `${slide.name || "slide"}.md`,
@@ -244,9 +238,7 @@ export function useSlidesManager() {
         }
       } catch (err) {
         console.warn("Falha ao salvar arquivo:", err);
-        setWarning(
-          "Não foi possível salvar diretamente no arquivo. Seu navegador pode não suportar, ou a permissão foi negada.",
-        );
+        setWarning(ERROR_MESSAGES.SAVE_FAILED);
         setTimeout(() => setWarning(""), 4000);
       }
     },
@@ -257,15 +249,15 @@ export function useSlidesManager() {
     if (slides.length === 0) return;
     const combined = slides
       .map((slide) => slide.content || "")
-      .join(`\n\n${DELIMITER_FALLBACK}\n\n`);
+      .join(`\n\n${EDITOR_CONFIG.DEFAULT_DELIMITER}\n\n`);
 
     try {
       const supportsFS =
         typeof window !== "undefined" &&
-        "showSaveFilePicker" in (window as typeof window & { showSaveFilePicker: () => Promise<any> });
+        "showSaveFilePicker" in (window as typeof window & { showSaveFilePicker: () => Promise<unknown> });
 
       if (supportsFS) {
-        const handle = await (window as any).showSaveFilePicker({
+        const handle = await (window as unknown as { showSaveFilePicker: (options: unknown) => Promise<FileSystemFileHandle> }).showSaveFilePicker({
           suggestedName: "apresentacao-completa.md",
           types: [
             { description: "Markdown", accept: { "text/markdown": [".md"] } },
@@ -303,7 +295,7 @@ export function useSlidesManager() {
     if (!slides.length) return;
     const combined = slides
       .map((slide) => slide.content)
-      .join(`\n\n${DELIMITER_FALLBACK}\n\n`);
+      .join(`\n\n${EDITOR_CONFIG.DEFAULT_DELIMITER}\n\n`);
     const blob = new Blob([combined], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
@@ -409,6 +401,10 @@ export function useSlidesManager() {
     [currentSlide],
   );
 
+  // ============================================
+  // RETURN
+  // ============================================
+
   return {
     slides,
     setSlides,
@@ -433,4 +429,3 @@ export function useSlidesManager() {
     resetSlidesState,
   };
 }
-

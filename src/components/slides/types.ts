@@ -1,10 +1,8 @@
-export type Slide = {
-  name?: string;
-  content?: string;
-  notes?: string[];
-  html?: string;
-  _fileHandle?: any;
-};
+/**
+ * @fileoverview Types para Slides
+ * @deprecated Use `import { Slide } from '../../core'` diretamente
+ */
+
+export type { Slide } from '../../core';
 
 export type SlideSelectionHandler = (index: number) => void;
-

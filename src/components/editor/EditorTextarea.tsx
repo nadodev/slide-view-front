@@ -6,8 +6,8 @@ type EditorTextareaProps = {
     onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
     onKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
     onScroll?: () => void;
-    textareaRef: React.RefObject<HTMLTextAreaElement>;
-    lineNumbersRef: React.RefObject<HTMLDivElement>;
+    textareaRef: React.RefObject<HTMLTextAreaElement | null>;
+    lineNumbersRef: React.RefObject<HTMLDivElement | null>;
     placeholder?: string;
     ariaLabel?: string;
 };
