@@ -66,13 +66,15 @@ export const RemoteControl: React.FC = () => {
         return;
       }
 
+      // Socket.IO roda no mesmo servidor que serve o frontend (server.js)
+      // Usar VITE_SOCKET_URL ou window.location.origin
       let apiUrl: string;
-      if (window.location.hostname.includes('railway.app')) {
-        apiUrl = window.location.origin;
-      } else if (window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1')) {
-        apiUrl = 'http://localhost:3001';
+      if (window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1')) {
+        // Desenvolvimento local: Socket.IO roda na porta 3001
+        apiUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001';
       } else {
-        apiUrl = import.meta.env.VITE_API_URL || window.location.origin;
+        // Produção: Socket.IO roda na mesma origem que o frontend
+        apiUrl = import.meta.env.VITE_SOCKET_URL || window.location.origin;
       }
 
 

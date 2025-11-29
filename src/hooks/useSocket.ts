@@ -41,16 +41,16 @@ export const useSocket = (): UseSocketReturn => {
   const [platform, setPlatform] = useState<string>('unknown');
   const [isSupported, setIsSupported] = useState<boolean>(true);
 
-  // Obter URL da API
+  // Obter URL do Socket.IO (roda no server.js junto com o frontend)
   const getApiUrl = useCallback(() => {
     const hostname = window.location.hostname;
     
-    if (hostname.includes('railway.app')) {
-      return window.location.origin;
-    } else if (hostname.includes('localhost') || hostname.includes('127.0.0.1')) {
-      return import.meta.env.VITE_API_URL || 'http://localhost:3001';
+    if (hostname.includes('localhost') || hostname.includes('127.0.0.1')) {
+      // Desenvolvimento local: Socket.IO roda na porta 3001
+      return import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001';
     } else {
-      return import.meta.env.VITE_API_URL || window.location.origin;
+      // Produção: Socket.IO roda na mesma origem que o frontend
+      return import.meta.env.VITE_SOCKET_URL || window.location.origin;
     }
   }, []);
 
