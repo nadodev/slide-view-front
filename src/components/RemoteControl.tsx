@@ -13,10 +13,10 @@ import {
   Smartphone,
   Wifi,
   WifiOff,
-  QrCode
+  QrCode,
+  Check
 } from 'lucide-react';
 import { Button } from '../shared/components/ui/button';
-import { toast } from 'sonner';
 import { useMermaid } from '../hooks/useMermaid';
 
 export const RemoteControl: React.FC = () => {
@@ -36,11 +36,20 @@ export const RemoteControl: React.FC = () => {
   useMermaid(presentationContent);
   const [isPresenterMode, setIsPresenterMode] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
+  const [lastAction, setLastAction] = useState<string | null>(null);
   const mirrorRef = useRef<HTMLDivElement>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isScrollingRef = useRef(false);
+  const actionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const isVercel = window.location.hostname.includes('vercel.app');
+
+  // Feedback visual temporário
+  const showFeedback = (message: string) => {
+    setLastAction(message);
+    if (actionTimeoutRef.current) clearTimeout(actionTimeoutRef.current);
+    actionTimeoutRef.current = setTimeout(() => setLastAction(null), 1500);
+  };
 
   try {
 
@@ -67,12 +76,6 @@ export const RemoteControl: React.FC = () => {
       }
 
 
-      if (window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1')) {
-        toast.info('Modo Desenvolvimento', {
-          description: 'Certifique-se que o servidor está rodando na porta 3001'
-        });
-      }
-
       const socketConnection = io(apiUrl, {
         transports: ['websocket', 'polling'],
         timeout: 10000,
@@ -87,37 +90,24 @@ export const RemoteControl: React.FC = () => {
         setError(null);
 
         socketConnection.emit('join-remote', sessionId, (response: any) => {
-
           if (response?.success) {
             setCurrentSlide(response.currentSlide || 0);
             setTotalSlides(response.totalSlides || 0);
             setJoinError(null);
-            toast.success('Conectado!', {
-              description: 'Controle remoto ativo'
-            });
           } else {
             setJoinError(response?.error || 'Sessão não encontrada');
-            toast.error('Erro', {
-              description: response?.error || 'Falha na conexão'
-            });
           }
         });
       });
 
       socketConnection.on('disconnect', () => {
         setIsConnected(false);
-        toast.warning('Desconectado', {
-          description: 'Reconectando...'
-        });
       });
 
       socketConnection.on('connect_error', (error) => {
         setIsConnected(false);
         setIsConnecting(false);
         setError(`Não foi possível conectar: ${error.message || 'Servidor indisponível'}`);
-        toast.error('Erro de conexão', {
-          description: 'Verifique se a apresentação está ativa'
-        });
       });
 
       socketConnection.on('sync-slide', ({ currentSlide: newSlide, totalSlides: newTotal }) => {
@@ -149,9 +139,7 @@ export const RemoteControl: React.FC = () => {
       });
 
       socketConnection.on('presentation-ended', () => {
-        toast.info('Apresentação encerrada', {
-          description: 'A apresentação foi finalizada'
-        });
+        setError('Apresentação encerrada');
       });
 
       setSocket(socketConnection);
@@ -228,7 +216,7 @@ export const RemoteControl: React.FC = () => {
 
     const retryJoin = () => {
       if (!socket) {
-        toast.error('Socket não está disponível para reconectar');
+        setError('Socket não disponível');
         return;
       }
 
@@ -241,20 +229,15 @@ export const RemoteControl: React.FC = () => {
           setJoinError(null);
           setCurrentSlide(response.currentSlide || 0);
           setTotalSlides(response.totalSlides || 0);
-          toast.success('Reconectado!', { description: 'Controle remoto ativo' });
+          showFeedback('Reconectado!');
         } else {
           setJoinError(response?.error || 'Sessão não encontrada');
-          toast.error('Falha ao reconectar', { description: response?.error || 'Sessão não encontrada' });
         }
       });
     };
 
     const sendCommand = (command: 'next' | 'previous' | 'goto' | 'scroll' | 'presenter' | 'focus', slideIndex?: number, scrollDirection?: 'up' | 'down') => {
-
       if (!socket || !isConnected) {
-        toast.error('Não conectado', {
-          description: 'Verifique a conexão'
-        });
         return;
       }
 
@@ -266,7 +249,7 @@ export const RemoteControl: React.FC = () => {
           command: 'presenter',
           toggle: newState,
         });
-        toast.success(newState ? 'Modo apresentação ativado' : 'Modo apresentação desativado');
+        showFeedback(newState ? 'Modo apresentação' : 'Modo normal');
         return;
       }
 
@@ -278,7 +261,7 @@ export const RemoteControl: React.FC = () => {
           command: 'focus',
           toggle: newState,
         });
-        toast.success(newState ? 'Modo foco ativado' : 'Modo foco desativado');
+        showFeedback(newState ? 'Modo foco' : 'Modo normal');
         return;
       }
 
@@ -289,15 +272,16 @@ export const RemoteControl: React.FC = () => {
         scrollDirection,
       });
 
-      const commandMessages = {
-        next: 'Próximo slide',
-        previous: 'Slide anterior',
-        goto: `Indo para slide ${(slideIndex || 0) + 1}`,
+      // Feedback visual discreto
+      const messages: Record<string, string> = {
+        next: 'Próximo',
+        previous: 'Anterior',
+        goto: `Slide ${(slideIndex || 0) + 1}`,
         scroll: scrollDirection === 'up' ? 'Rolando para cima' : 'Rolando para baixo',
       };
 
-      if (commandMessages[command]) {
-        toast.success(commandMessages[command]);
+      if (messages[command]) {
+        showFeedback(messages[command]);
       }
     };
 
@@ -347,7 +331,17 @@ export const RemoteControl: React.FC = () => {
     }
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-4 relative">
+        {/* Feedback visual discreto */}
+        {lastAction && (
+          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-200">
+            <div className="flex items-center gap-2 bg-violet-600/90 backdrop-blur-sm text-white px-4 py-2 rounded-full shadow-lg">
+              <Check size={16} />
+              <span className="text-sm font-medium">{lastAction}</span>
+            </div>
+          </div>
+        )}
+
         <div className="max-w-md mx-auto">
           <div className="text-center mb-8 pt-8">
             <div className="inline-flex items-center gap-2 mb-2">

@@ -4,6 +4,7 @@ import PresentationPage from './pages/Presentation/PresentationPage';
 import CreatePage from './pages/Create/CreatePage';
 import EditorPage from './pages/Editor/EditorPage';
 import { LoginPage, RegisterPage } from './pages/Auth';
+import { DashboardPage } from './pages/Dashboard';
 import { RemoteControl } from './components/RemoteControl';
 import GitHubAuthCallback from './components/GitHubAuthCallback';
 import { ProtectedRoute } from './components/auth';
@@ -26,6 +27,14 @@ export default function App(): JSX.Element {
         <Route path="/auth/github/callback" element={<GitHubAuthCallback />} />
         
         {/* Rotas protegidas - requer autenticação (qualquer plano) */}
+        <Route 
+          path="/dashboard" 
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          } 
+        />
         <Route 
           path="/create" 
           element={

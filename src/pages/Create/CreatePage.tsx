@@ -1,15 +1,18 @@
-import React, { useState, useRef } from 'react';
-import { Upload, Sparkles, Plus, FolderOpen, Brain, Palette, Users, Settings, Wand2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useRef, useEffect } from 'react';
+import { Upload, Sparkles, Plus, FolderOpen, Brain, Palette, Users, Settings, Wand2, ArrowLeft, Clock } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import type { MarkdownFile } from '../../services/editor/fileManagementService';
 import { Button } from '../../shared/components/ui/button';
 import { Progress } from '../../shared/components/ui/progress';
 import InteractiveSplitModal from '../../shared/components/InteractiveSplitModal';
+import { usePresentationsStore } from '../../stores/usePresentationsStore';
+import type { Presentation } from '../../services/presentation';
 
 export default function CreatePage() {
     const navigate = useNavigate();
     const inputRef = useRef<HTMLInputElement | null>(null);
+    const { presentations, fetchPresentations, createPresentation, isLoading } = usePresentationsStore();
 
     // Estados do upload
     const [isDragging, setIsDragging] = useState(false);
@@ -26,6 +29,11 @@ export default function CreatePage() {
     const [showSplitModal, setShowSplitModal] = useState(false);
     const [modalContent, setModalContent] = useState('');
     const [modalFilename, setModalFilename] = useState('');
+
+    // Carregar apresentações recentes
+    useEffect(() => {
+        fetchPresentations();
+    }, [fetchPresentations]);
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from((e.target.files || []) as File[]);
@@ -70,7 +78,7 @@ export default function CreatePage() {
                     setShowSplitModal(true);
                     return;
                 }
-            } catch (err) {
+            } catch {
                 // fallback
             }
         }
@@ -106,10 +114,36 @@ export default function CreatePage() {
             }
         }
 
-        // Passar arquivos para o store e navegar para editor
-        const { useFileStore } = await import('../../stores/useFileStore');
-        useFileStore.getState().setFiles(mdFiles);
-        navigate('/editor');
+        // Criar apresentação no backend
+        const title = files.length === 1 
+            ? files[0].name.replace('.md', '') 
+            : `Apresentação - ${new Date().toLocaleDateString('pt-BR')}`;
+
+        const slides = mdFiles.map((f, idx) => ({
+            title: f.name.replace('.md', ''),
+            content: f.content,
+            order: idx,
+        }));
+
+        const presentation = await createPresentation({
+            title,
+            slides,
+        });
+
+        if (presentation) {
+            toast.success("Apresentação criada!", {
+                description: "Redirecionando para o editor..."
+            });
+            
+            // Passar arquivos para o store e navegar para editor
+            const { useFileStore } = await import('../../stores/useFileStore');
+            useFileStore.getState().setFiles(mdFiles);
+            navigate(`/editor?id=${presentation.id}`);
+        } else {
+            toast.error("Erro ao criar apresentação", {
+                description: "Tente novamente mais tarde."
+            });
+        }
     };
 
     const handleDragOver = (e: React.DragEvent) => {
@@ -162,16 +196,61 @@ export default function CreatePage() {
     };
 
     const handleCreateSlide = async () => {
-        // Reset files in store and navigate to editor
-        const { useFileStore } = await import('../../stores/useFileStore');
-        useFileStore.getState().resetFiles();
-        navigate('/editor');
+        // Criar nova apresentação vazia no backend
+        const presentation = await createPresentation({
+            title: `Nova Apresentação - ${new Date().toLocaleDateString('pt-BR')}`,
+            slides: [{
+                title: 'Slide 1',
+                content: '# Nova Apresentação\n\nComece a editar seu primeiro slide!',
+            }],
+        });
+
+        if (presentation) {
+            // Reset files in store and navigate to editor
+            const { useFileStore } = await import('../../stores/useFileStore');
+            useFileStore.getState().resetFiles();
+            navigate(`/editor?id=${presentation.id}`);
+        } else {
+            toast.error("Erro ao criar apresentação");
+        }
     };
 
-    const recentProjects = [
-        { id: 1, name: 'Relatório Q4', slides: 15, updated: 'Há 2 horas', color: 'from-blue-500 to-purple-500' },
-        { id: 2, name: 'Pitch Startup', slides: 22, updated: 'Ontem', color: 'from-emerald-500 to-teal-500' },
-        { id: 3, name: 'Treinamento', slides: 8, updated: 'Há 3 dias', color: 'from-pink-500 to-rose-500' },
+    const handleOpenPresentation = async (presentation: Presentation) => {
+        // Carregar slides da apresentação no store
+        if (presentation.slides) {
+            const mdFiles: MarkdownFile[] = presentation.slides.map((slide, idx) => ({
+                id: String(slide.id || idx + 1),
+                name: slide.title || `Slide ${idx + 1}`,
+                content: slide.content,
+            }));
+            
+            const { useFileStore } = await import('../../stores/useFileStore');
+            useFileStore.getState().setFiles(mdFiles);
+        }
+        navigate(`/editor?id=${presentation.id}`);
+    };
+
+    const formatDate = (dateString?: string) => {
+        if (!dateString) return 'Recente';
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffMs = now.getTime() - date.getTime();
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+        if (diffHours < 1) return 'Agora mesmo';
+        if (diffHours < 24) return `Há ${diffHours} hora${diffHours > 1 ? 's' : ''}`;
+        if (diffDays === 1) return 'Ontem';
+        if (diffDays < 7) return `Há ${diffDays} dias`;
+        return date.toLocaleDateString('pt-BR');
+    };
+
+    const recentProjects = presentations.slice(0, 3);
+    const gradientColors = [
+        'from-blue-500 to-purple-500',
+        'from-emerald-500 to-teal-500',
+        'from-pink-500 to-rose-500',
+        'from-orange-500 to-amber-500',
     ];
 
     return (
@@ -179,17 +258,26 @@ export default function CreatePage() {
             <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
                 <header className="border-b border-slate-800/50 backdrop-blur-sm bg-slate-900/50">
                     <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                                <Sparkles size={20} className="text-white" />
+                        <div className="flex items-center gap-4">
+                            <Link to="/dashboard" className="p-2 hover:bg-slate-800 rounded-lg transition-colors">
+                                <ArrowLeft size={20} />
+                            </Link>
+                            <div className="flex items-center gap-2">
+                                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-black font-bold shadow-lg">
+                                    ▲
+                                </div>
+                                <span className="text-lg font-semibold">SlideMD</span>
                             </div>
-                            <h1 className="text-xl font-bold">SlideCraft AI</h1>
+                            <span className="text-slate-500">•</span>
+                            <span className="text-slate-400 text-sm">Criar Nova</span>
                         </div>
                         <div className="flex items-center gap-4">
-                            <button className="text-slate-400 hover:text-white transition-colors text-sm">
-                                Configurações
-                            </button>
-                            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full" />
+                            <Link to="/dashboard" className="px-4 py-2 text-sm rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors">
+                                Dashboard
+                            </Link>
+                            <Link to="/" className="text-slate-400 hover:text-white transition-colors text-sm">
+                                Início
+                            </Link>
                         </div>
                     </div>
                 </header>
@@ -362,7 +450,8 @@ export default function CreatePage() {
                             <div className="grid grid-cols-2 gap-3 mb-4">
                                 <button
                                     onClick={handleCreateSlide}
-                                    className="p-4 bg-slate-900/50 border border-slate-700 rounded-lg hover:border-emerald-500/50 transition-colors"
+                                    disabled={isLoading}
+                                    className="p-4 bg-slate-900/50 border border-slate-700 rounded-lg hover:border-emerald-500/50 transition-colors disabled:opacity-50"
                                 >
                                     <div className="text-center">
                                         <div className="w-12 h-12 bg-slate-800 rounded-lg mx-auto mb-2 flex items-center justify-center">
@@ -373,7 +462,8 @@ export default function CreatePage() {
                                 </button>
                                 <button
                                     onClick={handleCreateSlide}
-                                    className="p-4 bg-slate-900/50 border border-slate-700 rounded-lg hover:border-emerald-500/50 transition-colors"
+                                    disabled={isLoading}
+                                    className="p-4 bg-slate-900/50 border border-slate-700 rounded-lg hover:border-emerald-500/50 transition-colors disabled:opacity-50"
                                 >
                                     <div className="text-center">
                                         <div className="w-12 h-12 bg-slate-800 rounded-lg mx-auto mb-2 flex items-center justify-center">
@@ -385,9 +475,10 @@ export default function CreatePage() {
                             </div>
                             <button
                                 onClick={handleCreateSlide}
-                                className="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-lg transition-all text-sm font-medium"
+                                disabled={isLoading}
+                                className="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-lg transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                ➕ Novo Projeto
+                                {isLoading ? 'Criando...' : '➕ Novo Projeto'}
                             </button>
                         </div>
                     </div>
@@ -397,22 +488,26 @@ export default function CreatePage() {
                 <section className="max-w-7xl mx-auto px-6 pb-16">
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="text-2xl font-bold">Projetos Recentes</h3>
-                        <button className="text-blue-400 hover:text-blue-300 transition-colors text-sm font-medium">
+                        <Link to="/dashboard" className="text-blue-400 hover:text-blue-300 transition-colors text-sm font-medium">
                             Ver todos →
-                        </button>
+                        </Link>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        {recentProjects.map((project) => (
+                        {recentProjects.map((project, idx) => (
                             <div
                                 key={project.id}
+                                onClick={() => handleOpenPresentation(project)}
                                 className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6 hover:border-slate-600/50 transition-all cursor-pointer group"
                             >
-                                <div className={`w-full h-32 bg-gradient-to-br ${project.color} rounded-lg mb-4 flex items-center justify-center group-hover:scale-105 transition-transform`}>
+                                <div className={`w-full h-32 bg-gradient-to-br ${gradientColors[idx % gradientColors.length]} rounded-lg mb-4 flex items-center justify-center group-hover:scale-105 transition-transform`}>
                                     <FolderOpen size={40} className="text-white/80" />
                                 </div>
-                                <h4 className="font-semibold mb-2">{project.name}</h4>
+                                <h4 className="font-semibold mb-2 truncate">{project.title}</h4>
                                 <div className="flex items-center justify-between text-xs text-slate-400">
-                                    <span>{project.slides} slides • {project.updated}</span>
+                                    <span className="flex items-center gap-1">
+                                        <Clock size={12} />
+                                        {project.slide_count || 0} slides • {formatDate(project.last_edited_at || project.updated_at)}
+                                    </span>
                                     <span className="w-2 h-2 bg-emerald-500 rounded-full" />
                                 </div>
                             </div>

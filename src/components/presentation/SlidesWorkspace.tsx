@@ -1,6 +1,7 @@
 import type { RefObject } from "react";
 import SlidesWithThumbs, { Slide } from "../SlidesWithThumbs";
 import Navigation from "../Navigation";
+import { useTheme } from "../../stores/useThemeStore";
 
 type SlidesWorkspaceProps = {
   slides: Slide[];
@@ -35,6 +36,9 @@ type SlidesWorkspaceProps = {
     isConnected: boolean;
     remoteClients: number;
   } | null;
+  
+  // Layout props
+  hasNavbar?: boolean;
 };
 
 export default function SlidesWorkspace({
@@ -65,10 +69,14 @@ export default function SlidesWorkspace({
   loading = false,
   onShowRemoteControl,
   remoteSession,
+  hasNavbar = false,
 }: SlidesWorkspaceProps) {
+  const { isDark } = useTheme();
+  
   return (
-    <div className="flex w-full flex-col">
-      <div className="flex-1">
+    <div className="flex flex-col h-full w-full overflow-hidden">
+      {/* Área principal dos slides - ocupa todo espaço disponível */}
+      <div className="flex-1 min-h-0 overflow-hidden">
         <SlidesWithThumbs
           slides={slides}
           currentSlide={currentSlide}
@@ -84,9 +92,12 @@ export default function SlidesWorkspace({
           onRemove={onRemove}
           onReorder={onReorder}
           loading={loading}
+          hasNavbar={hasNavbar}
         />
       </div>
-      <div className="w-full border-t border-white/10">
+      
+      {/* Navigation - sempre visível no rodapé */}
+      <div className={`shrink-0 border-t ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
         <Navigation
           currentSlide={currentSlide}
           totalSlides={slides.length}
@@ -116,4 +127,3 @@ export default function SlidesWorkspace({
     </div>
   );
 }
-

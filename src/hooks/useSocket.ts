@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 
 interface PresentationSession {
@@ -27,17 +27,58 @@ interface UseSocketReturn {
   onRemoteCommand: (callback: (command: RemoteCommand) => void) => void;
   isSupported: boolean;
   platform: string;
+  serverStatus: 'checking' | 'online' | 'offline';
 }
 
 export const useSocket = (): UseSocketReturn => {
   const [session, setSession] = useState<PresentationSession | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [serverStatus, setServerStatus] = useState<'checking' | 'online' | 'offline'>('checking');
   const socketRef = useRef<Socket | null>(null);
   const commandCallbackRef = useRef<((command: RemoteCommand) => void) | null>(null);
 
   const [platform, setPlatform] = useState<string>('unknown');
   const [isSupported, setIsSupported] = useState<boolean>(true);
+
+  // Obter URL da API
+  const getApiUrl = useCallback(() => {
+    const hostname = window.location.hostname;
+    
+    if (hostname.includes('railway.app')) {
+      return window.location.origin;
+    } else if (hostname.includes('localhost') || hostname.includes('127.0.0.1')) {
+      return import.meta.env.VITE_API_URL || 'http://localhost:3001';
+    } else {
+      return import.meta.env.VITE_API_URL || window.location.origin;
+    }
+  }, []);
+
+  // Verificar status do servidor
+  const checkServerStatus = useCallback(async () => {
+    const apiUrl = getApiUrl();
+    
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      
+      const response = await fetch(`${apiUrl}/api/health`, {
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (response.ok) {
+        setServerStatus('online');
+        return true;
+      }
+      setServerStatus('offline');
+      return false;
+    } catch {
+      setServerStatus('offline');
+      return false;
+    }
+  }, [getApiUrl]);
 
   useEffect(() => {
     const hostname = window.location.hostname;
@@ -45,49 +86,65 @@ export const useSocket = (): UseSocketReturn => {
     if (hostname.includes('vercel.app')) {
       setPlatform('vercel');
       setIsSupported(false);
+      setServerStatus('offline');
     } else if (hostname.includes('netlify.app')) {
       setPlatform('netlify');
       setIsSupported(false);
+      setServerStatus('offline');
     } else if (hostname.includes('railway.app')) {
       setPlatform('railway');
       setIsSupported(true);
+      checkServerStatus();
     } else if (hostname.includes('render.com')) {
       setPlatform('render');
       setIsSupported(true);
+      checkServerStatus();
     } else if (hostname.includes('herokuapp.com')) {
       setPlatform('heroku');
       setIsSupported(true);
-    } else if (hostname.includes('localhost')) {
+      checkServerStatus();
+    } else if (hostname.includes('localhost') || hostname.includes('127.0.0.1')) {
       setPlatform('development');
       setIsSupported(true);
+      checkServerStatus();
     } else {
       setPlatform('custom');
       setIsSupported(true);
+      checkServerStatus();
     }
-  }, []);
+  }, [checkServerStatus]);
 
-  const connect = () => {
+  const connect = useCallback(() => {
     if (socketRef.current?.connected) return;
 
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+    const apiUrl = getApiUrl();
+    console.log('🔌 Conectando ao servidor Socket.IO:', apiUrl);
 
     try {
       socketRef.current = io(apiUrl, {
         transports: ['websocket', 'polling'],
         timeout: 5000,
+        reconnection: true,
+        reconnectionAttempts: 3,
+        reconnectionDelay: 1000,
       });
 
       socketRef.current.on('connect', () => {
+        console.log('✅ Conectado ao servidor Socket.IO');
         setError(null);
+        setServerStatus('online');
       });
 
       socketRef.current.on('disconnect', () => {
+        console.log('🔌 Desconectado do servidor Socket.IO');
         setSession(prev => prev ? { ...prev, isConnected: false } : null);
       });
 
       socketRef.current.on('connect_error', (err) => {
+        console.error('❌ Erro de conexão Socket.IO:', err.message);
+        setServerStatus('offline');
         if (platform === 'development') {
-          setError('Servidor não está rodando. Execute: npm run dev:full');
+          setError('Servidor não encontrado. Execute: npm run dev:full');
         } else {
           setError('Erro ao conectar com o servidor');
         }
@@ -95,102 +152,107 @@ export const useSocket = (): UseSocketReturn => {
       });
 
       socketRef.current.on('remote-connected', ({ totalRemotes }) => {
+        console.log('📱 Remote conectado, total:', totalRemotes);
         setSession(prev => prev ? { ...prev, remoteClients: totalRemotes } : null);
       });
 
       socketRef.current.on('remote-disconnected', ({ totalRemotes }) => {
+        console.log('📱 Remote desconectado, total:', totalRemotes);
         setSession(prev => prev ? { ...prev, remoteClients: totalRemotes } : null);
       });
 
       socketRef.current.on('remote-command', (command: RemoteCommand) => {
+        console.log('🎮 Comando remoto recebido:', command);
         if (commandCallbackRef.current) {
           commandCallbackRef.current(command);
         }
       });
 
     } catch (err) {
+      console.error('❌ Erro ao inicializar conexão:', err);
       setError('Erro ao inicializar conexão');
       setIsConnecting(false);
     }
-  };
+  }, [getApiUrl, platform]);
 
-  const createPresentation = () => {
+  const createPresentation = useCallback(async () => {
+    console.log('📺 Criando apresentação...', { platform, isSupported, serverStatus });
 
     if (!isSupported) {
       setError(`Controle remoto não disponível em ${platform}. Use Railway, Render ou Heroku.`);
       return;
     }
 
-    if (platform === 'development') {
-      const checkServer = async () => {
-        try {
-          const response = await fetch('http://localhost:3001/api/health');
-          if (!response.ok) {
-            throw new Error('Servidor não respondeu');
-          }
-        } catch (error) {
-          setError('Servidor Socket.IO não está rodando. Execute: npm run dev:full');
-          setIsConnecting(false);
-          return;
-        }
-      };
-      checkServer();
+    // Verificar servidor primeiro
+    const isServerOnline = await checkServerStatus();
+    
+    if (!isServerOnline) {
+      if (platform === 'development') {
+        setError('Servidor Socket.IO não está rodando.\n\nExecute: npm run dev:full');
+      } else {
+        setError('Servidor não está disponível');
+      }
+      return;
     }
 
-    if (!socketRef.current) {
+    if (!socketRef.current || !socketRef.current.connected) {
       connect();
+      // Aguardar conexão
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    if (!socketRef.current?.connected) {
+      setError('Não foi possível conectar ao servidor');
+      return;
     }
 
     setIsConnecting(true);
     setError(null);
 
-    if (socketRef.current) {
-      socketRef.current.emit('create-presentation', (response: any) => {
-        setIsConnecting(false);
-
-        if (response.success) {
-          let qrUrl = response.qrUrl;
-
-          if (!qrUrl || (!qrUrl.startsWith('http://') && !qrUrl.startsWith('https://'))) {
-            const baseUrl = window.location.origin;
-            qrUrl = `${baseUrl}/remote/${response.sessionId}`;
-          }
-
-          setSession({
-            sessionId: response.sessionId,
-            qrUrl: qrUrl,
-            isConnected: true,
-            remoteClients: 0,
-          });
-        } else {
-          setError('Erro ao criar apresentação');
-        }
-      });
-    } else {
-      setError('Conexão não disponível');
+    socketRef.current.emit('create-presentation', (response: any) => {
+      console.log('📺 Resposta create-presentation:', response);
       setIsConnecting(false);
-    }
-  };
 
-  const updateSlide = (currentSlide: number, totalSlides: number) => {
+      if (response.success) {
+        let qrUrl = response.qrUrl;
+
+        // Garantir que a URL é válida
+        if (!qrUrl || (!qrUrl.startsWith('http://') && !qrUrl.startsWith('https://'))) {
+          const baseUrl = window.location.origin;
+          qrUrl = `${baseUrl}/remote/${response.sessionId}`;
+        }
+
+        console.log('✅ Sessão criada:', response.sessionId, 'URL:', qrUrl);
+
+        setSession({
+          sessionId: response.sessionId,
+          qrUrl: qrUrl,
+          isConnected: true,
+          remoteClients: 0,
+        });
+      } else {
+        setError('Erro ao criar apresentação');
+      }
+    });
+  }, [isSupported, platform, serverStatus, checkServerStatus, connect]);
+
+  const updateSlide = useCallback((currentSlide: number, totalSlides: number) => {
     if (socketRef.current && session) {
       socketRef.current.emit('update-presentation', {
         sessionId: session.sessionId,
         currentSlide,
         totalSlides,
       });
-    } else {
-      console.warn('useSocket - updateSlide ignorado:', { hasSocket: !!socketRef.current, hasSession: !!session });
     }
-  };
+  }, [session]);
 
-  const shareContent = (content: string) => {
+  const shareContent = useCallback((content: string) => {
     if (socketRef.current && session) {
       socketRef.current.emit('share-presentation-content', session.sessionId, content);
     }
-  };
+  }, [session]);
 
-  const disconnect = () => {
+  const disconnect = useCallback(() => {
     if (socketRef.current) {
       socketRef.current.disconnect();
       socketRef.current = null;
@@ -198,17 +260,17 @@ export const useSocket = (): UseSocketReturn => {
     setSession(null);
     setError(null);
     setIsConnecting(false);
-  };
+  }, []);
 
-  const onRemoteCommand = (callback: (command: RemoteCommand) => void) => {
+  const onRemoteCommand = useCallback((callback: (command: RemoteCommand) => void) => {
     commandCallbackRef.current = callback;
-  };
+  }, []);
 
   useEffect(() => {
     return () => {
       disconnect();
     };
-  }, []);
+  }, [disconnect]);
 
   return {
     session,
@@ -221,5 +283,6 @@ export const useSocket = (): UseSocketReturn => {
     onRemoteCommand,
     isSupported,
     platform,
+    serverStatus,
   };
 };

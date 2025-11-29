@@ -1,5 +1,6 @@
 import React from 'react';
-import { Maximize2, Minimize2, Eye, EyeOff, X, Save, Plus, HelpCircle, Github } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Maximize2, Minimize2, Eye, EyeOff, X, Save, Plus, HelpCircle, Github, LayoutDashboard } from 'lucide-react';
 import { ExportDrawer } from './ExportDrawer';
 import { useUIStore } from '../../stores/useUIStore';
 import { useFileStore } from '../../stores/useFileStore';
@@ -41,16 +42,33 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
     const filesCount = getFilesWithContent().length;
 
     return (
-        <header className="relative flex items-center justify-between px-8 py-5 border-b border-slate-700/50 bg-gradient-to-r from-slate-900/80 via-slate-800/80 to-slate-900/80 backdrop-blur-sm flex-shrink-0">
+        <header className="relative flex items-center justify-between px-6 py-4 border-b border-slate-700/50 bg-gradient-to-r from-slate-900/80 via-slate-800/80 to-slate-900/80 backdrop-blur-sm flex-shrink-0">
             <div className="flex items-center gap-4">
-                <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full" />
+                {/* Logo */}
+                <Link to="/dashboard" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-black font-bold text-sm shadow-lg">
+                        ▲
+                    </div>
+                    <span className="text-base font-semibold text-white">SlideMD</span>
+                </Link>
+                
+                <div className="w-px h-6 bg-slate-700" />
+                
+                {/* Dashboard Link */}
+                <Link 
+                    to="/dashboard" 
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 text-slate-300 hover:text-white transition-colors text-sm"
+                >
+                    <LayoutDashboard size={14} />
+                    <span>Dashboard</span>
+                </Link>
+                
+                <div className="w-px h-6 bg-slate-700" />
+                
                 <div>
-                    <h2 className="text-lg font-bold text-white">
-                        Editor de Markdown
+                    <h2 className="text-base font-semibold text-white">
+                        Editor
                     </h2>
-                    <p className="text-xs text-slate-400">
-                        Edite e visualize em tempo real
-                    </p>
                 </div>
             </div>
 

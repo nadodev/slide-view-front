@@ -22,4 +22,8 @@ export {
   type User,
   type Plan,
 } from './useAuthStore';
+export {
+  usePresentationsStore,
+  usePresentations,
+} from './usePresentationsStore';
 

@@ -12,7 +12,7 @@ type SlideThumbListProps = {
 };
 
 const sanitizePreview = (content?: string) =>
-  (content || "").replace(/[#`>*_\-]/g, "").trim().slice(0, 80);
+  (content || "").replace(/[#`>*_\-\[\]]/g, "").trim().slice(0, 80);
 
 export default function SlideThumbList({
   slides,
@@ -25,8 +25,8 @@ export default function SlideThumbList({
   const canRemove = slides.length > 1 && typeof onRemove === "function";
 
   return (
-    <div className="custom-scrollbar flex-1 overflow-y-auto px-4 py-4">
-      <ul className="space-y-3">
+    <div className="px-3 py-3">
+      <ul className="space-y-2">
         {loading ? (
           Array.from({ length: 3 }).map((_, index) => (
             <SlideThumbSkeleton key={`skeleton-${index}`} />
@@ -50,4 +50,3 @@ export default function SlideThumbList({
     </div>
   );
 }
-

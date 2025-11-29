@@ -4,6 +4,7 @@ import SlideSidebar from "./slides/SlideSidebar";
 import SlideStage from "./slides/SlideStage";
 import SidebarStyles from "./slides/SidebarStyles";
 import type { Slide as SlideType } from "./slides/types";
+import { useTheme } from "../stores/useThemeStore";
 
 export type Slide = SlideType;
 
@@ -22,6 +23,7 @@ type SlidesWithThumbsProps = {
   onRemove?: (index: number) => void;
   onReorder?: (fromIndex: number, toIndex: number) => void;
   loading?: boolean;
+  hasNavbar?: boolean;
 };
 
 export default function SlidesWithThumbs({
@@ -39,12 +41,18 @@ export default function SlidesWithThumbs({
   onRemove,
   onReorder,
   loading = false,
+  hasNavbar = false,
 }: SlidesWithThumbsProps) {
   const { selectSlide } = useSlideNavigation(setCurrentSlide, setTransitionKey);
+  const { isDark } = useTheme();
   const showSidebar = !focusMode && !presenterMode;
 
+  const bgClass = isDark 
+    ? "bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950" 
+    : "bg-gradient-to-br from-slate-100 via-slate-50 to-slate-100";
+
   return (
-    <div className="flex h-[calc(100vh-80px)] w-full overflow-hidden bg-linear-to-br from-slate-950 via-slate-900 to-slate-950">
+    <div className={`flex h-full w-full overflow-hidden ${bgClass} transition-colors duration-300`}>
       {showSidebar && (
         <SlideSidebar
           slides={slides}

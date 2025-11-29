@@ -8,11 +8,8 @@ import {
   Copy,
   RotateCw,
   QrCode,
-  Smartphone,
   Wifi,
-  WifiOff
 } from "lucide-react";
-import { Button } from "../shared/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,6 +21,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "../shared/components/ui/alert-dialog";
+import { useTheme } from "../stores/useThemeStore";
 
 type NavigationProps = {
   currentSlide: number;
@@ -86,111 +84,98 @@ const Navigation = ({
     setTransitionKey(prev => prev + 1);
   };
 
-  const onEdit = () => {
-    onStartEditing();
-  };
+  const { isDark } = useTheme();
 
-  const onToggleFocus = () => {
-    setFocusMode(!focusMode);
-  };
-
-  const onDuplicate = () => {
-    duplicateSlide();
+  const colors = {
+    navBg: isDark ? 'bg-slate-900/95' : 'bg-white/95',
+    buttonBg: isDark ? 'bg-slate-800 hover:bg-slate-700 border-slate-700' : 'bg-slate-100 hover:bg-slate-200 border-slate-200',
+    buttonText: isDark ? 'text-slate-200' : 'text-slate-700',
+    counterBg: isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-100 border-slate-200',
+    counterText: isDark ? 'text-white' : 'text-slate-900',
+    counterSubtext: isDark ? 'text-slate-400' : 'text-slate-500',
+    divider: isDark ? 'bg-slate-700' : 'bg-slate-300',
   };
 
   return (
-    <nav className="w-full bg-gray-900 border-b border-gray-800 shadow-lg">
-      <div className="max-w-7xl mx-auto px-6 py-4">
-        <div className="flex items-center justify-between gap-6">
-          <div className="flex items-center gap-3">
+    <nav className={`w-full ${colors.navBg} shadow-lg backdrop-blur-xl`}>
+      <div className="max-w-7xl mx-auto px-3 py-2">
+        <div className="flex items-center justify-between gap-3">
+          {/* Navegação de slides */}
+          <div className="flex items-center gap-1.5">
             <button
               onClick={onPrev}
               disabled={currentSlide === 0}
-              aria-label="Slide anterior"
               title="Anterior (←)"
-              className="cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 font-medium text-sm border border-gray-700 hover:border-gray-600"
+              className={`cursor-pointer flex items-center gap-1 px-2.5 py-1.5 rounded-md ${colors.buttonBg} ${colors.buttonText} disabled:opacity-40 disabled:cursor-not-allowed transition-all text-xs font-medium border`}
             >
-              <ChevronLeft size={18} />
-              <span>Anterior</span>
+              <ChevronLeft size={14} />
+              <span className="hidden sm:inline">Anterior</span>
             </button>
 
-            <div className="flex items-center gap-2 px-4 py-2 bg-gray-800 rounded-lg border border-gray-700 min-w-[100px] justify-center">
-              <span className="text-sm font-semibold text-white">
+            <div className={`flex items-center gap-1 px-2.5 py-1.5 ${colors.counterBg} rounded-md border min-w-[60px] justify-center`}>
+              <span className={`text-xs font-bold ${colors.counterText}`}>
                 {currentSlide + 1}
               </span>
-              <span className="text-xs text-gray-500">/</span>
-              <span className="text-sm text-gray-400">{totalSlides}</span>
+              <span className={`text-[10px] ${colors.counterSubtext}`}>/</span>
+              <span className={`text-xs ${colors.counterSubtext}`}>{totalSlides}</span>
             </div>
 
             <button
               onClick={onNext}
               disabled={currentSlide === totalSlides - 1}
-              aria-label="Próximo slide"
               title="Próximo (→)"
-              className="cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 font-medium text-sm shadow-lg shadow-blue-900/30"
+              className="cursor-pointer flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all text-xs font-medium shadow-md shadow-blue-500/20"
             >
-              <span>Próximo</span>
-              <ChevronRight size={18} />
+              <span className="hidden sm:inline">Próximo</span>
+              <ChevronRight size={14} />
             </button>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Ações */}
+          <div className="flex items-center gap-1">
             <button
-              onClick={onEdit}
-              aria-label="Editar slide atual"
+              onClick={onStartEditing}
               title="Editar"
-              className="cursor-pointer flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 transition-all duration-200 text-sm border border-gray-700 hover:border-gray-600"
+              className={`cursor-pointer flex items-center gap-1 px-2 py-1.5 rounded-md ${colors.buttonBg} ${colors.buttonText} transition-all text-xs border`}
             >
-              <Pencil size={16} />
-              <span className="hidden sm:inline">Editar</span>
+              <Pencil size={12} />
+              <span className="hidden md:inline">Editar</span>
             </button>
 
             <button
-              onClick={onToggleFocus}
-              aria-label={
-                focusMode ? "Sair do modo de foco" : "Ativar modo de foco"
-              }
+              onClick={() => setFocusMode(!focusMode)}
               title={focusMode ? "Sair do foco" : "Modo foco"}
-              className={`cursor-pointer flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 text-sm border ${focusMode
+              className={`cursor-pointer flex items-center gap-1 px-2 py-1.5 rounded-md transition-all text-xs border ${focusMode
                 ? "bg-purple-600 hover:bg-purple-500 text-white border-purple-500"
-                : "bg-gray-800 hover:bg-gray-700 text-gray-200 border-gray-700 hover:border-gray-600"
+                : `${colors.buttonBg} ${colors.buttonText}`
                 }`}
             >
-              {focusMode ? <Eye size={16} /> : <EyeOff size={16} />}
-              <span className="hidden sm:inline">
-                {focusMode ? "Sair" : "Foco"}
-              </span>
+              {focusMode ? <Eye size={12} /> : <EyeOff size={12} />}
+              <span className="hidden md:inline">{focusMode ? "Sair" : "Foco"}</span>
             </button>
 
             <button
-              onClick={onDuplicate}
-              aria-label="Duplicar slide atual"
+              onClick={duplicateSlide}
               title="Duplicar (Ctrl+D)"
-              className="cursor-pointer flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 transition-all duration-200 text-sm border border-gray-700 hover:border-gray-600"
+              className={`cursor-pointer flex items-center gap-1 px-2 py-1.5 rounded-md ${colors.buttonBg} ${colors.buttonText} transition-all text-xs border`}
             >
-              <Copy size={16} />
-              <span className="hidden md:inline">Duplicar</span>
+              <Copy size={12} />
+              <span className="hidden lg:inline">Duplicar</span>
             </button>
 
             {onShowRemoteControl && (
               <button
-                onClick={() => {
-                  console.log('Botão QR Code clicado no Navigation');
-                  onShowRemoteControl();
-                }}
-                aria-label="Ativar controle remoto"
-                title="Controlar apresentação pelo celular"
-                className={`cursor-pointer flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 text-sm border ${remoteSession?.isConnected
-                  ? "bg-violet-600 hover:bg-violet-500 text-white border-violet-500 shadow-lg shadow-violet-900/30"
-                  : "bg-gray-800 hover:bg-gray-700 text-gray-200 border-gray-700 hover:border-violet-400"
+                onClick={onShowRemoteControl}
+                title="QR Code"
+                className={`cursor-pointer flex items-center gap-1 px-2 py-1.5 rounded-md transition-all text-xs border ${remoteSession?.isConnected
+                  ? "bg-violet-600 hover:bg-violet-500 text-white border-violet-500"
+                  : `${colors.buttonBg} ${colors.buttonText}`
                   }`}
               >
-                {remoteSession?.isConnected ? <Wifi size={16} /> : <QrCode size={16} />}
-                <span className="hidden md:inline">
-                  {remoteSession?.isConnected ? 'Remoto' : 'QR Code'}
-                </span>
+                {remoteSession?.isConnected ? <Wifi size={12} /> : <QrCode size={12} />}
+                <span className="hidden lg:inline">QR</span>
                 {remoteSession?.isConnected && remoteSession.remoteClients > 0 && (
-                  <span className="bg-white text-violet-600 text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+                  <span className="bg-white text-violet-600 text-[10px] font-bold px-1 rounded-full">
                     {remoteSession.remoteClients}
                   </span>
                 )}
@@ -200,12 +185,11 @@ const Navigation = ({
             {onSaveAllSlides && (
               <button
                 onClick={onSaveAllSlides}
-                aria-label="Salvar todos os slides"
-                title="Salvar apresentação completa (.md)"
-                className="cursor-pointer flex items-center gap-2 px-3 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white transition-all duration-200 text-sm border border-green-500 shadow-lg shadow-green-900/30"
+                title="Salvar (.md)"
+                className="cursor-pointer flex items-center gap-1 px-2 py-1.5 rounded-md bg-green-600 hover:bg-green-500 text-white transition-all text-xs border border-green-500"
               >
-                <Download size={16} />
-                <span className="hidden md:inline">Salvar Todos</span>
+                <Download size={12} />
+                <span className="hidden lg:inline">Salvar</span>
               </button>
             )}
 
@@ -213,54 +197,46 @@ const Navigation = ({
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <button
-                    aria-label="Recomençar - voltar à tela inicial"
-                    title="Recomençar apresentação"
-                    className="cursor-pointer flex items-center gap-2 px-3 py-2 rounded-lg bg-orange-600 hover:bg-orange-500 text-white transition-all duration-200 text-sm border border-orange-500 shadow-lg shadow-orange-900/30"
+                    title="Recomençar"
+                    className="cursor-pointer flex items-center gap-1 px-2 py-1.5 rounded-md bg-orange-600 hover:bg-orange-500 text-white transition-all text-xs border border-orange-500"
                   >
-                    <RotateCw size={16} />
-                    <span className="hidden lg:inline">Recomençar</span>
+                    <RotateCw size={12} />
+                    <span className="hidden xl:inline">Recomençar</span>
                   </button>
                 </AlertDialogTrigger>
-                <AlertDialogContent className="bg-slate-900 border-slate-700">
+                <AlertDialogContent className={`${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
                   <AlertDialogHeader>
-                    <AlertDialogTitle className="text-white flex items-center gap-2">
-                      <RotateCw size={20} className="text-orange-400" />
-                      Recomençar Apresentação
+                    <AlertDialogTitle className={`${isDark ? 'text-white' : 'text-slate-900'} flex items-center gap-2`}>
+                      <RotateCw size={18} className="text-orange-500" />
+                      Recomençar
                     </AlertDialogTitle>
-                    <AlertDialogDescription className="text-slate-300">
-                      Tem certeza que deseja recomençar? Todos os slides atuais serão perdidos e você retornará à tela inicial.
-                      <span className="mt-3 p-3 bg-orange-900/20 border border-orange-800/50 rounded-lg block">
-                        <span className="flex items-center gap-2 text-orange-300">
-                          <span className="text-orange-400">⚠️</span>
-                          <span className="text-sm font-medium">Esta ação não pode ser desfeita</span>
-                        </span>
-                      </span>
+                    <AlertDialogDescription className={isDark ? 'text-slate-300' : 'text-slate-600'}>
+                      Todos os slides serão perdidos.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel className="bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700">
+                    <AlertDialogCancel className={`${isDark ? 'bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700' : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'}`}>
                       Cancelar
                     </AlertDialogCancel>
                     <AlertDialogAction
                       onClick={onRestart}
-                      className="bg-orange-600 hover:bg-orange-700 text-white"
+                      className="bg-orange-600 hover:bg-orange-500 text-white"
                     >
-                      Sim, Recomençar
+                      Recomençar
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
             )}
-            <div className="h-6 w-px bg-gray-700 mx-1" />
+
+            <div className={`h-4 w-px ${colors.divider} mx-0.5`} />
 
             <button
               onClick={onReset}
-              aria-label="Recarregar"
-              title="Recarregar"
-              className="cursor-pointer flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 transition-all duration-200 text-sm border border-gray-700 hover:border-gray-600"
+              title="Voltar ao início"
+              className={`cursor-pointer p-1.5 rounded-md ${colors.buttonBg} ${colors.buttonText} transition-all border`}
             >
-              <RotateCw size={16} />
-              <span className="hidden lg:inline">Recarregar</span>
+              <RotateCw size={12} />
             </button>
           </div>
         </div>
