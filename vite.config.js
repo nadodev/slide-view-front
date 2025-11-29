@@ -40,19 +40,6 @@ export default defineConfig({
     cssCodeSplit: true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-react': [
-            'react',
-            'react-dom',
-            'react-router-dom',
-            'zustand',
-            'axios',
-            'mermaid',
-            '@tanstack/react-query'
-          ],
-          'vendor-socket': ['socket.io-client'],
-          'vendor-markdown': ['marked', 'highlight.js']
-        },
         chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]'
