@@ -30,6 +30,8 @@ export default function OAuthCallbackPage() {
 
   useEffect(() => {
     const handleCallback = async () => {
+      const token = searchParams.get('token');
+      const success = searchParams.get('success');
       const code = searchParams.get('code');
       const error = searchParams.get('error');
 
@@ -40,6 +42,41 @@ export default function OAuthCallbackPage() {
         return;
       }
 
+      // Se o token já veio na URL (redirecionamento do backend)
+      if (token && success === 'true') {
+        try {
+          // Buscar dados do usuário usando o token
+          const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+          const response = await fetch(`${API_BASE_URL}/auth/me`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/json',
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error('Erro ao obter dados do usuário');
+          }
+
+          const userData = await response.json();
+
+          // Salva no store
+          login(userData, token);
+
+          setStatus('success');
+          setMessage('Login realizado com sucesso!');
+
+          // Redireciona para o dashboard
+          setTimeout(() => navigate('/dashboard'), 1500);
+        } catch (err) {
+          setStatus('error');
+          setMessage(err instanceof Error ? err.message : 'Erro ao processar autenticação');
+          setTimeout(() => navigate('/login'), 3000);
+        }
+        return;
+      }
+
+      // Fluxo antigo: se veio o código, trocar pelo token
       if (!code) {
         setStatus('error');
         setMessage('Código de autorização não encontrado');
