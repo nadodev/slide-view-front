@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Github, Chrome, Check } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Check } from 'lucide-react';
 import { useTheme } from '../../stores/useThemeStore';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { authService } from '../../services/auth';
@@ -98,11 +98,6 @@ export default function RegisterPage() {
     }
   };
 
-  const handleSocialLogin = (provider: string) => {
-    console.log(`Registro com ${provider}`);
-    // TODO: Implementar OAuth
-  };
-
   return (
     <div className={`min-h-screen ${colors.bg} flex flex-col transition-colors duration-300`}>
       {/* Background decorations */}
@@ -136,38 +131,6 @@ export default function RegisterPage() {
               <p className={colors.textMuted}>
                 Comece a criar apresentações incríveis
               </p>
-            </div>
-
-            {/* Social Login */}
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              <button
-                type="button"
-                onClick={() => handleSocialLogin('google')}
-                className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border ${colors.buttonSecondary} transition-all duration-200 hover:scale-[1.02]`}
-              >
-                <Chrome size={18} />
-                <span className="text-sm font-medium">Google</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSocialLogin('github')}
-                className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border ${colors.buttonSecondary} transition-all duration-200 hover:scale-[1.02]`}
-              >
-                <Github size={18} />
-                <span className="text-sm font-medium">GitHub</span>
-              </button>
-            </div>
-
-            {/* Divider */}
-            <div className="relative mb-6">
-              <div className={`absolute inset-0 flex items-center`}>
-                <div className={`w-full border-t ${colors.inputBorder}`} />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className={`px-4 ${isDark ? 'bg-slate-900/50' : 'bg-white/80'} ${colors.textSubtle}`}>
-                  ou registre com email
-                </span>
-              </div>
             </div>
 
             {/* Form */}
