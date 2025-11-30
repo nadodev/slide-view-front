@@ -43,7 +43,7 @@ export default function OAuthCallbackPage() {
       }
 
       // Se o token já veio na URL (redirecionamento do backend)
-      if (token && success === 'true') {
+      if (token) {
         try {
           // Buscar dados do usuário usando o token
           const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
