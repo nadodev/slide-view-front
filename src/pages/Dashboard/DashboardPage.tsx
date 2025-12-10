@@ -250,7 +250,7 @@ export default function DashboardPage() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-8">
         {/* Limit Alert */}
-        {planUsage && showLimitAlert && planUsage.usage.presentations.used >= planUsage.usage.presentations.max && !planUsage.usage.presentations.unlimited && (
+        {planUsage && planUsage.usage && showLimitAlert && planUsage.usage.presentations && planUsage.usage.presentations.used >= planUsage.usage.presentations.max && !planUsage.usage.presentations.unlimited && (
           <LimitAlert
             type="presentations"
             used={planUsage.usage.presentations.used}
@@ -265,7 +265,7 @@ export default function DashboardPage() {
             <h1 className={`text-2xl font-bold ${colors.text}`}>Minhas Apresentações</h1>
             <p className={colors.textMuted}>
               {presentations.length} {presentations.length === 1 ? 'apresentação' : 'apresentações'}
-              {planUsage && !planUsage.usage.presentations.unlimited && (
+              {planUsage && planUsage.usage && planUsage.usage.presentations && !planUsage.usage.presentations.unlimited && (
                 <span className="ml-2">
                   ({planUsage.usage.presentations.used} / {planUsage.usage.presentations.max})
                 </span>
@@ -301,7 +301,7 @@ export default function DashboardPage() {
             <Link
               to="/create"
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium shadow-lg transition-all duration-200 hover:scale-[1.02] ${
-                planUsage && planUsage.usage.presentations.used >= planUsage.usage.presentations.max && !planUsage.usage.presentations.unlimited
+                planUsage && planUsage.usage && planUsage.usage.presentations && planUsage.usage.presentations.used >= planUsage.usage.presentations.max && !planUsage.usage.presentations.unlimited
                   ? 'bg-slate-400 text-white cursor-not-allowed opacity-60'
                   : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white shadow-blue-500/25 hover:shadow-blue-500/40'
               }`}
